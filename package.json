@@ -1,0 +1,41 @@
+{
+  "name": "@axiosleo/koapp",
+  "version": "0.0.1-alpha.0",
+  "description": "",
+  "bin": {
+    "koapp": "./bin/koapp.js"
+  },
+  "author": "AxiosLeo",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AxiosLeo/node-koapp"
+  },
+  "scripts": {
+    "lint": "tsc ./index.d.ts && eslint --fix src/",
+    "test": "mocha --reporter spec --timeout 3000 tests/*.tests.js",
+    "test-cov": "nyc -r=lcov -r=html -r=text -r=json mocha -t 10000 -R spec tests/*.tests.js",
+    "ci": "npm run lint && npm run test-cov",
+    "clear": "rm -rf ./nyc_output ./coverage"
+  },
+  "directories": {
+    "lib": "src"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@axiosleo/cli-tool": "^1"
+  },
+  "devDependencies": {
+    "@types/node": "^15.12.1",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "eslint": "^7.0",
+    "expect.js": "^0.3.1",
+    "has-flag": "^4.0.0",
+    "mm": "^3.2.0",
+    "mocha": "^9.1.3",
+    "mocha-sinon": "^2.1.2",
+    "pre-commit": "^1.2.2",
+    "sinon": "^9.0.2",
+    "typescript": "^4.3.2"
+  }
+}

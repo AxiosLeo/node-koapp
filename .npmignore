@@ -1,0 +1,10 @@
+runtime/*
+.github/*
+tests/*
+coverage/*
+.nyc_output/*
+package-lock.json
+nyc.config.js
+.idea/*
+node_modules/*
+.appveyor.yml
