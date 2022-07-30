@@ -23,6 +23,10 @@
   "license": "MIT",
   "dependencies": {
     "@axiosleo/cli-tool": "^1.4.11",
+    "koa": "^2.13.4",
+    "koa-bodyparser": "^4.3.0",
+    "koa-session": "^6.2.0",
+    "koa-static-server": "^1.5.2",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
