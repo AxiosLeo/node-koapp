@@ -22,7 +22,7 @@ const result = (data, status = 200, headers = {}) => {
   throw new HttpResponse(status, data, headers ? headers : {});
 };
 
-const response = (data, code, status = 200, headers = {}) => {
+const response = (data, code = '200;Success', status = 200, headers = {}) => {
   const [c, m] = code.split(';');
   throw new HttpResponse(status, {
     code: c,
@@ -31,7 +31,7 @@ const response = (data, code, status = 200, headers = {}) => {
   }, headers ? headers : {});
 };
 
-const success = (data = {}, headers) => {
+const success = (data = {}, headers = null) => {
   throw new HttpResponse(200, {
     code: '200',
     message: 'success',
@@ -39,7 +39,7 @@ const success = (data = {}, headers) => {
   }, headers ? headers : {});
 };
 
-const failed = (data = {}, code, status = 501, headers = {}) => {
+const failed = (data = {}, code = '500;Internal Server Error', status = 501, headers = {}) => {
   const [c, m] = code.split(';');
   throw new HttpResponse(status, {
     code: c,
