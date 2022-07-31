@@ -1,6 +1,6 @@
 import type KoaStaticServer from 'koa-static-server';
 import type Koa from 'koa';
-import type { Context, Configuration } from '@axiosleo/cli-tool';
+import type { Context, Configuration, App } from '@axiosleo/cli-tool';
 import type { IncomingHttpHeaders } from 'http';
 
 type StatusCode = string | '000;Unknown Error' |
@@ -95,6 +95,7 @@ interface AppConfiguration {
   app_id?: string,
   paths?: Record<string, string>,
   routers?: Router[],
+  operator?: Record<string, ContextHandler>,
   server?: {
     env?: string | undefined,
     keys?: string[] | undefined,
@@ -106,7 +107,16 @@ interface AppConfiguration {
   }
 }
 
+interface KoaApplicationConfig extends AppConfiguration {
+  listen_host: 'localhost',
+}
+
 export declare abstract class Application extends Configuration implements AppConfiguration {
   constructor(config: AppConfiguration);
   abstract start(): Promise<void>;
+}
+
+export declare class KoaApplication extends Application {
+  constructor(config: AppConfiguration);
+  start(): Promise<void>;
 }
