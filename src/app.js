@@ -224,7 +224,7 @@ class Application extends EventEmitter {
       const context = initContext(app, ctx, app_id);
       const router = getRouteInfo(routes, ctx.path, ctx.method);
       if (!router) {
-        this.trigger('notFound', context);
+        await next();
         return;
       }
       context.params = router && router.params ? router.params : {};
@@ -238,7 +238,6 @@ class Application extends EventEmitter {
         this.trigger('response', exContext);
       }
       this.trigger('done', context);
-      await next();
     };
   }
 

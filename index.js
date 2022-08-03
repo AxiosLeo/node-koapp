@@ -8,6 +8,9 @@ const { Router } = require('./src/router');
 const { printer } = require('@axiosleo/cli-tool');
 const { HttpResponse, error, HttpError, success } = require('./src/response');
 const response = require('./src/response');
+const session = require('koa-session');
+const KoaStaticServer = require('koa-static-server');
+const path = require('path');
 
 class KoaApplication extends Application {
   constructor(config = {}) {
@@ -18,6 +21,24 @@ class KoaApplication extends Application {
       debug,
       routers: [],
       app_id: '',
+      session: {
+        /** (number || 'session') maxAge in ms (default is 1 days) */
+        /** 'session' will result in a cookie that expires when session/browser is closed */
+        /** Warning: If a session cookie is stolen, this cookie will never expire */
+        maxAge: 1296000000, // ms, 15 days
+        // autoCommit: true, /** (boolean) automatically commit headers (default true) */
+        overwrite: true, /** (boolean) can overwrite or not (default true) */
+        httpOnly: true, /** (boolean) httpOnly or not (default true) */
+        signed: true, /** (boolean) signed or not (default true) */
+        rolling: false, /** (boolean) Force a session identifier cookie to be set on every response. The expiration is reset to the original maxAge, resetting the expiration countdown. (default is false) */
+        renew: true, /** (boolean) renew session when session is nearly expired, so we can always keep user logged in. (default is false)*/
+        // secure: process.env.DEBUG ? false : true, /** (boolean) secure cookie*/
+        secure: false,
+        // sameSite: null, /** (string) session cookie sameSite options (default null, don't set it) */
+      },
+      static: {
+        rootDir: path.join(__dirname, './public'),
+      },
       ...config
     });
     printer.input('-'.repeat(60));
@@ -68,8 +89,13 @@ class KoaApplication extends Application {
 
   async start() {
     const koa = new Koa();
+    koa.use(session({
+      key: `koa.sess.${this.app_id}`, /** (string) cookie key (default is koa.sess) */
+      ...this.config.session
+    }, koa));
     koa.use(KoaBodyParser());
     koa.use(this.dispacher());
+    koa.use(KoaStaticServer(this.config.static));
 
     // set '0.0.0.0' for public access
     koa.listen(this.config.port, this.config.listen_host);
@@ -89,10 +115,8 @@ if (require.main === module) {
   const app = new KoaApplication({
     routers: [new Router('/test', {
       method: 'any',
-      handlers: [async (ctx) => {
-        success({
-          test: '123'
-        });
+      handlers: [async () => {
+        success('Hello, World!');
       }]
     })]
   });
