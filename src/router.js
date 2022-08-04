@@ -1,7 +1,7 @@
 'use strict';
 
 class Router {
-  constructor(prefix, options = {}) {
+  constructor(prefix = '', options = {}) {
     this.prefix = prefix || '';
     Object.assign(this, {
       method: '',
