@@ -17,6 +17,20 @@ export function failed(data?: unknown, code?: StatusCode, httpstatus?: number, h
 export function error(httpstatus: number, msg: string, headers?: Record<string, string>): void;
 export function log(...data: any): void;
 
+export declare class HttpResponse extends Error {
+  public readonly status: number;
+  public readonly headers: IncomingHttpHeaders;
+  public readonly data: unknown;
+  constructor(httpStatus: number, data: unknown, headers?: IncomingHttpHeaders);
+}
+
+export declare class HttpError extends Error {
+  public readonly status: number;
+  public readonly headers: IncomingHttpHeaders;
+  public readonly message: string;
+  constructor(httpStatus: number, message: string, headers?: IncomingHttpHeaders);
+}
+
 interface ControllerInterface {
   response(data: unknown, code?: StatusCode, status?: number, headers?: Record<string, string>): void;
   result(data: unknown, status?: number, headers?: Record<string, string>): void;
@@ -80,7 +94,7 @@ export class Router {
   middlewares?: ContextHandler[];
   options?: RouterOptions;
 
-  constructor(prefix: string, options?: RouterOptions);
+  constructor(prefix?: string, options?: RouterOptions);
 
   add(router: Router): void;
 
