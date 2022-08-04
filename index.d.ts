@@ -125,9 +125,14 @@ interface KoaApplicationConfig extends AppConfiguration {
   listen_host: 'localhost',
 }
 
-export declare abstract class Application extends Configuration implements AppConfiguration {
+export declare abstract class Application {
+  routes: any;
+  app_id: string;
   constructor(config: AppConfiguration);
   abstract start(): Promise<void>;
+  register(event_name: string, ...triggers: (...args: any[]) => void): void;
+  trigger(event_name: string, ...args: any[]);
+  dispacher(): Promise<void>;
 }
 
 export declare class KoaApplication extends Application {
