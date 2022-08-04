@@ -89,13 +89,17 @@ class KoaApplication extends Application {
 
   async start() {
     const koa = new Koa();
-    koa.use(session({
-      key: `koa.sess.${this.app_id}`, /** (string) cookie key (default is koa.sess) */
-      ...this.config.session
-    }, koa));
+    if (this.config.session) {
+      koa.use(session({
+        key: `koa.sess.${this.app_id}`, /** (string) cookie key (default is koa.sess) */
+        ...this.config.session
+      }, koa));
+    }
     koa.use(KoaBodyParser());
     koa.use(this.dispacher());
-    koa.use(KoaStaticServer(this.config.static));
+    if (this.config.static) {
+      koa.use(KoaStaticServer(this.config.static));
+    }
 
     // set '0.0.0.0' for public access
     koa.listen(this.config.port, this.config.listen_host);
