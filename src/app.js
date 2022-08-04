@@ -235,6 +235,9 @@ class Application extends EventEmitter {
       try {
         await workflow.start(context);
       } catch (exContext) {
+        if (!exContext.response && exContext.curr) {
+          exContext.response = exContext.curr.error || new Error('unknown error');
+        }
         this.trigger('response', exContext);
       }
       this.trigger('done', context);
