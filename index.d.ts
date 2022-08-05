@@ -125,13 +125,15 @@ interface KoaApplicationConfig extends AppConfiguration {
   listen_host: 'localhost',
 }
 
+type TriggerFunc = (...args: any[]) => void
+
 export declare abstract class Application {
   routes: any;
   app_id: string;
   constructor(config: AppConfiguration);
   abstract start(): Promise<void>;
-  register(event_name: string, ...triggers: (...args: any[]) => void): void;
-  trigger(event_name: string, ...args: any[]);
+  register(event_name: string, ...triggers: TriggerFunc[]): void;
+  trigger(event_name: string, ...args: any[]): boolean;
   dispacher(): Promise<void>;
 }
 
