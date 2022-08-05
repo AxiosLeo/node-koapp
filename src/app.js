@@ -221,7 +221,7 @@ class Application extends EventEmitter {
     const routes = this.routes;
     const workflow = this.workflow;
     return async (ctx, next) => {
-      const context = initContext(app, ctx, app_id);
+      let context = initContext(app, ctx, app_id);
       const router = getRouteInfo(routes, ctx.path, ctx.method);
       if (!router) {
         await next();
@@ -235,10 +235,10 @@ class Application extends EventEmitter {
       try {
         await workflow.start(context);
       } catch (exContext) {
-        if (!exContext.response && exContext.curr) {
-          exContext.response = exContext.curr.error || new Error('unknown error');
-        }
-        this.trigger('response', exContext);
+        context = exContext;
+      }
+      if (!context.response && context.curr) {
+        context.response = context.curr.error || new Error('unknown error');
       }
       this.trigger('done', context);
     };

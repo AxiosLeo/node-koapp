@@ -5,7 +5,7 @@ const Controller = require('./src/controller');
 const Koa = require('koa');
 const KoaBodyParser = require('koa-bodyparser');
 const { Router } = require('./src/router');
-const { printer } = require('@axiosleo/cli-tool');
+const { printer, debug } = require('@axiosleo/cli-tool');
 const { HttpResponse, error, HttpError, success } = require('./src/response');
 const response = require('./src/response');
 const session = require('koa-session');
@@ -14,11 +14,10 @@ const path = require('path');
 
 class KoaApplication extends Application {
   constructor(config = {}) {
-    const debug = process.env.DEPLOY_MODE === 'dev' ? true : false;
     super({
       port: 8080,
       listen_host: 'localhost',
-      debug,
+      debug: false,
       routers: [],
       app_id: '',
       session: {
@@ -57,8 +56,24 @@ class KoaApplication extends Application {
       let response;
       if (context.response instanceof HttpResponse) {
         response = context.response;
+      } else if (this.config.debug) {
+        response = new HttpResponse(500, {
+          code: 500,
+          message: 'Internal Server Error',
+          data: {
+            code: context.response.code,
+            msg: context.response.message,
+            stack: context.response.stack,
+          },
+          config: this.config
+        });
       } else {
-        response = new HttpResponse(500, {});
+        debug.log(context.response);
+        response = new HttpResponse(500, {
+          code: 500,
+          message: 'Internal Server Error',
+          data: null,
+        });
       }
       context.koa.type = response.format;
       response.data.request_id = context.request_id;
@@ -74,7 +89,7 @@ class KoaApplication extends Application {
           error(errorIns.status, errorIns.message, errorIns.headers);
         } else if (errorIns instanceof HttpResponse) {
           this.trigger('response', context);
-        } else if (context.app.debug) {
+        } else if (this.config.debug) {
           debug.dump('error:', context.curr.error);
           error(500, context.curr.error ? context.curr.error.message : 'Internal Server Error');
         } else {
