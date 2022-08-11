@@ -22,7 +22,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@axiosleo/cli-tool": "^1.4.11",
+    "@axiosleo/cli-tool": "^1.4.14",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",
     "koa-session": "^6.2.0",

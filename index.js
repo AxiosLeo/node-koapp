@@ -11,6 +11,7 @@ const response = require('./src/response');
 const session = require('koa-session');
 const KoaStaticServer = require('koa-static-server');
 const path = require('path');
+const is = require('@axiosleo/cli-tool/src/helper/is');
 
 class KoaApplication extends Application {
   constructor(config = {}) {
@@ -76,9 +77,15 @@ class KoaApplication extends Application {
         });
       }
       context.koa.type = response.format;
-      response.data.request_id = context.request_id;
-      response.data.timestamp = (new Date()).getTime();
-      context.koa.body = JSON.stringify(response.data);
+      if (is.object(response.data)) {
+        response.data.request_id = context.request_id;
+        response.data.timestamp = (new Date()).getTime();
+        context.koa.body = JSON.stringify(response.data);
+      } else if (is.array(response.data)) {
+        context.koa.body = JSON.stringify(response.data);
+      } else {
+        context.koa.body = response.data;
+      }
       context.koa.response.status = response.status;
     });
 
