@@ -1,6 +1,6 @@
 {
   "name": "@axiosleo/koapp",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "",
   "bin": {
     "koapp": "./bin/koapp.js"
