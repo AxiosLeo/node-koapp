@@ -69,7 +69,6 @@ class KoaApplication extends Application {
           config: this.config
         });
       } else {
-        debug.log(context.response);
         response = new HttpResponse(500, {
           code: 500,
           message: 'Internal Server Error',
@@ -80,12 +79,8 @@ class KoaApplication extends Application {
       if (is.object(response.data)) {
         response.data.request_id = context.request_id;
         response.data.timestamp = (new Date()).getTime();
-        context.koa.body = JSON.stringify(response.data);
-      } else if (is.array(response.data)) {
-        context.koa.body = JSON.stringify(response.data);
-      } else {
-        context.koa.body = response.data;
       }
+      context.koa.body = response.data || '';
       context.koa.response.status = response.status;
     });
 
@@ -138,8 +133,21 @@ module.exports = {
 };
 
 if (require.main === module) {
+  const handle = async (context) => {
+    success({
+      body: context.koa.request.body,
+      query: context.koa.request.query,
+      params: context.params
+    });
+  };
   const app = new KoaApplication({
-    routers: [new Router('/test', {
+    routers: [new Router('/test/{:a}', {
+      method: 'any',
+      handlers: [handle]
+    }), new Router('/test/', {
+      method: 'any',
+      handlers: [handle]
+    }), new Router('/***', {
       method: 'any',
       handlers: [async () => {
         success('Hello, World!');
