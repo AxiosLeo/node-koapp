@@ -1,6 +1,6 @@
 {
   "name": "@axiosleo/koapp",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "",
   "bin": {
     "koapp": "./bin/koapp.js"
@@ -22,7 +22,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@axiosleo/cli-tool": "^1.4.14",
+    "@axiosleo/cli-tool": "^1.4.15",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",
     "koa-session": "^6.2.0",
