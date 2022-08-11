@@ -17,11 +17,18 @@ export function failed(data?: unknown, code?: StatusCode, httpstatus?: number, h
 export function error(httpstatus: number, msg: string, headers?: Record<string, string>): void;
 export function log(...data: any): void;
 
+export interface HttpResponseConfig {
+  status?: number;
+  headers?: IncomingHttpHeaders;
+  data?: unknown;
+  format?: 'json' | 'text';
+}
+
 export declare class HttpResponse extends Error {
   public readonly status: number;
   public readonly headers: IncomingHttpHeaders;
   public readonly data: unknown;
-  constructor(httpStatus: number, data: unknown, headers?: IncomingHttpHeaders);
+  constructor(config?: HttpResponseConfig);
 }
 
 export declare class HttpError extends Error {

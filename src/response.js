@@ -1,11 +1,14 @@
 'use strict';
 
 class HttpResponse extends Error {
-  constructor(httpStatus, data, headers = {}) {
+  constructor(config = {}) {
     super();
-    this.headers = headers;
-    this.status = httpStatus;
-    this.data = data;
+    Object.assign(this, {
+      format: 'text',
+      headers: {},
+      status: 200,
+      data: null
+    }, config);
   }
 }
 
@@ -19,40 +22,38 @@ class HttpError extends Error {
 }
 
 const result = (data, status = 200, headers = {}) => {
-  throw new HttpResponse(status, data, headers ? headers : {});
+  throw new HttpResponse({
+    status,
+    data,
+    headers
+  });
 };
 
-const response = (data, code = '200;Success', status = 200, headers = {}) => {
+const response = (data, code = '200;Success', status = 200, headers = {}, format = 'json') => {
   const [c, m] = code.split(';');
-  throw new HttpResponse(status, {
-    code: c,
-    message: m,
-    data,
-  }, headers ? headers : {});
+  throw new HttpResponse({
+    status,
+    data: {
+      timestamp: (new Date()).getTime(),
+      code: c,
+      message: m,
+      data,
+    },
+    headers,
+    format
+  });
 };
 
-const success = (data = {}, headers = null) => {
-  throw new HttpResponse(200, {
-    code: '200',
-    message: 'success',
-    data,
-  }, headers ? headers : {});
+const success = (data = {}, headers = {}) => {
+  response(data, '200;Success', 200, headers);
 };
 
 const failed = (data = {}, code = '500;Internal Server Error', status = 501, headers = {}) => {
-  const [c, m] = code.split(';');
-  throw new HttpResponse(status, {
-    code: c,
-    message: m,
-    data: data,
-  }, headers ? headers : {});
+  response(data, code, status, headers);
 };
 
 const error = (status, msg, headers = {}) => {
-  throw new HttpResponse(status, {
-    code: `${status}`,
-    message: msg,
-  }, headers ? headers : {});
+  response({}, `${status};${msg}`, status, headers);
 };
 
 module.exports = {

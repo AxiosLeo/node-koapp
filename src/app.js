@@ -1,7 +1,7 @@
 'use strict';
 
 const { Configuration, Workflow } = require('@axiosleo/cli-tool');
-const { _sync_foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
+const { _sync_foreach, _foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
 const EventEmitter = require('events');
 const { v4, v5, validate } = require('uuid');
 
@@ -189,7 +189,7 @@ class Application extends EventEmitter {
         this.trigger('controller', context);
         try {
           if (context.router && context.router.handlers && context.router.handlers.length > 0) {
-            await _sync_foreach(context.router.handlers, async (handler) => {
+            await _foreach(context.router.handlers, async (handler) => {
               await handler(context);
             });
           } else {
