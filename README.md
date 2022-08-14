@@ -33,3 +33,7 @@ app.start();
 
 // open http://localhost:8088/test
 ```
+
+## License
+
+This project is open-sourced software licensed under the [MIT](LICENSE).
