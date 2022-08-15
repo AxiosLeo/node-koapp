@@ -6,7 +6,7 @@ const Koa = require('koa');
 const KoaBodyParser = require('koa-bodyparser');
 const { Router } = require('./src/router');
 const { printer, debug } = require('@axiosleo/cli-tool');
-const { HttpResponse, error, HttpError, success } = require('./src/response');
+const { HttpResponse, error, HttpError, success, result } = require('./src/response');
 const response = require('./src/response');
 const session = require('koa-session');
 const KoaStaticServer = require('koa-static-server');
@@ -80,6 +80,9 @@ class KoaApplication extends Application {
         response.data.request_id = context.request_id;
         response.data.timestamp = (new Date()).getTime();
       }
+      Object.keys(response.headers).forEach(k => {
+        context.koa.set(k, response.headers[k]);
+      });
       context.koa.body = response.data || '';
       context.koa.response.status = response.status;
     });
@@ -147,6 +150,13 @@ if (require.main === module) {
     }), new Router('/test/', {
       method: 'any',
       handlers: [handle]
+    }), new Router('/result', {
+      method: 'any',
+      handlers: [async () => {
+        result(JSON.stringify({ hello: 'World!' }), 200, {
+          'Content-Type': 'application/json'
+        });
+      }]
     }), new Router('/***', {
       method: 'any',
       handlers: [async () => {
