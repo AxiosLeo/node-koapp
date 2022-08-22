@@ -2,9 +2,6 @@
   "name": "@axiosleo/koapp",
   "version": "0.1.4",
   "description": "",
-  "bin": {
-    "koapp": "./bin/koapp.js"
-  },
   "author": "AxiosLeo",
   "repository": {
     "type": "git",
