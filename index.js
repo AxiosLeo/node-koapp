@@ -6,7 +6,7 @@ const Koa = require('koa');
 const KoaBodyParser = require('koa-bodyparser');
 const { Router } = require('./src/router');
 const { printer, debug } = require('@axiosleo/cli-tool');
-const { HttpResponse, error, HttpError, success, result } = require('./src/response');
+const { HttpResponse, error, HttpError, success, result, failed } = require('./src/response');
 const response = require('./src/response');
 const session = require('koa-session');
 const KoaStaticServer = require('koa-static-server');
@@ -58,21 +58,24 @@ class KoaApplication extends Application {
       if (context.response instanceof HttpResponse) {
         response = context.response;
       } else if (this.config.debug) {
-        response = new HttpResponse(500, {
-          code: 500,
-          message: 'Internal Server Error',
+        response = new HttpResponse({
+          format: 'json',
+          status: 500,
           data: {
-            code: context.response.code,
-            msg: context.response.message,
-            stack: context.response.stack,
-          },
-          config: this.config
+            code: 500,
+            message: 'Internal Server Error',
+            data: {
+              code: context.response.code,
+              msg: context.response.message,
+              stack: context.response.stack,
+            },
+            config: this.config
+          }
         });
       } else {
-        response = new HttpResponse(500, {
-          code: 500,
-          message: 'Internal Server Error',
-          data: null,
+        response = new HttpResponse({
+          status: 500,
+          data: 'Internal Server Error'
         });
       }
       context.koa.type = response.format;
@@ -95,7 +98,6 @@ class KoaApplication extends Application {
         } else if (errorIns instanceof HttpResponse) {
           this.trigger('response', context);
         } else if (this.config.debug) {
-          debug.dump('error:', context.curr.error);
           error(500, context.curr.error ? context.curr.error.message : 'Internal Server Error');
         } else {
           error(500, 'Internal Server Error');
@@ -144,12 +146,25 @@ if (require.main === module) {
     });
   };
   const app = new KoaApplication({
+    debug: true,
     routers: [new Router('/test/{:a}', {
       method: 'any',
       handlers: [handle]
     }), new Router('/test/', {
       method: 'any',
       handlers: [handle]
+    }), new Router('/error', {
+      method: 'any',
+      handlers: [async () => {
+        throw new Error('error');
+      }]
+    }), new Router('/failed', {
+      method: 'any',
+      handlers: [async () => {
+        failed({
+          code: 500,
+        });
+      }]
     }), new Router('/result', {
       method: 'any',
       handlers: [async () => {
@@ -157,7 +172,7 @@ if (require.main === module) {
           'Content-Type': 'application/json'
         });
       }]
-    }), new Router('/***', {
+    }), new Router('/success', {
       method: 'any',
       handlers: [async () => {
         success('Hello, World!');
