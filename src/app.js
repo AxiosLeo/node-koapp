@@ -1,7 +1,7 @@
 'use strict';
 
 const { Configuration, Workflow } = require('@axiosleo/cli-tool');
-const { _sync_foreach, _foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
+const { _foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
 const EventEmitter = require('events');
 const { v4, v5, validate } = require('uuid');
 
@@ -180,7 +180,7 @@ class Application extends EventEmitter {
 
         // exec middleware by routes configuration
         if (context.router && context.router.middlewares && context.router.middlewares.length > 0) {
-          await _sync_foreach(context.router.middlewares, async (middleware) => {
+          await _foreach(context.router.middlewares, async (middleware) => {
             await middleware(context);
           });
         }
@@ -199,8 +199,8 @@ class Application extends EventEmitter {
           context.response = err;
         }
       },
-      response: async (context) => {
-        this.trigger('response', context);
+      done: async (context) => {
+        this.trigger('done', context);
       }
     });
     this.event = new EventEmitter();
@@ -224,6 +224,7 @@ class Application extends EventEmitter {
       let context = initContext(app, ctx, app_id);
       const router = getRouteInfo(routes, ctx.path, ctx.method);
       if (!router) {
+        this.trigger('notFound', context);
         await next();
         return;
       }
@@ -240,7 +241,7 @@ class Application extends EventEmitter {
       if (!context.response && context.curr) {
         context.response = context.curr.error || new Error('unknown error');
       }
-      this.trigger('done', context);
+      this.trigger('response', context);
     };
   }
 
