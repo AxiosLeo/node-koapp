@@ -11,7 +11,7 @@ npm install @axiosleo/koapp
 ## Quick Start
 
 ```javascript
-const { KoaApplication } = require("@axiosleo/koapp");
+const { KoaApplication, Router, success } = require("@axiosleo/koapp");
 
 const app = new KoaApplication({
   port: 8088,
