@@ -21,7 +21,9 @@ const resolvePathinfo = (pathinfo) => {
 const recur = (tree, prefix, router, middlewares = []) => {
   const middlewaresClone = router.middlewares && router.middlewares.length > 0 ?
     middlewares.concat(router.middlewares) : middlewares.concat();
-  prefix = prefix + router.prefix;
+  if (router.prefix) {
+    prefix = prefix + router.prefix;
+  }
   if (router.routers && router.routers.length) {
     router.routers.forEach((item) => {
       recur(tree, prefix, item, middlewaresClone);

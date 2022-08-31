@@ -2,13 +2,13 @@
 
 class Router {
   constructor(prefix = '', options = {}) {
-    this.prefix = prefix || '';
     Object.assign(this, {
       method: '',
       handlers: [],
       routers: [],
       middlewares: [],
     }, options || {});
+    this.prefix = prefix || '';
   }
 
   /**
