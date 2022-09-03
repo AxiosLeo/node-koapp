@@ -111,6 +111,7 @@ class KoaApplication extends Application {
   async start() {
     const koa = new Koa();
     if (this.config.session) {
+      koa.keys = [this.app_id];
       koa.use(session({
         key: `koa.sess.${this.app_id}`, /** (string) cookie key (default is koa.sess) */
         ...this.config.session
