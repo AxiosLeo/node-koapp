@@ -240,10 +240,12 @@ class Application extends EventEmitter {
       } catch (exContext) {
         context = exContext;
       }
-      if (!context.response && context.curr) {
+      if (!context.response && context.curr && context.curr.error) {
         context.response = context.curr.error || new Error('unknown error');
       }
-      this.trigger('response', context);
+      if (context.response) {
+        this.trigger('response', context);
+      }
     };
   }
 

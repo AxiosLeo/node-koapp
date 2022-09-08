@@ -69,7 +69,6 @@ class KoaApplication extends Application {
               msg: context.response.message,
               stack: context.response.stack,
             },
-            config: this.config
           }
         });
       } else {
@@ -147,7 +146,12 @@ if (require.main === module) {
   };
   const app = new KoaApplication({
     debug: true,
-    routers: [new Router('/test/{:a}', {
+    routers: [new Router('/none', {
+      method: 'get',
+      handlers: [async (context) => {
+        context.koa.body = 'hello, world!';
+      }]
+    }), new Router('/test/{:a}', {
       method: 'any',
       handlers: [handle]
     }), new Router('/test/', {
