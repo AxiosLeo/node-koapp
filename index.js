@@ -2,7 +2,6 @@
 
 const Application = require('./src/app');
 const Controller = require('./src/controller');
-const Koa = require('koa');
 const KoaBodyParser = require('koa-bodyparser');
 const { Router } = require('./src/router');
 const { printer, debug } = require('@axiosleo/cli-tool');
@@ -39,6 +38,7 @@ class KoaApplication extends Application {
       static: {
         rootDir: path.join(__dirname, './public'),
       },
+      // body_parser: undefined,
       ...config
     });
     printer.input('-'.repeat(60));
@@ -106,25 +106,23 @@ class KoaApplication extends Application {
         this.trigger('response', context);
       }
     });
+    if (this.config.session) {
+      this.koa.keys = [this.app_id];
+      this.koa.use(session({
+        key: `koa.sess.${this.app_id}`, /** (string) cookie key (default is koa.sess) */
+        ...this.config.session
+      }, this.koa));
+    }
+    this.koa.use(KoaBodyParser(this.config.body_parser));
+    this.koa.use(this.dispacher());
+    if (this.config.static) {
+      this.koa.use(KoaStaticServer(this.config.static));
+    }
   }
 
   async start() {
-    const koa = new Koa();
-    if (this.config.session) {
-      koa.keys = [this.app_id];
-      koa.use(session({
-        key: `koa.sess.${this.app_id}`, /** (string) cookie key (default is koa.sess) */
-        ...this.config.session
-      }, koa));
-    }
-    koa.use(KoaBodyParser());
-    koa.use(this.dispacher());
-    if (this.config.static) {
-      koa.use(KoaStaticServer(this.config.static));
-    }
-
     // set '0.0.0.0' for public access
-    koa.listen(this.config.port, this.config.listen_host);
+    this.koa.listen(this.config.port, this.config.listen_host);
   }
 }
 
