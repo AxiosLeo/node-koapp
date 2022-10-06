@@ -145,6 +145,7 @@ export declare abstract class Application {
 }
 
 export declare class KoaApplication extends Application {
+  koa: Koa;
   constructor(config: AppConfiguration);
   start(): Promise<void>;
 }
