@@ -4,7 +4,6 @@ const { Configuration, Workflow } = require('@axiosleo/cli-tool');
 const { _foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
 const EventEmitter = require('events');
 const { v4, v5, validate } = require('uuid');
-const Koa = require('koa');
 
 const resolvePathinfo = (pathinfo) => {
   let trace = [];
@@ -207,7 +206,6 @@ class Application extends EventEmitter {
       }
     });
     this.event = new EventEmitter();
-    this.koa = new Koa();
     this.trigger('start', this);
   }
 

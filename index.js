@@ -11,6 +11,7 @@ const session = require('koa-session');
 const KoaStaticServer = require('koa-static-server');
 const path = require('path');
 const is = require('@axiosleo/cli-tool/src/helper/is');
+const Koa = require('koa');
 
 class KoaApplication extends Application {
   constructor(config = {}) {
@@ -113,11 +114,13 @@ class KoaApplication extends Application {
         ...this.config.session
       }, this.koa));
     }
+    this.koa = new Koa();
     this.koa.use(KoaBodyParser(this.config.body_parser));
     this.koa.use(this.dispacher());
     if (this.config.static) {
       this.koa.use(KoaStaticServer(this.config.static));
     }
+    this.trigger('koa_init', this);
   }
 
   async start() {
