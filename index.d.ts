@@ -137,6 +137,7 @@ type TriggerFunc = (...args: any[]) => void
 export declare abstract class Application {
   routes: any;
   app_id: string;
+  config: Configuration;
   constructor(config: AppConfiguration);
   abstract start(): Promise<void>;
   register(event_name: string, ...triggers: TriggerFunc[]): void;
