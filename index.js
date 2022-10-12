@@ -42,6 +42,7 @@ class KoaApplication extends Application {
       // body_parser: undefined,
       ...config
     });
+    this.koa = new Koa();
     printer.input('-'.repeat(60));
     printer.green('OpenAPI service start on ')
       .println(`http://localhost:${this.config.port}`).println();
@@ -114,7 +115,6 @@ class KoaApplication extends Application {
         ...this.config.session
       }, this.koa));
     }
-    this.koa = new Koa();
     this.koa.use(KoaBodyParser(this.config.body_parser));
     this.koa.use(this.dispacher());
     if (this.config.static) {
