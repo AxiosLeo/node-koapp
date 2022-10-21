@@ -107,6 +107,7 @@ class KoaApplication extends Application {
         this.trigger('response', context);
       }
     });
+    this.koa = new Koa();
     if (this.config.session) {
       this.koa.keys = [this.app_id];
       this.koa.use(session({
@@ -114,8 +115,12 @@ class KoaApplication extends Application {
         ...this.config.session
       }, this.koa));
     }
-    this.koa = new Koa();
-    this.koa.use(KoaBodyParser(this.config.body_parser));
+    if(this.config.body_parser) {
+      this.koa.use(KoaBodyParser(this.config.body_parser));
+    } else {
+      this.koa.use(KoaBodyParser());
+    }
+
     this.koa.use(this.dispacher());
     if (this.config.static) {
       this.koa.use(KoaStaticServer(this.config.static));
