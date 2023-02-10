@@ -73,6 +73,7 @@ class KoaApplication extends Application {
             },
           }
         });
+        debug.log({ err: context.response });
       } else {
         response = new HttpResponse({
           status: 500,
