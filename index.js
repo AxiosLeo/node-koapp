@@ -12,6 +12,7 @@ const KoaStaticServer = require('koa-static-server');
 const path = require('path');
 const is = require('@axiosleo/cli-tool/src/helper/is');
 const Koa = require('koa');
+const Model = require('./src/model');
 
 class KoaApplication extends Application {
   constructor(config = {}) {
@@ -39,12 +40,11 @@ class KoaApplication extends Application {
       static: {
         rootDir: path.join(__dirname, './public'),
       },
-      // body_parser: undefined,
       ...config
     });
     this.koa = new Koa();
     printer.input('-'.repeat(60));
-    printer.green('OpenAPI service start on ')
+    printer.green('Service start on ')
       .println(`http://localhost:${this.config.port}`).println();
 
     this.register('receive', async (context) => {
@@ -135,6 +135,7 @@ module.exports = {
   Application,
   KoaApplication,
 
+  Model,
   Router,
   ...response
 };
@@ -183,6 +184,23 @@ if (require.main === module) {
       method: 'any',
       handlers: [async () => {
         success('Hello, World!');
+      }]
+    }), new Router('/model', {
+      method: 'get',
+      handlers: [async () => {
+        const model = new Model({
+          submodel: new Model({
+            submodel: new Model({
+              a: 'A'
+            })
+          })
+        });
+        success({
+          obj: model.toObj(),
+          json: model.toJson(),
+          properties: model.properties(),
+          count: model.count(),
+        });
       }]
     })]
   });
