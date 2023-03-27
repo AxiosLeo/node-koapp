@@ -1,7 +1,9 @@
 import type KoaStaticServer from 'koa-static-server';
 import type Koa from 'koa';
-import type { Context, Configuration, App } from '@axiosleo/cli-tool';
+import type { Context, Configuration } from '@axiosleo/cli-tool';
 import type { IncomingHttpHeaders } from 'http';
+
+import type { Rules, ErrorMessages, Validator } from 'validatorjs';
 
 type StatusCode = string | '000;Unknown Error' |
   '200;Success' | '404;Not Found' |
@@ -149,4 +151,22 @@ export declare class KoaApplication extends Application {
   koa: Koa;
   constructor(config: AppConfiguration);
   start(): Promise<void>;
+}
+
+export declare class Model {
+  constructor(obj?: { [key: string]: any }, rules?: Rules, msg?: ErrorMessages);
+
+  static create<T extends Model>(
+    obj?: { [key: string]: any },
+    rules?: Rules,
+    msg?: ErrorMessages
+  ): T;
+
+  toJson(): string;
+
+  properties(): Array<string>;
+
+  count(): number;
+
+  validate(rules: Rules, msg?: ErrorMessages): Validator<this>;
 }
