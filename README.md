@@ -15,7 +15,7 @@ const { KoaApplication, Router, success } = require("@axiosleo/koapp");
 
 const handle = async (ctx) => {
   success({
-   "message": "Hello World!
+    message: "Hello World!",
   });
 };
 
