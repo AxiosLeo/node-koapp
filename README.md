@@ -13,21 +13,21 @@ npm install @axiosleo/koapp
 ```javascript
 const { KoaApplication, Router, success } = require("@axiosleo/koapp");
 
+const handle = async (ctx) => {
+  success({
+   "message": "Hello World!
+  });
+};
+
+const router = new Router("/test", {
+  method: "any",
+  handlers: [handle],
+});
+
 const app = new KoaApplication({
   port: 8088,
   listen_host: "localhost", // 0.0.0.0 for public access
-  routers: [
-    new Router("/test", {
-      method: "any",
-      handlers: [
-        async (ctx) => {
-          success({
-            test: "123",
-          });
-        },
-      ],
-    }),
-  ],
+  routers: [router],
 });
 app.start();
 
