@@ -59,6 +59,14 @@ class KoaApplication extends Application {
       let response;
       if (context.response instanceof HttpResponse) {
         response = context.response;
+      } else if (context.response instanceof HttpError) {
+        response = new HttpResponse({
+          format: 'json',
+          status: context.response.status,
+          data: {
+            message: context.response.message,
+          },
+        });
       } else if (this.config.debug) {
         response = new HttpResponse({
           format: 'json',
@@ -73,6 +81,8 @@ class KoaApplication extends Application {
             },
           }
         });
+        const err = new Error();
+        debug.log(err);
         debug.log({ err: context.response });
       } else {
         response = new HttpResponse({

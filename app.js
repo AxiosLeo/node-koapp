@@ -72,6 +72,11 @@ if (require.main === module) {
           count: model.count(),
         });
       }]
+    }), new Router('/model/valid', {
+      method: 'any',
+      handlers: [async () => {
+        Model.create({}, { param: 'required' });
+      }]
     })]
   });
   app.start();
