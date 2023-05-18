@@ -1,6 +1,7 @@
 'use strict';
 
 const Validator = require('validatorjs');
+const { HttpError } = require('./response');
 
 class Model {
   constructor(obj, rules = null, msg = null) {
@@ -12,7 +13,7 @@ class Model {
       if (validation.fails()) {
         const errors = validation.errors.all();
         const keys = Object.keys(errors);
-        throw new Error(errors[keys[0]][0]);
+        throw new HttpError(400, errors[keys[0]][0]);
       }
     }
   }
