@@ -5,29 +5,29 @@ name: tests
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   build:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
-        operating-system: [macos-latest,ubuntu-latest]
+        operating-system: [macos-latest, ubuntu-latest]
         node-version: [12, 13, 14, 16, 18]
     name: Node.js ${{ matrix.node-version }} Test on ${{ matrix.operating-system }}
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: npm install
-    - run: npm run test-cov
-    - uses: codecov/codecov-action@v3
-      with:
-        name: codecov-node-koapp # optional
-        fail_ci_if_error: true # optional (default = false)
-        verbose: true # optional (default = false)
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm install
+      - run: npm run test-cov
+      - uses: codecov/codecov-action@v3
+        with:
+          name: codecov-node-koapp # optional
+          fail_ci_if_error: true # optional (default = false)
+          verbose: true # optional (default = false)
