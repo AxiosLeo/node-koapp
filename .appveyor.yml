@@ -1,0 +1,25 @@
+environment:
+  matrix:
+    - nodejs_version: "12"
+    - nodejs_version: "14"
+    - nodejs_version: "16"
+    - nodejs_version: "18"
+branches:
+  only:
+    - main
+init:
+  - cmd: git config --global core.autocrlf true
+install:
+  # Get the latest stable version of Node.js or io.js
+  - ps: Install-Product node $env:nodejs_version
+  # install modules
+  - npm install -f
+test_script:
+  - node --version
+  - npm --version
+  - npm run lint
+on_finish:
+  - ps: |
+      $env:PATH = 'C:\msys64\usr\bin;' + $env:PATH
+# Don't actually build.
+build: off

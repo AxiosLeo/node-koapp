@@ -1,5 +1,12 @@
 # @axiosleo/koapp
 
+[![NPM version](https://img.shields.io/npm/v/@axiosleo/koapp.svg?style=flat-square)](https://npmjs.org/package/@axiosleo/koapp)
+[![npm download](https://img.shields.io/npm/dm/@axiosleo/koapp.svg?style=flat-square)](https://npmjs.org/package/@axiosleo/koapp)
+[![CI Build Status](https://github.com/AxiosLeo/node-koapp/actions/workflows/ci.yml/badge.svg)](https://github.com/AxiosLeo/node-koapp/actions/workflows/ci.yml)
+[![](https://codecov.io/gh/AxiosLeo/node-koapp/branch/master/graph/badge.svg)](https://codecov.io/gh/AxiosLeo/node-koapp)
+[![License](https://img.shields.io/github/license/AxiosLeo/node-koapp?color=%234bc524)](LICENSE)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FAxiosLeo%2Fnode-koapp.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FAxiosLeo%2Fnode-koapp/refs/branch/master)
+
 > Design for quickly developing Web applications using Node.js
 >
 > Based on [koa](https://koajs.com/)
@@ -37,3 +44,5 @@ app.start();
 ## License
 
 This project is open-sourced software licensed under the [MIT](LICENSE).
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FAxiosLeo%2Fnode-koapp.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FAxiosLeo%2Fnode-koapp/refs/branch/master/)
