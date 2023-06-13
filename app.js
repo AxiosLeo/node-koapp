@@ -77,6 +77,28 @@ if (require.main === module) {
       handlers: [async () => {
         Model.create({}, { param: 'required' });
       }]
+    }), new Router('/validate', {
+      method: 'any',
+      validators: {
+        query: {
+          rules: {
+            a: 'required',
+            b: 'string'
+          }
+        },
+        body: {
+          rules: {
+            bodyA: 'required',
+            bodyB: 'string'
+          },
+          messages: {
+            'required': 'The :attribute field is required......'
+          }
+        }
+      },
+      handlers: [async (context) => {
+        success('all params is valid');
+      }]
     })]
   });
   app.start();

@@ -1,9 +1,12 @@
 'use strict';
 
-const { Configuration, Workflow } = require('@axiosleo/cli-tool');
+const { Configuration, Workflow, debug } = require('@axiosleo/cli-tool');
 const { _foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
 const EventEmitter = require('events');
 const { v4, v5, validate } = require('uuid');
+const Validator = require('validatorjs');
+const { failed } = require('./response');
+const is = require('@axiosleo/cli-tool/src/helper/is');
 
 const resolvePathinfo = (pathinfo) => {
   let trace = [];
@@ -124,6 +127,7 @@ const getRouteInfo = (routers, pathinfo, method) => {
         const routeInfo = {
           pathinfo,
           params: {},
+          validators: route.router.validators ? route.router.validators : {},
           handlers: route.router.handlers ? route.router.handlers : [],
           middlewares: route.middlewares,
         };
@@ -167,6 +171,7 @@ class Application extends EventEmitter {
   constructor(config) {
     super();
     this.config = new Configuration({
+      debug: false,
       routers: [],
       app_id: '',
       ...config,
@@ -176,6 +181,32 @@ class Application extends EventEmitter {
     this.workflow = new Workflow(this.config.operator || {
       begin: async (context) => {
         this.trigger('receive', context);
+      },
+      validate: async (context) => {
+        this.trigger('validate', context);
+        if (context.router && context.router.validators) {
+          const { query, body } = context.router.validators;
+          const check = {};
+          if (query) {
+            const validation = new Validator(context.params, query.rules, query.messages || null);
+            validation.check();
+            if (validation.fails()) {
+              const errors = validation.errors.all();
+              check.query = errors;
+            }
+          }
+          if (body) {
+            const validation = new Validator(context.body, body.rules, body.messages || null);
+            validation.check();
+            if (validation.fails()) {
+              const errors = validation.errors.all();
+              check.body = errors;
+            }
+          }
+          if (!is.empty(check)) {
+            failed(check, '400;Bad Request Data');
+          }
+        }
       },
       middleware: async (context) => {
         this.trigger('middleware', context);
@@ -227,6 +258,9 @@ class Application extends EventEmitter {
       const router = getRouteInfo(routes, ctx.path, ctx.method);
       if (!router) {
         this.trigger('notFound', context);
+        if (this.config.debug) {
+          debug.log('[RouterNotFound]', ctx.path, ctx.method);
+        }
         await next();
         return;
       }
