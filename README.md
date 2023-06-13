@@ -41,6 +41,29 @@ app.start();
 // open http://localhost:8088/test
 ```
 
+## More Examples
+
+- Validation
+
+> see [validatorjs](https://github.com/mikeerickson/validatorjs) for more rules
+
+```javascript
+const { Router } = require("@axiosleo/koapp");
+
+const router = new Router("/test", {
+  method: "any",
+  validator: {
+    query: {
+      name: "required|string",
+    },
+    body: {
+      age: "required|integer",
+    }
+  }
+  handlers: [],
+});
+```
+
 ## License
 
 This project is open-sourced software licensed under the [MIT](LICENSE).

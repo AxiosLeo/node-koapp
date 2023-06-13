@@ -2,7 +2,6 @@ import type KoaStaticServer from 'koa-static-server';
 import type Koa from 'koa';
 import type { Context, Configuration } from '@axiosleo/cli-tool';
 import type { IncomingHttpHeaders } from 'http';
-
 import type { Rules, ErrorMessages, Validator } from 'validatorjs';
 
 type StatusCode = string | '000;Unknown Error' |
@@ -59,10 +58,19 @@ export declare class Controller implements ControllerInterface {
   log(...data: any): void;
 }
 
+interface RouterValidator {
+  rules: Rules,
+  messages?: ErrorMessages
+}
+
 interface RouterInfo {
   pathinfo: string;
-  handlers: ContextHandler[];
+  validators: {
+    query: RouterValidator,
+    body: RouterValidator
+  };
   middlewares: ContextHandler[];
+  handlers: ContextHandler[];
   params: {
     [key: string]: string;
   };
