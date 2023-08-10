@@ -45,7 +45,7 @@ app.start();
 
 - Validation
 
-> see [validatorjs](https://github.com/mikeerickson/validatorjs) for more rules
+> see [validatorjs](https://github.com/mikeerickson/validatorjs) for more rule examples
 
 ```javascript
 const { Router } = require("@axiosleo/koapp");
