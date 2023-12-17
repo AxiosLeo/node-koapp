@@ -103,7 +103,7 @@ class Application extends EventEmitter {
       if (!router) {
         this.trigger('notFound', context);
         if (this.config.debug) {
-          debug.log('[RouterNotFound]', ctx.path, ctx.method);
+          debug.log('[RouterNotFound]', ctx.method, ctx.path);
         }
         await next();
         return;
