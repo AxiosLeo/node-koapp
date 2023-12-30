@@ -3,6 +3,9 @@
   "version": "0.5.0",
   "description": "",
   "author": "AxiosLeo",
+  "bin": {
+    "koapp": "./bin/koapp.js"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/AxiosLeo/node-koapp"
@@ -19,7 +22,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@axiosleo/cli-tool": "^1.4.15",
+    "@axiosleo/cli-tool": "^1.5.5",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",
     "koa-session": "^6.2.0",
