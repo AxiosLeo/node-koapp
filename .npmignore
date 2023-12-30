@@ -8,3 +8,5 @@ nyc.config.js
 .idea/*
 node_modules/*
 .appveyor.yml
+app.js
+.gitignore
