@@ -11,7 +11,7 @@ class InitCommand extends Command {
   constructor() {
     super({
       name: 'init',
-      desc: ''
+      desc: 'Initialize a new application'
     });
     this.addArgument('name', 'Application name', 'required');
     this.addOption('dir', 'd', 'output dir', 'optional', process.cwd());
@@ -41,11 +41,12 @@ class InitCommand extends Command {
       let c = await _render_with_file(file, { name });
       await _write(f, c);
     });
+
     printer.success('Initialized successfully');
-    debug.log({ dir });
     if (!await this.confirm('install dependencies?', true)) {
       return;
     }
+
     await _exec('npm install', dir);
     if (!await this.confirm('start services right now?', true)) {
       return;
