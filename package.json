@@ -23,7 +23,6 @@
   "license": "MIT",
   "dependencies": {
     "@axiosleo/cli-tool": "^1.6.0",
-    "json-schema-to-typescript": "^13.1.1",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",
     "koa-session": "^6.2.0",
