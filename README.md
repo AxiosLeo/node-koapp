@@ -15,6 +15,15 @@
 npm install @axiosleo/koapp
 ```
 
+## Initialization
+
+```bash
+npx @axiosleo/koapp init <app-name> -d <optional-dir>
+
+# show help info
+# npx @axiosleo/koapp init -h
+```
+
 ## Quick Start
 
 ```javascript
@@ -66,6 +75,6 @@ const router = new Router("/test", {
 
 ## License
 
-This project is open-sourced software licensed under the [MIT](LICENSE).
+This project is open-sourced software licensed under [MIT](LICENSE).
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FAxiosLeo%2Fnode-koapp.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FAxiosLeo%2Fnode-koapp/refs/branch/master/)
