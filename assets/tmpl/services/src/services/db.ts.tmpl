@@ -1,0 +1,21 @@
+// eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+import { createPool } from '@axiosleo/orm-mysql';
+import config from '../config';
+import { Pool } from 'mysql2';
+
+let pool: Pool | null = null;
+
+export const _mysql = () => {
+  if (pool === null) {
+    pool = createPool({
+      host: config.envs.mysql.host,
+      port: config.envs.mysql.port,
+      user: config.envs.mysql.user,
+      password: config.envs.mysql.pass,
+      database: config.envs.mysql.db,
+      connectionLimit: 10,
+      multipleStatements: true
+    });
+  }
+  return pool;
+};
