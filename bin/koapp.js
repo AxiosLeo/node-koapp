@@ -2,6 +2,7 @@
 
 'use strict';
 
+const path = require('path');
 const { App } = require('@axiosleo/cli-tool');
 
 const app = new App({
@@ -9,6 +10,7 @@ const app = new App({
   desc: 'koapp application generator',
   bin: 'koapp',
   version: '0.5.0',
+  commands_dir: path.join(__dirname, '../commands'),
 });
 
 app.start();
