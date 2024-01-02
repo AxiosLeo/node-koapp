@@ -1,0 +1,15 @@
+import { _mysql } from '@/services/db';
+import { Controller } from '@axiosleo/koapp';
+import { QueryHandler } from '@axiosleo/orm-mysql';
+import { debug } from '@axiosleo/cli-tool';
+
+export class BaseController extends Controller {
+  mainDB: QueryHandler;
+  debug: typeof debug;
+  constructor() {
+    super();
+    const conn = _mysql();
+    this.mainDB = new QueryHandler(conn);
+    this.debug = debug;
+  }
+}
