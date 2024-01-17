@@ -18,9 +18,9 @@ export default class App extends KoaApplication {
       port: config.envs.app.api_port,
       routers,
       static: {
-        rootDir: path.join(root, staticRoot || '../web/dist'),
+        rootDir: path.join(root, staticRoot || '../web/'),
         index: 'index.html',
-        notFoundFile: 'view/error/404.html'
+        // notFoundFile: 'view/error/404.html'
       },
     };
     super(options);
