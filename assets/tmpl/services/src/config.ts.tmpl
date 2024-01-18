@@ -13,7 +13,7 @@ export default {
       port: process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT) : 13306,
       user: process.env.MYSQL_USER || 'root',
       pass: process.env.MYSQL_PASS || '3AQqZTfmww=Ftj',
-      db: process.env.MYSQL_DB || 'cms',
+      db: process.env.MYSQL_DB || '${name}',
     }
   }
 };
