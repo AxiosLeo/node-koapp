@@ -6,7 +6,7 @@ const defaultHandler = {
   }]
 };
 
-const root = new Router('/api/v1', defaultHandler);
+const root = new Router('/api', defaultHandler);
 root.new('/***', defaultHandler);
 
 export default [root];
