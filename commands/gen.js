@@ -221,7 +221,7 @@ class GenTsCommand extends Command {
   }
 
   generatePageMethod(context, emitter) {
-    emitter.emitln('async page(page:number, size:number, fields?: string[]) {', 'begin');
+    emitter.emitln('async page(page: number, size: number, fields?: string[]) {', 'begin');
     emitter.emitRows(
       `const query = this.mainDB.table('${context.name}');`,
       'if (fields) {',
