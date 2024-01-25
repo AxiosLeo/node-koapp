@@ -2,7 +2,8 @@
 
 const os = require('os');
 const path = require('path');
-const { Command, printer } = require('@axiosleo/cli-tool');
+// eslint-disable-next-line no-unused-vars
+const { Command, printer, debug } = require('@axiosleo/cli-tool');
 const { _select_multi, _foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
 const { Emitter, _snake_case, _upper_first } = require('@axiosleo/cli-tool/src/helper/str');
 const { _write, _exists, _read_json, _search, _read } = require('@axiosleo/cli-tool/src/helper/fs');
@@ -32,10 +33,15 @@ class GenTsCommand extends Command {
     if (await is.file(path.join(process.cwd(), args.meta))) {
       throw new Error('The meta argument must be a directory');
     }
-    const files = await _search(path.join(process.cwd(), args.meta), 'json');
-    await _foreach(files.map((f) => {
-      return { metaFile: f, targetDir: path.resolve(options.dir), methods };
-    }), async (options) => {
+    let files = await _search(path.join(process.cwd(), args.meta), 'json');
+    files = files.map((f) => {
+      let genFiles = f.endsWith('.schema.json') ? ['model', 'controller', 'router'] : ['model'];
+      return { metaFile: f, targetDir: path.resolve(options.dir), methods, genFiles };
+    });
+    if (!files.length) {
+      return;
+    }
+    await _foreach(files, async (options) => {
       await this.generate(options);
     });
   }
@@ -48,6 +54,9 @@ class GenTsCommand extends Command {
     let modelSchema = null;
     if (options.metaFile) {
       const schema = await _read_json(options.metaFile);
+      if (!schema.title) {
+        throw new Error('Must be set title for schema');
+      }
       title = schema.title.split(' ').map(c => _upper_first(c)).join('');
       // 去掉每个字段的 title 属性
       Object.keys(schema.properties).forEach((p) => {
@@ -96,22 +105,34 @@ class GenTsCommand extends Command {
       targetDir: options.targetDir
     };
 
-    await this.generateModel(context);
-    await this.generateController(context);
-    await this.generateRouter(context);
-
-    const routesFile = path.join(options.targetDir, 'index.ts');
-    if (!await _exists(routesFile)) {
-      return;
-    }
-    let content = await _read(routesFile);
-    let rows = content.split(os.EOL);
-    const existRoute = rows.find((r) => r.indexOf(`root.add(${name})`) > -1);
-    if (!existRoute) {
-      rows.splice(1, 0, `import ${name} from './${name}.router';`);
-      rows.splice(rows.length - 2, 0, `root.add(${name});`);
-      await _write(routesFile, rows.join(os.EOL));
-    }
+    await _foreach(options.genFiles, async (f) => {
+      switch (f) {
+        case 'model':
+          await this.generateModel(context);
+          break;
+        case 'controller':
+          await this.generateController(context);
+          break;
+        case 'router': {
+          await this.generateRouter(context);
+          const routesFile = path.join(options.targetDir, 'index.ts');
+          if (!await _exists(routesFile)) {
+            return;
+          }
+          let content = await _read(routesFile);
+          let rows = content.split(os.EOL);
+          const existRoute = rows.find((r) => r.indexOf(`root.add(${name})`) > -1);
+          if (!existRoute) {
+            rows.splice(1, 0, `import ${name} from './${name}.router';`);
+            rows.splice(rows.length - 2, 0, `root.add(${name});`);
+            await _write(routesFile, rows.join(os.EOL));
+          }
+          break;
+        }
+        default:
+          throw new Error('Invalid type for generate file ' + f);
+      }
+    });
   }
 
   async generateModel(context) {
@@ -136,13 +157,12 @@ class GenTsCommand extends Command {
     }
     const emitter = new Emitter();
     emitter.emitln('import { success, error, failed } from \'@axiosleo/koapp\';');
-    emitter.emitln('import { QueryHandler } from \'@axiosleo/orm-mysql\';');
-    emitter.emitln('import { _mysql } from \'@/services/db\';');
     emitter.emitln('import { helper } from \'@axiosleo/cli-tool\';');
+    emitter.emitln('import { BaseController } from \'./controller\';');
     emitter.emitln('const { _foreach } = helper.cmd;').emitln();
     emitter.emitln(`import { ${title}Item, ${title}Model } from './${name}.model';`);
 
-    emitter.emitln(`class ${title} {`, 'open');
+    emitter.emitln(`class ${title} extends BaseController {`, 'open');
     let isBegin = true;
     methods.forEach((method) => {
       let m = `generate${method}Method`;
@@ -184,7 +204,7 @@ class GenTsCommand extends Command {
       }
     });
 
-    emitter.emitln('export default root;');
+    emitter.emitln().emitln('export default root;');
 
     await _write(path.join(context.targetDir, `${name}.router.ts`), emitter.output());
   }
@@ -192,9 +212,7 @@ class GenTsCommand extends Command {
   generateFindMethod(context, emitter) {
     const { name } = context;
     emitter.emitln('async find(id: number) {', 'begin');
-    emitter.emitln('const conn = _mysql();', true);
-    emitter.emitln('const handler = new QueryHandler(conn);', true);
-    emitter.emitln(`const item = await handler.table('${name}').where('id', id).find();`, true);
+    emitter.emitln(`const item = await this.mainDB.table('${name}').where('id', id).find();`, true);
     emitter.emitln('if (!item) {', 'begin');
     emitter.emitln('error(404, \'Not Found\');', true);
     emitter.emitln('}', 'end');
@@ -205,9 +223,7 @@ class GenTsCommand extends Command {
   generatePageMethod(context, emitter) {
     emitter.emitln('async page(page:number, size:number, fields?: string[]) {', 'begin');
     emitter.emitRows(
-      'const conn = _mysql();',
-      'const handler = new QueryHandler(conn);',
-      `const query = handler.table('${context.name}');`,
+      `const query = this.mainDB.table('${context.name}');`,
       'if (fields) {',
       emitter.config.indent + 'query.attr(...fields);',
       '}',
@@ -220,9 +236,7 @@ class GenTsCommand extends Command {
   generateLoadMethod(context, emitter) {
     emitter.emitln('async load(last_id: number, order: \'asc\' | \'desc\', fields?: string[]) {', 'begin');
     emitter.emitRows(
-      'const conn = _mysql();',
-      'const handler = new QueryHandler(conn);',
-      `const query = handler.table('${context.name}');`,
+      `const query = this.mainDB.table('${context.name}');`,
       'if (fields) {',
       emitter.config.indent + 'query.attr(...fields);',
       '}',
@@ -236,9 +250,7 @@ class GenTsCommand extends Command {
     const { title } = context;
     emitter.emitln(`async create(data: ${title}Item) {`, 'begin');
     emitter.emitRows(
-      'const conn = _mysql();',
-      'const handler = new QueryHandler(conn);',
-      `const res = await handler.table('${context.name}').insert(data);`,
+      `const res = await this.mainDB.table('${context.name}').insert(data);`,
       'res.insertId ? success() : failed(data, \'500;Create Failed\');'
     );
     emitter.emitln('}', 'end');
@@ -248,9 +260,7 @@ class GenTsCommand extends Command {
     const { title } = context;
     emitter.emitln(`async update(id: number, data: ${title}Item) {`, 'begin');
     emitter.emitRows(
-      'const conn = _mysql();',
-      'const handler = new QueryHandler(conn);',
-      `const res = await handler.table('${context.name}').where('id', id).update(data);`,
+      `const res = await this.mainDB.table('${context.name}').where('id', id).update(data);`,
       'res.affectedRows || res.changedRows ? success() : failed(data, \'500;Update Failed\');'
     );
     emitter.emitln('}', 'end');
@@ -259,9 +269,7 @@ class GenTsCommand extends Command {
   generatePatchMethod(context, emitter) {
     emitter.emitln('async patch(id: number, field_name: string, value: any) {', 'begin');
     emitter.emitRows(
-      'const conn = _mysql();',
-      'const handler = new QueryHandler(conn);',
-      `const res = await handler.table('${context.name}').where('id', id).update({ [field_name]: value });`,
+      `const res = await this.mainDB.table('${context.name}').where('id', id).update({ [field_name]: value });`,
       'res.affectedRows || res.changedRows ? success() : failed({ id, field_name, value }, \'500;Update Failed\');'
     );
     emitter.emitln('}', 'end');
@@ -270,9 +278,7 @@ class GenTsCommand extends Command {
   generateDeleteMethod(context, emitter) {
     emitter.emitln('async delete(id: number) {', 'begin');
     emitter.emitRows(
-      'const conn = _mysql();',
-      'const handler = new QueryHandler(conn);',
-      `const res = await handler.table('${context.name}').where('id', id).delete();`,
+      `const res = await this.mainDB.table('${context.name}').where('id', id).delete();`,
       'res.affectedRows ? success() : failed({}, \'500;Delete Failed\');'
     );
     emitter.emitln('}', 'end');
@@ -282,10 +288,8 @@ class GenTsCommand extends Command {
     const { title } = context;
     emitter.emitln(`async batchCreate(data: ${title}Item[]) {`, 'begin');
     emitter.emitRows(
-      'const conn = _mysql();',
-      'const handler = new QueryHandler(conn);',
       `await _foreach(data, async (item: ${title}Item) => {`,
-      emitter.config.indent + `await handler.table('${context.name}').insert(item);`,
+      emitter.config.indent + `await this.mainDB.table('${context.name}').insert(item);`,
       '});'
     );
     emitter.emitln('success({});', true);
@@ -296,10 +300,8 @@ class GenTsCommand extends Command {
     const { title } = context;
     emitter.emitln(`async batchUpdate(data: ${title}Model[]) {`, 'begin');
     emitter.emitRows(
-      'const conn = _mysql();',
-      'const handler = new QueryHandler(conn);',
       `await _foreach(data, async (item: ${title}Model) => {`,
-      emitter.config.indent + `await handler.table('${context.name}').where('id', item.id).update(item);`,
+      emitter.config.indent + `await this.mainDB.table('${context.name}').where('id', item.id).update(item);`,
       '});'
     );
     emitter.emitln('success({});', true);
@@ -309,10 +311,8 @@ class GenTsCommand extends Command {
   generateBatchDeleteMethod(context, emitter) {
     emitter.emitln('async batchDelete(ids: number[]) {', 'begin');
     emitter.emitRows(
-      'const conn = _mysql();',
-      'const handler = new QueryHandler(conn);',
       'await _foreach(ids, async (id: number) => {',
-      emitter.config.indent + `await handler.table('${context.name}').where('id', id).delete();`,
+      emitter.config.indent + `await this.mainDB.table('${context.name}').where('id', id).delete();`,
       '});'
     );
     emitter.emitln('success({});', true);
