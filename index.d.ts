@@ -134,8 +134,8 @@ interface AppConfiguration {
     subdomainOffset?: number | undefined,
     proxyIpHeader?: string | undefined,
     maxIpsCount?: number | undefined,
-    static?: KoaStaticServer.Options
-  }
+  },
+  static?: KoaStaticServer.Options
 }
 
 interface KoaApplicationConfig extends AppConfiguration {
