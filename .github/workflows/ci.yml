@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         operating-system: [macos-latest, ubuntu-latest]
-        node-version: [12, 13, 14, 16, 18]
+        node-version: [16, 18, 20]
     name: Node.js ${{ matrix.node-version }} Test on ${{ matrix.operating-system }}
 
     steps:
