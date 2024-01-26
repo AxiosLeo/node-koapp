@@ -1,9 +1,9 @@
-import type KoaStaticServer from 'koa-static-server';
-import type Koa from 'koa';
-import type { Context, Configuration, Workflow } from '@axiosleo/cli-tool';
-import type { IncomingHttpHeaders } from 'http';
-import type { Rules, ErrorMessages, Validator } from 'validatorjs';
-import EventEmitter from 'events';
+import * as KoaStaticServer from 'koa-static-server';
+import * as Koa from 'koa';
+import { Context, Configuration, Workflow } from '@axiosleo/cli-tool';
+import { IncomingHttpHeaders } from 'http';
+import { Rules, ErrorMessages, Validator } from 'validatorjs';
+import * as EventEmitter from 'events';
 
 type StatusCode = string | '000;Unknown Error' |
   '200;Success' | '404;Not Found' |
