@@ -147,7 +147,6 @@ const getRouteInfo = (routers, pathinfo, method) => {
 };
 
 /**
- * 
  * @param {Application} app 
  * @param {Koa.ParameterizedContext} ctx 
  * @param {string} app_id 
