@@ -1,8 +1,9 @@
 import type KoaStaticServer from 'koa-static-server';
 import type Koa from 'koa';
-import type { Context, Configuration } from '@axiosleo/cli-tool';
+import type { Context, Configuration, Workflow } from '@axiosleo/cli-tool';
 import type { IncomingHttpHeaders } from 'http';
 import type { Rules, ErrorMessages, Validator } from 'validatorjs';
+import EventEmitter from 'events';
 
 type StatusCode = string | '000;Unknown Error' |
   '200;Success' | '404;Not Found' |
@@ -10,6 +11,9 @@ type StatusCode = string | '000;Unknown Error' |
   '400;Bad Data' | '401;Unauthorized' |
   '403;Not Authorized' | '400;Invalid Signature' |
   '501;Failed' | '409;Data Already Exists';
+
+type HttpMethod = 'ANY' | 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS' | 'TRACE' | 'CONNECT' |
+  'any' | 'get' | 'post' | 'put' | 'delete' | 'patch' | 'head' | 'options' | 'trace' | 'connect' | string;
 
 export function response(data: unknown, code?: StatusCode, httpstatus?: number, headers?: Record<string, string>): void;
 export function result(data: unknown, httpstatus?: number, headers?: Record<string, string>): void;
@@ -58,17 +62,19 @@ export declare class Controller implements ControllerInterface {
   log(...data: any): void;
 }
 
-interface RouterValidator {
+interface ValidatorConfig {
   rules: Rules,
   messages?: ErrorMessages
 }
 
+interface RouterValidator {
+  query: ValidatorConfig,
+  body: ValidatorConfig
+}
+
 interface RouterInfo {
   pathinfo: string;
-  validators: {
-    query: RouterValidator,
-    body: RouterValidator
-  };
+  validators: RouterValidator;
   middlewares: ContextHandler[];
   handlers: ContextHandler[];
   params: {
@@ -76,12 +82,16 @@ interface RouterInfo {
   };
 }
 
-
-interface KoaContext extends Context {
+interface AppContext extends Context {
   app: Application,
-  koa: Koa.ParameterizedContext,
   app_id: string,
-  method: string,
+  config: AppConfiguration,
+}
+
+
+interface KoaContext extends AppContext {
+  koa: Koa.ParameterizedContext,
+  method: HttpMethod,
   url: string,
   // eslint-disable-next-line no-use-before-define
   router?: RouterInfo | null,
@@ -95,17 +105,19 @@ interface KoaContext extends Context {
 
 type ContextHandler = (context: KoaContext) => Promise<void>
 
+
 interface RouterOptions {
-  method?: string,
+  method?: HttpMethod,
   handlers?: ContextHandler[],
   middlewares?: ContextHandler[],
   intro?: string,
   routers?: Router[],
+  validators?: RouterValidator;
 }
 
 export class Router {
   prefix: string;
-  method: string;
+  method: HttpMethod;
   routers: Router[];
   handlers?: ContextHandler[];
   middlewares?: ContextHandler[];
@@ -116,6 +128,8 @@ export class Router {
   add(router: Router): void;
 
   new(prefix: string, options?: RouterOptions): void;
+
+  push(method: HttpMethod, prefix: string, handle: ContextHandler, validator?: RouterValidator);
 }
 
 interface AppConfiguration {
@@ -144,10 +158,11 @@ interface KoaApplicationConfig extends AppConfiguration {
 
 type TriggerFunc = (...args: any[]) => void
 
-export declare abstract class Application {
+export declare abstract class Application extends EventEmitter {
   routes: any;
   app_id: string;
   config: Configuration;
+  workflow: Workflow<KoaContext>;
   constructor(config: AppConfiguration);
   abstract start(): Promise<void>;
   register(event_name: string, ...triggers: TriggerFunc[]): void;
