@@ -4,8 +4,7 @@ const Application = require('./src/app');
 const Controller = require('./src/controller');
 const KoaBodyParser = require('koa-bodyparser');
 const { Router } = require('./src/router');
-const { printer, debug } = require('@axiosleo/cli-tool');
-const { HttpResponse, error, HttpError } = require('./src/response');
+const { printer } = require('@axiosleo/cli-tool');
 const response = require('./src/response');
 const session = require('koa-session');
 const KoaStaticServer = require('koa-static-server');
@@ -13,10 +12,30 @@ const path = require('path');
 const is = require('@axiosleo/cli-tool/src/helper/is');
 const Koa = require('koa');
 const Model = require('./src/model');
+const { dispacher } = require('./src/core');
+const { _assign } = require('@axiosleo/cli-tool/src/helper/obj');
+
+/**
+ * 
+ * @param {import('./index').KoaContext} context 
+ */
+const handleRes = (context) => {
+  let response = context.response;
+  context.koa.type = response.format;
+  if (is.object(response.data)) {
+    response.data.request_id = context.request_id;
+    response.data.timestamp = (new Date()).getTime();
+  }
+  Object.keys(response.headers).forEach(k => {
+    context.koa.set(k, response.headers[k]);
+  });
+  context.koa.body = response.data || '';
+  context.koa.response.status = response.status;
+};
 
 class KoaApplication extends Application {
   constructor(config = {}) {
-    super({
+    config = _assign({
       port: 8080,
       listen_host: 'localhost',
       debug: false,
@@ -40,98 +59,44 @@ class KoaApplication extends Application {
       static: {
         rootDir: path.join(__dirname, './public'),
       },
-      ...config
-    });
-    this.koa = new Koa();
+    }, config);
+
     printer.input('-'.repeat(60));
-    printer.green('Service start on ')
-      .println(`http://localhost:${this.config.port}`).println();
+    printer.green('start on ').println(`http://localhost:${config.port}`).println();
+    super(config);
+    this.koa = new Koa();
 
-    this.register('receive', async (context) => {
-      if (context.app.debug) {
-        printer.input('receive request : ' + context.request_id);
-        if (context.koa.request.body) {
-          debug.dump(context.koa.request.body);
-        }
-      }
-    });
-    this.register('response', async (context) => {
-      let response;
-      if (context.response instanceof HttpResponse) {
-        response = context.response;
-      } else if (context.response instanceof HttpError) {
-        response = new HttpResponse({
-          format: 'json',
-          status: context.response.status,
-          data: {
-            message: context.response.message,
-          },
-        });
-      } else if (this.config.debug) {
-        response = new HttpResponse({
-          format: 'json',
-          status: 500,
-          data: {
-            code: 500,
-            message: 'Internal Server Error',
-            data: {
-              code: context.response.code,
-              msg: context.response.message,
-              stack: context.response.stack,
-            },
-          }
-        });
-        const err = new Error();
-        debug.log(err);
-        debug.log({ err: context.response });
-      } else {
-        response = new HttpResponse({
-          status: 500,
-          data: 'Internal Server Error'
-        });
-      }
-      context.koa.type = response.format;
-      if (is.object(response.data)) {
-        response.data.request_id = context.request_id;
-        response.data.timestamp = (new Date()).getTime();
-      }
-      Object.keys(response.headers).forEach(k => {
-        context.koa.set(k, response.headers[k]);
-      });
-      context.koa.body = response.data || '';
-      context.koa.response.status = response.status;
-    });
-
-    this.register('error', async (context) => {
-      try {
-        const errorIns = context.curr.error;
-        if (errorIns instanceof HttpError) {
-          error(errorIns.status, errorIns.message, errorIns.headers);
-        } else if (errorIns instanceof HttpResponse) {
-          this.trigger('response', context);
-        } else if (this.config.debug) {
-          error(500, context.curr.error ? context.curr.error.message : 'Internal Server Error');
-        } else {
-          error(500, 'Internal Server Error');
-        }
-      } catch (err) {
-        context.curr.error = err;
-        this.trigger('response', context);
-      }
-    });
+    // session middleware
     if (this.config.session) {
       this.koa.keys = [this.app_id];
+      let sessionconfig = {
+        key: `koa.sess.${this.app_id}`
+      };
+      _assign(sessionconfig, this.config.session);
       this.koa.use(session({
         key: `koa.sess.${this.app_id}`, /** (string) cookie key (default is koa.sess) */
         ...this.config.session
       }, this.koa));
     }
+
+    // body parser
     this.koa.use(KoaBodyParser(this.config.body_parser));
-    this.koa.use(this.dispacher());
+
+    // dispacher request
+    this.koa.use(dispacher({
+      app: this,
+      app_id: this.app_id,
+      workflow: this.workflow,
+      routes: this.routes
+    }));
+
+    // koa static services
     if (this.config.static) {
       this.koa.use(KoaStaticServer(this.config.static));
     }
-    this.trigger('koa_init', this);
+    this.on('response', handleRes);
+
+    this.emit('koa_init', this);
   }
 
   async start() {
