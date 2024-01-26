@@ -22,13 +22,27 @@ class Router {
 
   /**
    * @param {string} prefix 
-   * @param {*} options 
+   * @param {import('..').RouterOptions} options 
    * @returns 
    */
   new(prefix, options = {}) {
     const router = new Router(prefix, options);
     this.add(router);
     return this;
+  }
+
+  /**
+   * 
+   * @param {string} method 
+   * @param {string} prefix 
+   * @param {*} handle 
+   */
+  push(method, prefix, handle, validator) {
+    this.new(prefix, {
+      method,
+      handlers: [handle],
+      validators: validator
+    });
   }
 }
 
