@@ -6,7 +6,8 @@
   "watch": [
     "src",
     "commands",
-    "index.js"
+    "index.js",
+    "./tests/bootstrap.js"
   ],
-  "exec": "node ./bin/koapp.js http ./assets/"
+  "exec": "node --trace-warnings ./tests/bootstrap.js"
 }
