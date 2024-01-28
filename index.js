@@ -61,8 +61,7 @@ class KoaApplication extends Application {
       },
     }, config);
 
-    printer.input('-'.repeat(60));
-    printer.green('start on ').println(`http://localhost:${config.port}`).println();
+    printer.println().green('start on ').println(`http://localhost:${config.port}`).println();
     super(config);
     this.koa = new Koa();
 

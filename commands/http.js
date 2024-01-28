@@ -43,7 +43,6 @@ class HttpCommand extends Command {
    * @param {import('@axiosleo/cli-tool').App} app 
    */
   async exec(args, options) {
-    printer.yellow('listening on ').green(`${options.port}`).println(' port');
     let dir = path.resolve(args.dir);
     const router = new Router('/***', {
       method: 'any',
