@@ -100,8 +100,6 @@ async function handle(context) {
       await _foreach(context.router.handlers, async (handler) => {
         await handler(context);
       });
-    } else {
-      error(404, 'Not Found!');
     }
   } catch (err) {
     context.response = err;
