@@ -1,6 +1,8 @@
 
 'use strict';
 
+// eslint-disable-next-line no-unused-vars
+const { debug } = require('@axiosleo/cli-tool');
 const { success, result, failed } = require('../src/response');
 
 const { KoaApplication, Router, Model } = require('..');
@@ -18,6 +20,16 @@ if (require.main === module) {
   // default
   root.push('any', '/***', async (context) => {
     context.koa.body = 'hello, world!';
+  });
+
+  // return NotFound response when not set method
+  root.push('', '/invalid', async (context) => {
+    context.koa.body = 'cannot be here, will return NotFound response';
+  });
+
+  // set multi-method
+  root.push('get|post', '/multi', async (context) => {
+    success({ method: context.method });
   });
 
   // path params
