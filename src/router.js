@@ -8,7 +8,7 @@ class Router {
       handlers: [],
       routers: [],
       middlewares: [],
-      validators: { query: {}, body: {} }
+      validators: { params: {}, query: {}, body: {} }
     }, options || {});
     if (this.method) {
       this.method = this.method.toUpperCase();

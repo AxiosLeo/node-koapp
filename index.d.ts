@@ -68,6 +68,7 @@ interface ValidatorConfig {
 }
 
 interface RouterValidator {
+  params: ValidatorConfig,
   query: ValidatorConfig,
   body: ValidatorConfig
 }

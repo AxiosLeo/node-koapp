@@ -41,17 +41,25 @@ async function validate(context) {
   try {
     context.app.emit('validate', context);
     if (context.router && context.router.validators) {
-      const { query, body } = context.router.validators;
+      const { params, query, body } = context.router.validators;
       const check = {};
-      if (query) {
-        const validation = new Validator(context.params, query.rules, query.messages || null);
+      if (!is.empty(params)) {
+        const validation = new Validator(context.params, params.rules, params.messages || null);
+        validation.check();
+        if (validation.fails()) {
+          const errors = validation.errors.all();
+          check.params = errors;
+        }
+      }
+      if (!is.empty(query)) {
+        const validation = new Validator(context.query, query.rules, query.messages || null);
         validation.check();
         if (validation.fails()) {
           const errors = validation.errors.all();
           check.query = errors;
         }
       }
-      if (body) {
+      if (!is.empty(body)) {
         const validation = new Validator(context.body, body.rules, body.messages || null);
         validation.check();
         if (validation.fails()) {
