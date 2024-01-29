@@ -1,6 +1,6 @@
 {
   "name": "@axiosleo/koapp",
-  "version": "0.6.4",
+  "version": "1.0.0-alpha.1",
   "description": "",
   "author": "AxiosLeo",
   "bin": {
@@ -21,6 +21,9 @@
     "lib": "src"
   },
   "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "dependencies": {
     "@axiosleo/cli-tool": "^1.6.0",
     "json-schema-to-typescript": "^13.1.2",

@@ -16,8 +16,11 @@
     "test-one": "NODE_ENV=test mocha -r @swc-node/register --exit",
     "test-cov": "nyc mocha -r @swc-node/register src/**/*.test.ts --parallel"
   },
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "dependencies": {
-    "@axiosleo/koapp": "^0.6.2",
+    "@axiosleo/koapp": "^1.0.0-alpha.1",
     "@axiosleo/orm-mysql": "^0.8.6",
     "cluster": "^0.7.7",
     "dotenv": "^10.0.0"
