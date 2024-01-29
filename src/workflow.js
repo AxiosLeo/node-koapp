@@ -1,6 +1,6 @@
 'use strict';
 
-const { debug } = require('@axiosleo/cli-tool');
+const { debug, printer } = require('@axiosleo/cli-tool');
 const Validator = require('validatorjs');
 const is = require('@axiosleo/cli-tool/src/helper/is');
 const { failed, error, HttpResponse, HttpError } = require('./response');
@@ -25,7 +25,8 @@ async function receive(context) {
     context.headers = context.koa.request.headers;
     context.router = router;
     if (context.app.config.debug) {
-      debug.log('[DEBUG]', 'request router: ', router);
+      printer.yellow('[DEBUG] ');
+      debug.log('request router: ', router);
     }
   } catch (err) {
     context.response = err;
@@ -152,8 +153,10 @@ async function response(context) {
       }
     });
     const err = new Error();
-    debug.log('[DEBUG]', err);
-    debug.log('[DEBUG]', { err: context.response });
+    printer.yellow('[DEBUG] ');
+    debug.log(err);
+    printer.yellow('[DEBUG] ');
+    debug.log({ err: context.response });
   } else {
     response = new HttpResponse({
       status: 500,
@@ -162,10 +165,11 @@ async function response(context) {
   }
   context.response = response;
   if (context.app.config.debug) {
+    printer.yellow('[DEBUG] ');
     if (context.response.data) {
-      debug.log('[DEBUG]', 'response', context.response.data);
+      debug.log('response', context.response.data);
     } else {
-      debug.log('[DEBUG]', 'response', context.response);
+      debug.log('response', context.response);
     }
   }
   context.app.emit('response', context);
