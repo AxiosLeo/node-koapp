@@ -81,6 +81,34 @@ const getRouter = (item) => {
   return route;
 };
 
+const getRouterItem = ({ routes, method, pathinfo, params }) => {
+  if (!routes) {
+    return null;
+  }
+  for (let i = 0; i < routes.length; i++) {
+    const route = routes[i];
+    const methods = route.router.method.split('|');
+    if (methods.indexOf('ANY') > -1 || methods.indexOf(method) > -1) {
+      const routeInfo = {
+        pathinfo,
+        params: {},
+        validators: route.router.validators ? route.router.validators : {},
+        handlers: route.router.handlers ? route.router.handlers : [],
+        middlewares: route.middlewares,
+      };
+      if (route.params && route.params.length) {
+        route.params.forEach((item, index) => {
+          if (typeof params[index] !== 'undefined') {
+            routeInfo.params[item] = params[index];
+          }
+        });
+      }
+      return routeInfo;
+    }
+  }
+  return null;
+};
+
 const getRouteInfo = (routers, pathinfo, method) => {
   const trace = resolvePathinfo(pathinfo);
   let curr = routers;
@@ -118,30 +146,18 @@ const getRouteInfo = (routers, pathinfo, method) => {
   if (curr === null && traceDefault !== null) {
     curr = traceDefault;
   }
-  const routes = getRouter(curr);
+  let routes = getRouter(curr);
   if (routes.length) {
-    for (let i = 0; i < routes.length; i++) {
-      const route = routes[i];
-      const methods = route.router.method.toUpperCase().split('|');
-      if (methods.indexOf('ANY') > -1 || methods.indexOf(method) > -1) {
-        const routeInfo = {
-          pathinfo,
-          params: {},
-          validators: route.router.validators ? route.router.validators : {},
-          handlers: route.router.handlers ? route.router.handlers : [],
-          middlewares: route.middlewares,
-        };
-        if (route.params && route.params.length) {
-          route.params.forEach((item, index) => {
-            if (typeof params[index] !== 'undefined') {
-              routeInfo.params[item] = params[index];
-            }
-          });
-        }
-        return routeInfo;
-      }
+    let routerInfo = getRouterItem({ routes, method, pathinfo, params });
+    if (routerInfo) {
+      return routerInfo;
     }
-    return null;
+  }
+  if (traceDefault) {
+    routes = getRouter(traceDefault);
+    if (routes.length) {
+      return getRouterItem({ routes, method, pathinfo, params });
+    }
   }
   return null;
 };
