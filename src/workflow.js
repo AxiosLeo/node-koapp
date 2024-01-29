@@ -25,7 +25,7 @@ async function receive(context) {
     context.headers = context.koa.request.headers;
     context.router = router;
     if (context.app.config.debug) {
-      debug.log('request router: ', router);
+      debug.log('[DEBUG]', 'request router: ', router);
     }
   } catch (err) {
     context.response = err;
@@ -144,8 +144,8 @@ async function response(context) {
       }
     });
     const err = new Error();
-    debug.log(err);
-    debug.log({ err: context.response });
+    debug.log('[DEBUG]', err);
+    debug.log('[DEBUG]', { err: context.response });
   } else {
     response = new HttpResponse({
       status: 500,
@@ -155,9 +155,9 @@ async function response(context) {
   context.response = response;
   if (context.app.config.debug) {
     if (context.response.data) {
-      debug.log('response', context.response.data);
+      debug.log('[DEBUG]', 'response', context.response.data);
     } else {
-      debug.log('response', context.response);
+      debug.log('[DEBUG]', 'response', context.response);
     }
   }
   context.app.emit('response', context);
