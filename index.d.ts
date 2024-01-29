@@ -119,9 +119,9 @@ export class Router {
   prefix: string;
   method: HttpMethod;
   routers: Router[];
-  handlers?: ContextHandler[];
-  middlewares?: ContextHandler[];
-  options?: RouterOptions;
+  handlers: ContextHandler[];
+  middlewares: ContextHandler[];
+  validators: RouterValidator;
 
   constructor(prefix?: string, options?: RouterOptions);
 
