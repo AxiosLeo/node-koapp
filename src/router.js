@@ -3,12 +3,16 @@
 class Router {
   constructor(prefix = '', options = {}) {
     Object.assign(this, {
+      prefix: prefix || '',
       method: '',
       handlers: [],
       routers: [],
       middlewares: [],
+      validators: { query: {}, body: {} }
     }, options || {});
-    this.prefix = prefix || '';
+    if (this.method) {
+      this.method = this.method.toUpperCase();
+    }
   }
 
   /**
