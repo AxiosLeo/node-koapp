@@ -12,7 +12,8 @@ if (require.main === module) {
     success({
       body: context.koa.request.body,
       query: context.koa.request.query,
-      params: context.params
+      params: context.params,
+      method: context.method
     });
   };
   const root = new Router();
@@ -45,12 +46,12 @@ if (require.main === module) {
 
   // send res by failed() method
   root.push('any', '/failed', async () => {
-    failed({ code: 500 });
+    failed({ data: 'something' }, '403;Unauthorized', 403);
   });
 
   // send res by result() method
   root.push('any', '/result', async () => {
-    result(JSON.stringify({ hello: 'World!' }), 200, {
+    result(JSON.stringify({ hello: 'world!' }), 200, {
       'Content-Type': 'application/json'
     });
   });
@@ -90,19 +91,30 @@ if (require.main === module) {
   });
 
   // validate request
-  root.push('any', '/validate', async () => {
-    success('all params is valid');
+  root.push('any', '/validate/{:param1}/{:param2}', async (context) => {
+    success({
+      result: 'all params is valid',
+      params: context.params,
+      query: context.query,
+      body: context.body
+    });
   }, {
+    params: {
+      rules: {
+        param1: 'required',
+        param2: 'required'
+      }
+    },
     query: {
       rules: {
         a: 'required',
-        b: 'string'
+        b: 'integer'
       }
     },
     body: {
       rules: {
         bodyA: 'required',
-        bodyB: 'string'
+        bodyB: 'integer'
       },
       messages: {
         'required': 'The :attribute field is required......'
