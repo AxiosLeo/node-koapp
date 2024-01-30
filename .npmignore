@@ -11,4 +11,4 @@ node_modules/*
 .appveyor.yml
 ./app.js
 .gitignore
-
+nodemon.json
