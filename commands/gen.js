@@ -14,7 +14,7 @@ class GenTsCommand extends Command {
   constructor() {
     super({
       name: 'generate',
-      desc: '',
+      desc: 'Generate ts files from json schema files',
       alias: ['gen']
     });
     this.addArgument('meta', 'The dir of json schema files to generate', 'optional', './meta/');
