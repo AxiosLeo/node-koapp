@@ -3,7 +3,7 @@ import * as Koa from 'koa';
 import { Context, Configuration, Workflow } from '@axiosleo/cli-tool';
 import { IncomingHttpHeaders } from 'http';
 import { Rules, ErrorMessages, Validator } from 'validatorjs';
-import * as EventEmitter from 'events';
+import { EventEmitter } from 'events';
 
 type StatusCode = string | '000;Unknown Error' |
   '200;Success' | '404;Not Found' |
@@ -130,7 +130,7 @@ export class Router {
 
   new(prefix: string, options?: RouterOptions): void;
 
-  push(method: HttpMethod, prefix: string, handle: ContextHandler, validator?: RouterValidator);
+  push(method: HttpMethod, prefix: string, handle: ContextHandler, validator?: RouterValidator): void;
 }
 
 interface AppConfiguration {
@@ -166,9 +166,6 @@ export declare abstract class Application extends EventEmitter {
   workflow: Workflow<KoaContext>;
   constructor(config: AppConfiguration);
   abstract start(): Promise<void>;
-  register(event_name: string, ...triggers: TriggerFunc[]): void;
-  trigger(event_name: string, ...args: any[]): boolean;
-  dispacher(): Promise<void>;
 }
 
 export declare class KoaApplication extends Application {
