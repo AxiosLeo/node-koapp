@@ -6,8 +6,29 @@ const { error, Router, KoaApplication, result } = require('../');
 const path = require('path');
 const promisify = require('util').promisify;
 const readdir = promisify(fs.readdir);
-const { _exists, _is_file, _read, _is_dir } = require('@axiosleo/cli-tool/src/helper/fs');
+const { _exists, _is_file, _read, _is_dir, _ext } = require('@axiosleo/cli-tool/src/helper/fs');
 const { _fixed } = require('@axiosleo/cli-tool/src/helper/str');
+
+const mimeTypes = {
+  'css': 'text/css',
+  'gif': 'image/gif',
+  'html': 'text/html',
+  'ico': 'image/x-icon',
+  'jpeg': 'image/jpeg',
+  'jpg': 'image/jpeg',
+  'js': 'text/javascript',
+  'json': 'application/json',
+  'pdf': 'application/pdf',
+  'png': 'image/png',
+  'svg': 'image/svg+xml',
+  'swf': 'application/x-shockwave-flash',
+  'tiff': 'image/tiff',
+  'txt': 'text/plain',
+  'wav': 'audio/x-wav',
+  'wma': 'audio/x-ms-wma',
+  'wmv': 'video/x-ms-wmv',
+  'xml': 'text/xml'
+};
 
 class HttpCommand extends Command {
   constructor() {
@@ -55,6 +76,12 @@ class HttpCommand extends Command {
         if (await _is_file(d)) {
           let c = await _read(d);
           let tmp = context.url.split('/');
+          const ext = _ext(d);
+          if (mimeTypes[ext]) {
+            result(c, 200, {
+              'Content-Type': mimeTypes[ext]
+            });
+          }
           result(c, 200, {
             'Content-disposition': 'attachment; filename=' + tmp[tmp.length - 1]
           });
