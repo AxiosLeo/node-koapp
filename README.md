@@ -55,6 +55,8 @@ app.start();
 - Validation
 
 > see [validatorjs](https://github.com/mikeerickson/validatorjs) for more rule examples
+> 
+> see `Router` examples for more usage: [tests/bootstrap.js](tests/bootstrap.js)
 
 ```javascript
 const { Router } = require("@axiosleo/koapp");
@@ -62,6 +64,10 @@ const { Router } = require("@axiosleo/koapp");
 const router = new Router("/test", {
   method: "any",
   validator: {
+    // url params, like `/test/{:id}`, the 'id' is required and must be an integer
+    params: {
+      id: "required|integer",
+    },
     query: {
       name: "required|string",
     },
