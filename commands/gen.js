@@ -28,12 +28,22 @@ class GenTsCommand extends Command {
    * @param {import('@axiosleo/cli-tool').App} app 
    */
   async exec(args, options) {
-    const methodsOption = ['Find', 'Page', 'Load', 'Create', 'Update', 'Patch', 'Delete', 'BatchCreate', 'BatchUpdate', 'BatchDelete'];
-    const methods = await _select_multi('Please select the methods to generate', methodsOption, methodsOption);
+    let dir = path.join(process.cwd(), args.meta);
+    if (!await _exists(dir)) {
+      printer.println().error('The meta argument must be a directory and exists');
+      return;
+    }
     if (await is.file(path.join(process.cwd(), args.meta))) {
-      throw new Error('The meta argument must be a directory');
+      printer.println().error('The meta argument must be a directory');
+      return;
     }
     let files = await _search(path.join(process.cwd(), args.meta), 'json');
+    if (!files.length) {
+      printer.println().error('No json schema files found in the directory : ' + args.meta);
+      return;
+    }
+    const methodsOption = ['Find', 'Page', 'Load', 'Create', 'Update', 'Patch', 'Delete', 'BatchCreate', 'BatchUpdate', 'BatchDelete'];
+    const methods = await _select_multi('Please select the methods to generate', methodsOption, methodsOption);
     files = files.map((f) => {
       let genFiles = f.endsWith('.schema.json') ? ['model', 'controller', 'router'] : ['model'];
       return { metaFile: f, targetDir: path.resolve(options.dir), methods, genFiles };
