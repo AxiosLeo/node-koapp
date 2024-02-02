@@ -94,11 +94,10 @@ class KoaApplication extends Application {
       this.koa.use(KoaStaticServer(this.config.static));
     }
     this.on('response', handleRes);
-
-    this.emit('koa_init', this);
   }
 
   async start() {
+    this.emit('starting');
     // set '0.0.0.0' for public access
     this.koa.listen(this.config.port, this.config.listen_host);
   }
