@@ -5,7 +5,7 @@ const path = require('path');
 // eslint-disable-next-line no-unused-vars
 const { Command, printer, debug } = require('@axiosleo/cli-tool');
 const { _select_multi, _foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
-const { Emitter, _snake_case, _upper_first } = require('@axiosleo/cli-tool/src/helper/str');
+const { Emitter, _snake_case, _upper_first, _caml_case } = require('@axiosleo/cli-tool/src/helper/str');
 const { _write, _exists, _read_json, _search, _read } = require('@axiosleo/cli-tool/src/helper/fs');
 const is = require('@axiosleo/cli-tool/src/helper/is');
 const { _deep_clone } = require('@axiosleo/cli-tool/src/helper/obj');
@@ -17,33 +17,52 @@ class GenTsCommand extends Command {
       desc: 'Generate ts files from json schema files',
       alias: ['gen']
     });
-    this.addArgument('meta', 'The dir of json schema files to generate', 'optional', './meta/');
-    this.addOption('dir', 'd', 'The modules directory where the file is generated', 'optional', process.cwd());
+    this.addArgument('name', 'Specify module name', 'optional');
+    this.addOption('dir', null, 'The koapp project directory. the project is generate by koapp-cli', 'optional', process.cwd());
   }
 
   /**
-   * @param {*} args 
-   * @param {*} options 
+   * @param {{name:string}} args 
+   * @param {dir:string} options 
    * @param {string[]} argList 
    * @param {import('@axiosleo/cli-tool').App} app 
    */
   async exec(args, options) {
-    let dir = path.join(process.cwd(), args.meta);
+    const methodsOption = ['Find', 'Page', 'Load', 'Create', 'Update', 'Patch', 'Delete', 'BatchCreate', 'BatchUpdate', 'BatchDelete'];
+    let methods = [];
+    if (args.name) {
+      methods = await _select_multi('Please select the methods to generate', methodsOption, methodsOption);
+      await this.generate({
+        methods, schema: {
+          '$schema': 'https://json-schema.org/draft/2020-12/schema',
+          '$id': 'https://example.com/product.schema.json',
+          'title': _caml_case(args.name),
+          'description': '',
+          'type': 'object',
+          'properties': {},
+          'required': []
+        },
+        targetDir: options.dir,
+        subDir: 'services/src/modules/',
+        genFiles: ['model', 'controller', 'router']
+      });
+      return;
+    }
+    let dir = path.join(options.dir, './meta/');
     if (!await _exists(dir)) {
-      printer.println().error('The meta argument must be a directory and exists');
+      printer.println().error('The meta directory must be exists');
       return;
     }
     if (await is.file(path.join(process.cwd(), args.meta))) {
       printer.println().error('The meta argument must be a directory');
       return;
     }
-    let files = await _search(path.join(process.cwd(), args.meta), 'json');
+    let files = await _search(path.join(process.cwd(), './meta/'), 'json');
     if (!files.length) {
-      printer.println().error('No json schema files found in the directory : ' + args.meta);
+      printer.println().error('No json schema files found in the meta directory : ' + args.meta);
       return;
     }
-    const methodsOption = ['Find', 'Page', 'Load', 'Create', 'Update', 'Patch', 'Delete', 'BatchCreate', 'BatchUpdate', 'BatchDelete'];
-    const methods = await _select_multi('Please select the methods to generate', methodsOption, methodsOption);
+    methods = await _select_multi('Please select the methods to generate', methodsOption, methodsOption);
     files = files.map((f) => {
       let genFiles = f.endsWith('.schema.json') ? ['model', 'controller', 'router'] : ['model'];
       return { metaFile: f, targetDir: path.resolve(options.dir), methods, genFiles };
@@ -52,59 +71,59 @@ class GenTsCommand extends Command {
       return;
     }
     await _foreach(files, async (options) => {
+      options.schema = await _read_json(options.metaFile);
       await this.generate(options);
     });
   }
 
   async generate(options) {
-    const methods = options.methods;
+    const { methods, targetDir, genFiles, schema } = options;
     let name = null;
     let title = '';
     let reqSchema = null;
     let modelSchema = null;
-    if (options.metaFile) {
-      const schema = await _read_json(options.metaFile);
-      if (!schema.title) {
-        throw new Error('Must be set title for schema');
-      }
-      title = schema.title.split(' ').map(c => _upper_first(c)).join('');
-      // 去掉每个字段的 title 属性
-      Object.keys(schema.properties).forEach((p) => {
-        if (schema.properties[p].title) {
-          let desc = `${schema.properties[p].title};${schema.properties[p].description || ''}`;
-          delete schema.properties[p].title;
-          schema.properties[p].description = desc;
-        }
-      });
-      name = _snake_case(title);
-      schema.fields = Object.keys(schema.properties).map(p => _snake_case(p));
-      reqSchema = schema;
-      modelSchema = _deep_clone(schema);
-      // 为 modelSchema 增加 id, created_by, updated_by, created_at, updated_at 字段
-      modelSchema.properties = {
-        ...modelSchema.properties,
-        id: {
-          type: 'integer'
-        },
-        created_by: {
-          type: 'integer'
-        },
-        updated_by: {
-          type: 'integer'
-        },
-        created_at: {
-          type: 'string',
-          format: 'date-time'
-        },
-        updated_at: {
-          type: 'string',
-          format: 'date-time'
-        }
-      };
-      modelSchema.required.push('id');
-    } else {
-      name = path.basename(options.metaFile);
+    if (!schema.title) {
+      throw new Error('Must be set title for schema');
     }
+    title = schema.title.split(' ').map(c => _upper_first(c)).join('');
+    // 去掉每个字段的 title 属性
+    Object.keys(schema.properties).forEach((p) => {
+      if (schema.properties[p].title) {
+        let desc = `${schema.properties[p].title};${schema.properties[p].description || ''}`;
+        delete schema.properties[p].title;
+        schema.properties[p].description = desc;
+      }
+    });
+    name = _snake_case(title);
+    schema.fields = Object.keys(schema.properties).map(p => _snake_case(p));
+    reqSchema = schema;
+    modelSchema = _deep_clone(schema);
+    // 为 modelSchema 增加 id, created_by, updated_by, created_at, updated_at 字段
+    modelSchema.properties = {
+      ...modelSchema.properties,
+      id: {
+        type: 'integer'
+      },
+      created_by: {
+        type: 'integer'
+      },
+      updated_by: {
+        type: 'integer'
+      },
+      created_at: {
+        type: 'string',
+        format: 'date-time'
+      },
+      updated_at: {
+        type: 'string',
+        format: 'date-time'
+      },
+      deleted_at: {
+        type: 'string',
+        format: 'date-time'
+      }
+    };
+    modelSchema.required.push('id');
 
     const context = {
       name, // snake case
@@ -112,10 +131,10 @@ class GenTsCommand extends Command {
       methods, // array
       reqSchema,
       modelSchema,
-      targetDir: options.targetDir
+      targetDir
     };
 
-    await _foreach(options.genFiles, async (f) => {
+    await _foreach(genFiles, async (f) => {
       switch (f) {
         case 'model':
           await this.generateModel(context);
@@ -125,7 +144,7 @@ class GenTsCommand extends Command {
           break;
         case 'router': {
           await this.generateRouter(context);
-          const routesFile = path.join(options.targetDir, 'index.ts');
+          const routesFile = path.join(targetDir, 'index.ts');
           if (!await _exists(routesFile)) {
             return;
           }
@@ -155,12 +174,12 @@ class GenTsCommand extends Command {
     emitter.emitln(`const ${title}ModelSchema = ${JSON.stringify(modelSchema, null, 2).replace(/"/g, '\'')} as const;`);
     emitter.emitln(`export type ${title}Model = FromSchema<typeof ${title}ModelSchema>;`);
 
-    await _write(path.join(context.targetDir, `${name}.model.ts`), emitter.output());
+    await _write(path.join(context.targetDir, 'services/src/modules/', `${name}.model.ts`), emitter.output());
   }
 
   async generateController(context) {
     const { name, title, methods } = context;
-    const filePath = path.join(context.targetDir, `${name}.controller.ts`);
+    const filePath = path.join(context.targetDir, 'services/src/modules/', `${name}.controller.ts`);
     if (await _exists(filePath)) {
       printer.yellow('The file already exists: ').println(`${name}.controller.ts`);
       return;
@@ -216,7 +235,7 @@ class GenTsCommand extends Command {
 
     emitter.emitln().emitln('export default root;');
 
-    await _write(path.join(context.targetDir, `${name}.router.ts`), emitter.output());
+    await _write(path.join(context.targetDir, 'services/src/modules/', `${name}.router.ts`), emitter.output());
   }
 
   generateFindMethod(context, emitter) {
