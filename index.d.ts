@@ -76,8 +76,8 @@ interface RouterValidator {
 interface RouterInfo {
   pathinfo: string;
   validators: RouterValidator;
-  middlewares: ContextHandler[];
-  handlers: ContextHandler[];
+  middlewares: ContextHandler<KoaContext>[];
+  handlers: ContextHandler<KoaContext>[];
   params: {
     [key: string]: string;
   };
@@ -104,33 +104,33 @@ interface KoaContext extends AppContext {
   headers?: IncomingHttpHeaders,
 }
 
-type ContextHandler = (context: KoaContext) => Promise<void>
+type ContextHandler<T extends KoaContext> = (context: T) => Promise<void>
 
 
 interface RouterOptions {
   method?: HttpMethod,
-  handlers?: ContextHandler[],
-  middlewares?: ContextHandler[],
+  handlers?: ContextHandler<KoaContext>[],
+  middlewares?: ContextHandler<KoaContext>[],
   intro?: string,
   routers?: Router[],
   validators?: RouterValidator;
 }
 
-export class Router {
+export class Router<T extends KoaContext = KoaContext> {
   prefix: string;
   method: HttpMethod;
   routers: Router[];
-  handlers: ContextHandler[];
-  middlewares: ContextHandler[];
+  handlers: ContextHandler<T>[];
+  middlewares: ContextHandler<T>[];
   validators: RouterValidator;
 
   constructor(prefix?: string, options?: RouterOptions);
 
-  add(router: Router): void;
+  add<T extends KoaContext>(router: Router<T>): void;
 
   new(prefix: string, options?: RouterOptions): void;
 
-  push(method: HttpMethod, prefix: string, handle: ContextHandler, validator?: RouterValidator): void;
+  push(method: HttpMethod, prefix: string, handle: ContextHandler<T>, validator?: RouterValidator): void;
 }
 
 interface AppConfiguration {
@@ -141,7 +141,7 @@ interface AppConfiguration {
   app_id?: string,
   paths?: Record<string, string>,
   routers?: Router[],
-  operator?: Record<string, ContextHandler>,
+  operator?: Record<string, ContextHandler<KoaContext>>,
   server?: {
     env?: string | undefined,
     keys?: string[] | undefined,
