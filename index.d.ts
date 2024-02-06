@@ -107,10 +107,10 @@ interface KoaContext extends AppContext {
 type ContextHandler<T extends KoaContext> = (context: T) => Promise<void>
 
 
-interface RouterOptions {
+interface RouterOptions<T extends KoaContext> {
   method?: HttpMethod,
-  handlers?: ContextHandler<KoaContext>[],
-  middlewares?: ContextHandler<KoaContext>[],
+  handlers?: ContextHandler<T>[],
+  middlewares?: ContextHandler<T>[],
   intro?: string,
   routers?: Router[],
   validators?: RouterValidator;
@@ -124,11 +124,11 @@ export class Router<T extends KoaContext = KoaContext> {
   middlewares: ContextHandler<T>[];
   validators: RouterValidator;
 
-  constructor(prefix?: string, options?: RouterOptions);
+  constructor(prefix?: string, options?: RouterOptions<T>);
 
   add<T extends KoaContext>(router: Router<T>): void;
 
-  new(prefix: string, options?: RouterOptions): void;
+  new(prefix: string, options?: RouterOptions<T>): void;
 
   push(method: HttpMethod, prefix: string, handle: ContextHandler<T>, validator?: RouterValidator): void;
 }
