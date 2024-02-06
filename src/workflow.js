@@ -1,5 +1,6 @@
 'use strict';
 
+const os = require('os');
 const { debug, printer } = require('@axiosleo/cli-tool');
 const Validator = require('validatorjs');
 const is = require('@axiosleo/cli-tool/src/helper/is');
@@ -166,8 +167,16 @@ async function response(context) {
   context.response = response;
   if (context.app.config.debug) {
     printer.yellow('[DEBUG] ');
-    if (context.response.data) {
-      debug.log('response', context.response.data);
+    if (context.response.stack) {
+      let tmp = context.response.stack.split(os.EOL);
+      if (tmp[3]) {
+        let t = tmp[3].trim();
+        if (t.startsWith('at /')) {
+          printer.print('response '.data).print(tmp[3].trim().warning).println();
+        }
+      }
+      // eslint-disable-next-line no-console
+      console.log(context.response.data);
     } else {
       debug.log('response', context.response);
     }
