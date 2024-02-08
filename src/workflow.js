@@ -169,11 +169,12 @@ async function response(context) {
     printer.yellow('[DEBUG] ');
     if (context.response.stack) {
       let tmp = context.response.stack.split(os.EOL);
-      if (tmp[3]) {
-        let t = tmp[3].trim();
-        if (t.startsWith('at /')) {
-          printer.print('response '.data).print(tmp[3].trim().warning).println();
-        }
+      let t1 = tmp[3] ? tmp[3].trim() : '';
+      let t2 = tmp[4] ? tmp[4].trim() : '';
+      if (t1.startsWith('at /')) {
+        printer.print('response '.data).print(t1.warning).println();
+      } else if (t2.startsWith('at /')) {
+        printer.print('response '.data).print(t2.warning).println();
       }
       // eslint-disable-next-line no-console
       console.log(context.response.data);
