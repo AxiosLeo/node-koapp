@@ -12,7 +12,7 @@ const path = require('path');
 const is = require('@axiosleo/cli-tool/src/helper/is');
 const Koa = require('koa');
 const Model = require('./src/model');
-const { dispacher } = require('./src/core');
+const { dispatcher } = require('./src/core');
 const { _assign } = require('@axiosleo/cli-tool/src/helper/obj');
 
 /**
@@ -68,10 +68,10 @@ class KoaApplication extends Application {
     // session middleware
     if (this.config.session) {
       this.koa.keys = [this.app_id];
-      let sessionconfig = {
+      let sessionConfig = {
         key: `koa.sess.${this.app_id}`
       };
-      _assign(sessionconfig, this.config.session);
+      _assign(sessionConfig, this.config.session);
       this.koa.use(session({
         key: `koa.sess.${this.app_id}`, /** (string) cookie key (default is koa.sess) */
         ...this.config.session
@@ -81,8 +81,8 @@ class KoaApplication extends Application {
     // body parser
     this.koa.use(KoaBodyParser(this.config.body_parser));
 
-    // dispacher request
-    this.koa.use(dispacher({
+    // dispatcher request
+    this.koa.use(dispatcher({
       app: this,
       app_id: this.app_id,
       workflow: this.workflow,

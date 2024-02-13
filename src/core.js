@@ -186,7 +186,7 @@ const initContext = (app, ctx, app_id, routes) => {
 /**
  * @param {import('..').Application} app 
  */
-const dispacher = ({ app, app_id, workflow, routes }) => {
+const dispatcher = ({ app, app_id, workflow, routes }) => {
   return async (ctx, next) => {
     let context = initContext(app, ctx, app_id, routes);
     try {
@@ -199,7 +199,7 @@ const dispacher = ({ app, app_id, workflow, routes }) => {
 };
 
 module.exports = {
-  dispacher,
+  dispatcher,
   initContext,
   getRouteInfo,
   resolveRouters,
