@@ -126,11 +126,23 @@ export class Router<T extends KoaContext = KoaContext> {
 
   constructor(prefix?: string, options?: RouterOptions<T>);
 
-  add<T extends KoaContext>(router: Router<T>): void;
+  add<T extends KoaContext>(router: Router<T>): this;
 
-  new(prefix: string, options?: RouterOptions<T>): void;
+  new(prefix: string, options?: RouterOptions<T>): this;
 
-  push(method: HttpMethod, prefix: string, handle: ContextHandler<T>, validator?: RouterValidator): void;
+  push(method: HttpMethod, prefix: string, handle: ContextHandler<T>, validator?: RouterValidator): this;
+
+  get(prefix: string, handle: ContextHandler<T>, validator?: RouterValidator): this;
+
+  post(prefix: string, handle: ContextHandler<T>, validator?: RouterValidator): this;
+
+  put(prefix: string, handle: ContextHandler<T>, validator?: RouterValidator): this;
+
+  patch(prefix: string, handle: ContextHandler<T>, validator?: RouterValidator): this;
+
+  delete(prefix: string, handle: ContextHandler<T>, validator?: RouterValidator): this;
+
+  any(prefix: string, handle: ContextHandler<T>, validator?: RouterValidator): this;
 }
 
 interface AppConfiguration {

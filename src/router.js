@@ -36,17 +36,48 @@ class Router {
   }
 
   /**
-   * 
    * @param {string} method 
    * @param {string} prefix 
-   * @param {*} handle 
+   * @param {import('..').ContextHandler} handle 
+   * @param {import('..').RouterValidator} validator
    */
-  push(method, prefix, handle, validator) {
+  push(method, prefix, handle, validators = null) {
     this.new(prefix, {
       method,
       handlers: [handle],
-      validators: validator
+      validators: validators || {}
     });
+    return this;
+  }
+
+  get(prefix, handle, validator) {
+    this.push('GET', prefix, handle, validator);
+    return this;
+  }
+
+  post(prefix, handle, validator) {
+    this.push('POST', prefix, handle, validator);
+    return this;
+  }
+
+  put(prefix, handle, validator) {
+    this.push('PUT', prefix, handle, validator);
+    return this;
+  }
+
+  patch(prefix, handle, validator) {
+    this.push('PATCH', prefix, handle, validator);
+    return this;
+  }
+
+  delete(prefix, handle, validator) {
+    this.push('DELETE', prefix, handle, validator);
+    return this;
+  }
+
+  any(prefix, handle, validator) {
+    this.push('ANY', prefix, handle, validator);
+    return this;
   }
 }
 
