@@ -7,6 +7,7 @@ const is = require('@axiosleo/cli-tool/src/helper/is');
 const { failed, error, HttpResponse, HttpError } = require('./response');
 const { _foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
 const { getRouteInfo } = require('./core');
+const { _str, _fixed } = require('@axiosleo/cli-tool/src/helper/str');
 
 /**
  * receive request
@@ -26,8 +27,21 @@ async function receive(context) {
     context.headers = context.koa.request.headers;
     context.router = router;
     if (context.app.config.debug) {
-      printer.yellow('[DEBUG] ');
-      debug.log('request router: ', router);
+      printer.println('-'.repeat(30) + '[DEBUG Info]' + '-'.repeat(30));
+      printer.yellow(_fixed('method', 15)).print(': ').green(context.method).println();
+      ['pathinfo', 'validators'].forEach(k => {
+        if (is.empty(router[k])) {
+          return;
+        }
+        printer.yellow(_fixed(k, 15)).print(': ').println(typeof router[k] === 'object' ? JSON.stringify(router[k]) : _str(router[k]));
+      });
+      ['query', 'params', 'body'].forEach(k => {
+        if (is.empty(context[k])) {
+          return;
+        }
+        printer.yellow(_fixed(k, 15)).print(': ').println(typeof context[k] === 'object' ? JSON.stringify(context[k]) : _str(context[k]));
+      });
+      printer.println('-'.repeat(72));
     }
   } catch (err) {
     context.response = err;
@@ -176,6 +190,8 @@ async function response(context) {
       } else if (t2.startsWith('at /')) {
         printer.print('response '.data).print(t2.warning).println();
       }
+      // eslint-disable-next-line no-console
+      console.log('required id: ', context.request_id);
       // eslint-disable-next-line no-console
       console.log(context.response.data);
     } else {
