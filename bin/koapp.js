@@ -13,4 +13,10 @@ const app = new App({
   commands_dir: path.join(__dirname, '../commands'),
 });
 
+app.locale({
+  sets: ['en-US', 'zh-CN',],
+  dir: path.join(__dirname, '../assets/locales'),
+  format: 'js',
+});
+
 app.start();
