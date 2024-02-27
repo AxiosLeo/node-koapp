@@ -27,19 +27,20 @@ async function receive(context) {
     context.headers = context.koa.request.headers;
     context.router = router;
     if (context.app.config.debug) {
+      const wide = 12;
       printer.println('-'.repeat(30) + '[DEBUG Info]' + '-'.repeat(30));
-      printer.yellow(_fixed('method', 15)).print(': ').green(context.method).println();
+      printer.yellow(_fixed('method', wide)).print(': ').green(context.method).println();
       ['pathinfo', 'validators'].forEach(k => {
         if (is.empty(router[k])) {
           return;
         }
-        printer.yellow(_fixed(k, 15)).print(': ').println(typeof router[k] === 'object' ? JSON.stringify(router[k]) : _str(router[k]));
+        printer.yellow(_fixed(k, wide)).print(': ').println(typeof router[k] === 'object' ? JSON.stringify(router[k]) : _str(router[k]));
       });
       ['query', 'params', 'body'].forEach(k => {
         if (is.empty(context[k])) {
           return;
         }
-        printer.yellow(_fixed(k, 15)).print(': ').println(typeof context[k] === 'object' ? JSON.stringify(context[k]) : _str(context[k]));
+        printer.yellow(_fixed(k, wide)).print(': ').println(typeof context[k] === 'object' ? JSON.stringify(context[k]) : _str(context[k]));
       });
       printer.println('-'.repeat(72));
     }
