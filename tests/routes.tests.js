@@ -14,8 +14,9 @@ describe('router test case', () => {
 
     const moduleRouters = new Router('/module');
     router.add(moduleRouters);
+    router.add('/{:module}', moduleRouters);
 
-    const routes = resolveRouters([router]);
+    const routes = resolveRouters(router);
     const result = getRouteInfo(routes, '/api/v1/module/123');
     expect(result).not.to.be.null;
   });
