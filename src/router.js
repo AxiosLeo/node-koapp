@@ -13,14 +13,28 @@ class Router {
     if (this.method) {
       this.method = this.method.toUpperCase();
     }
+    this.subRouters = {};
   }
 
   /**
+   * @param {string|Router} prefix
    * @param {Router} router 
    * @returns 
    */
-  add(router) {
-    this.routers.push(router);
+  add(prefix, router) {
+    if (prefix instanceof Router) {
+      this.routers.push(prefix);
+      return this;
+    }
+    if (!prefix && router instanceof Router) {
+      this.routers.push(prefix);
+      return this;
+    }
+    if (!this.subRouters[prefix]) {
+      this.subRouters[prefix] = new Router(prefix);
+      this.routers.push(this.subRouters[prefix]);
+    }
+    this.subRouters[prefix].add(router);
     return this;
   }
 
