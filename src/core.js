@@ -32,13 +32,6 @@ const recur = (tree, prefix, router, middlewares = []) => {
   let curr = tree;
   let key = '';
   if (trace.length > 1) {
-    let routerClone = {
-      prefix: router.prefix || '',
-      method: router.method || '',
-      handlers: router.handlers || [],
-      middlewares: router.middlewares || [],
-      validators: router.validators || {},
-    };
     trace.forEach((t) => {
       if (t.indexOf('{:') === 0) {
         key = '*';
@@ -51,22 +44,29 @@ const recur = (tree, prefix, router, middlewares = []) => {
       }
       curr = curr[key];
     });
-    if (!curr['__route___']) {
-      curr['__route___'] = [
-        {
-          prefix,
-          params,
-          router: routerClone,
-          middlewares: middlewaresClone,
-        }
-      ];
-    } else {
-      curr['__route___'].push({
-        prefix,
-        params,
-        router: routerClone,
-        middlewares: middlewaresClone,
-      });
+    let routeNode = {};
+    if (!is.empty(params)) {
+      routeNode.params = params;
+    }
+    if (router.method) {
+      routeNode.method = router.method;
+    }
+    if (!is.empty(router.handlers)) {
+      routeNode.handlers = router.handlers;
+    }
+    if (!is.empty(router.validators)) {
+      routeNode.validators = router.validators;
+    }
+    if (!is.empty(middlewaresClone)) {
+      routeNode.middlewares = middlewaresClone;
+    }
+
+    if (!is.empty(routeNode)) {
+      if (!curr['__route___']) {
+        curr['__route___'] = [routeNode];
+      } else {
+        curr['__route___'].push(routeNode);
+      }
     }
   }
 };
@@ -98,14 +98,15 @@ const getRouterItem = ({ routes, method, pathinfo, params }) => {
   }
   for (let i = 0; i < routes.length; i++) {
     const route = routes[i];
-    const methods = route.router.method.split('|');
+    const methods = route.method ? route.method.split('|') : [];
     if (methods.indexOf('ANY') > -1 || methods.indexOf(method) > -1) {
       const routeInfo = {
         pathinfo,
         params: {},
-        validators: route.router.validators ? route.router.validators : {},
-        handlers: route.router.handlers ? route.router.handlers : [],
-        middlewares: route.middlewares,
+        method: route.method,
+        validators: route.validators ? route.validators : { params: {}, body: {}, query: {} },
+        handlers: route.handlers ? route.handlers : [],
+        middlewares: route.middlewares ? route.middlewares : [],
       };
       if (route.params && route.params.length) {
         route.params.forEach((item, index) => {
