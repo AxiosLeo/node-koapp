@@ -127,7 +127,7 @@ export class Router<T extends KoaContext = KoaContext> {
   constructor(prefix?: string, options?: RouterOptions<T>);
 
   add<T extends KoaContext>(router: Router<T>): this;
-  add<T extends KoaContext>(prefix: string, router: Router<T>): this;
+  add<T extends KoaContext>(prefix: string, ...router: Router<T>[]): this;
 
   new(prefix: string, options?: RouterOptions<T>): this;
 

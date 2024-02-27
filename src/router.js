@@ -1,40 +1,42 @@
 'use strict';
 
+const is = require('@axiosleo/cli-tool/src/helper/is');
+
 class Router {
   constructor(prefix = '', options = {}) {
     Object.assign(this, {
       prefix: prefix || '',
       method: '',
       handlers: [],
-      routers: [],
       middlewares: [],
-      validators: { params: {}, query: {}, body: {} }
+      validators: {}
     }, options || {});
     if (this.method) {
       this.method = this.method.toUpperCase();
     }
     this.subRouters = {};
+    this.routers = [];
   }
 
   /**
    * @param {string|Router} prefix
-   * @param {Router} router 
+   * @param {Router|Routers} router 
    * @returns 
    */
-  add(prefix, router) {
-    if (prefix instanceof Router) {
+  add(prefix, ...router) {
+    if (is.invalid(prefix)) {
+      prefix = '';
+    }
+    if (!(prefix instanceof Router)) {
+      if (!this.subRouters[prefix]) {
+        this.subRouters[prefix] = new Router(prefix);
+        this.routers.push(this.subRouters[prefix]);
+      }
+      this.subRouters[prefix].add(...router);
+    } else {
       this.routers.push(prefix);
-      return this;
+      this.routers.push(...router);
     }
-    if (!prefix && router instanceof Router) {
-      this.routers.push(prefix);
-      return this;
-    }
-    if (!this.subRouters[prefix]) {
-      this.subRouters[prefix] = new Router(prefix);
-      this.routers.push(this.subRouters[prefix]);
-    }
-    this.subRouters[prefix].add(router);
     return this;
   }
 
