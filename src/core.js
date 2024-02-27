@@ -1,6 +1,7 @@
 'use strict';
 
 const { v4, v5, validate } = require('uuid');
+const is = require('@axiosleo/cli-tool/src/helper/is');
 
 const resolvePathinfo = (pathinfo) => {
   let trace = [];
@@ -31,6 +32,13 @@ const recur = (tree, prefix, router, middlewares = []) => {
   let curr = tree;
   let key = '';
   if (trace.length > 1) {
+    let routerClone = {
+      prefix: router.prefix || '',
+      method: router.method || '',
+      handlers: router.handlers || [],
+      middlewares: router.middlewares || [],
+      validators: router.validators || {},
+    };
     trace.forEach((t) => {
       if (t.indexOf('{:') === 0) {
         key = '*';
@@ -48,7 +56,7 @@ const recur = (tree, prefix, router, middlewares = []) => {
         {
           prefix,
           params,
-          router,
+          router: routerClone,
           middlewares: middlewaresClone,
         }
       ];
@@ -56,7 +64,7 @@ const recur = (tree, prefix, router, middlewares = []) => {
       curr['__route___'].push({
         prefix,
         params,
-        router,
+        router: routerClone,
         middlewares: middlewaresClone,
       });
     }
@@ -64,6 +72,9 @@ const recur = (tree, prefix, router, middlewares = []) => {
 };
 
 const resolveRouters = (routers = []) => {
+  if (!is.array(routers)) {
+    routers = [routers];
+  }
   const tree = {};
   routers.forEach(item => recur(tree, '', item, []));
   return tree;
