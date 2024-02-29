@@ -11,6 +11,7 @@
     "url": "https://github.com/AxiosLeo/node-koapp"
   },
   "scripts": {
+    "dev": "nodemon",
     "lint": "tsc ./index.d.ts && eslint --fix src/",
     "test": "mocha --reporter spec --timeout 3000 tests/*.tests.js",
     "test-cov": "nyc -r=lcov -r=html -r=text -r=json mocha -t 10000 -R spec tests/*.tests.js",
