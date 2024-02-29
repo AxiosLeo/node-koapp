@@ -78,6 +78,7 @@ interface RouterInfo {
   validators: RouterValidator;
   middlewares: ContextHandler<KoaContext>[];
   handlers: ContextHandler<KoaContext>[];
+  afters: ContextHandler<KoaContext>[];
   params: {
     [key: string]: string;
   };
@@ -102,6 +103,7 @@ interface KoaContext extends AppContext {
   body?: any,
   query?: any,
   headers?: IncomingHttpHeaders,
+  response?: HttpResponse | HttpError,
 }
 
 type ContextHandler<T extends KoaContext> = (context: T) => Promise<void>
@@ -111,6 +113,7 @@ interface RouterOptions<T extends KoaContext> {
   method?: HttpMethod,
   handlers?: ContextHandler<T>[],
   middlewares?: ContextHandler<T>[],
+  afters?: ContextHandler<T>[],
   intro?: string,
   routers?: Router[],
   validators?: RouterValidator;
@@ -123,6 +126,7 @@ export class Router<T extends KoaContext = KoaContext> {
   handlers: ContextHandler<T>[];
   middlewares: ContextHandler<T>[];
   validators: RouterValidator;
+  afters?: ContextHandler<T>[];
 
   constructor(prefix?: string, options?: RouterOptions<T>);
 

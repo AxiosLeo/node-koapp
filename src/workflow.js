@@ -202,10 +202,33 @@ async function response(context) {
   context.app.emit('response', context);
 }
 
+/**
+ * Executes the after logic for the given context.
+ * @param {import("..").KoaContext & { app: import("..").Application}} context - The context object.
+ */
+async function after(context) {
+  try {
+    context.app.emit('request_end', context);
+    if (context.router && context.router.afters && context.router.afters.length > 0) {
+      debug.log('afters', context.router.afters);
+      await _foreach(context.router.afters, async (after) => {
+        try {
+          await after(context);
+        } catch (err) {
+          context.app.emit('after_error', context, err);
+        }
+      });
+    }
+  } catch (err) {
+    context.response = err;
+  }
+}
+
 module.exports = {
   receive,
   validate,
   middleware,
   handle,
-  response
+  response,
+  after
 };

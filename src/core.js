@@ -16,15 +16,17 @@ const resolvePathinfo = (pathinfo) => {
   return trace;
 };
 
-const recur = (tree, prefix, router, middlewares = []) => {
+const recur = (tree, prefix, router, middlewares = [], afters = []) => {
   const middlewaresClone = router.middlewares && router.middlewares.length > 0 ?
     middlewares.concat(router.middlewares) : middlewares.concat();
+  const aftersClone = router.afters && router.afters.length > 0 ?
+    afters.concat(router.afters) : afters.concat();
   if (router.prefix) {
     prefix = prefix + router.prefix;
   }
   if (router.routers && router.routers.length) {
     router.routers.forEach((item) => {
-      recur(tree, prefix, item, middlewaresClone);
+      recur(tree, prefix, item, middlewaresClone, aftersClone);
     });
   }
   const trace = resolvePathinfo(prefix);
@@ -59,6 +61,9 @@ const recur = (tree, prefix, router, middlewares = []) => {
     }
     if (!is.empty(middlewaresClone)) {
       routeNode.middlewares = middlewaresClone;
+    }
+    if (!is.empty(aftersClone)) {
+      routeNode.afters = aftersClone;
     }
 
     if (!is.empty(routeNode)) {
@@ -107,6 +112,7 @@ const getRouterItem = ({ routes, method, pathinfo, params }) => {
         validators: route.validators ? route.validators : { params: {}, body: {}, query: {} },
         handlers: route.handlers ? route.handlers : [],
         middlewares: route.middlewares ? route.middlewares : [],
+        afters: route.afters ? route.afters : []
       };
       if (route.params && route.params.length) {
         route.params.forEach((item, index) => {
