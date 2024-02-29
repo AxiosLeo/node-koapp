@@ -16,7 +16,14 @@ if (require.main === module) {
       method: context.method
     });
   };
-  const root = new Router();
+  const root = new Router(null, {
+    middlewares: [async (context) => {
+      debug.log(`[${context.app_id}] ${context.method}: ${context.router.pathinfo}`);
+    }],
+    afters: [async (context) => {
+      debug.log(context.response);
+    }]
+  });
 
   // default
   root.push('any', '/***', async (context) => {
