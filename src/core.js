@@ -108,7 +108,7 @@ const getRouterItem = ({ routes, method, pathinfo, params }) => {
       const routeInfo = {
         pathinfo,
         params: {},
-        method: route.method,
+        methods: methods,
         validators: route.validators ? route.validators : { params: {}, body: {}, query: {} },
         handlers: route.handlers ? route.handlers : [],
         middlewares: route.middlewares ? route.middlewares : [],

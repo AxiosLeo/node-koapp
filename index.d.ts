@@ -79,6 +79,7 @@ interface RouterInfo {
   middlewares: ContextHandler<KoaContext>[];
   handlers: ContextHandler<KoaContext>[];
   afters: ContextHandler<KoaContext>[];
+  methods: string[];
   params: {
     [key: string]: string;
   };
