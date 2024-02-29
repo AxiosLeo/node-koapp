@@ -210,7 +210,6 @@ async function after(context) {
   try {
     context.app.emit('request_end', context);
     if (context.router && context.router.afters && context.router.afters.length > 0) {
-      debug.log('afters', context.router.afters);
       await _foreach(context.router.afters, async (after) => {
         try {
           await after(context);
