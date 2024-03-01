@@ -15,11 +15,11 @@ type StatusCode = string | '000;Unknown Error' |
 type HttpMethod = 'ANY' | 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS' | 'TRACE' | 'CONNECT' |
   'any' | 'get' | 'post' | 'put' | 'delete' | 'patch' | 'head' | 'options' | 'trace' | 'connect' | string;
 
-export function response(data: unknown, code?: StatusCode, httpstatus?: number, headers?: Record<string, string>): void;
-export function result(data: unknown, httpstatus?: number, headers?: Record<string, string>): void;
+export function response(data: unknown, code?: StatusCode, httpStatus?: number, headers?: Record<string, string>): void;
+export function result(data: unknown, httpStatus?: number, headers?: Record<string, string>): void;
 export function success(data?: unknown, headers?: Record<string, string>): void;
-export function failed(data?: unknown, code?: StatusCode, httpstatus?: number, headers?: Record<string, string>): void;
-export function error(httpstatus: number, msg: string, headers?: Record<string, string>): void;
+export function failed(data?: unknown, code?: StatusCode, httpStatus?: number, headers?: Record<string, string>): void;
+export function error(httpStatus: number, msg: string, headers?: Record<string, string>): void;
 export function log(...data: any): void;
 
 export interface HttpResponseConfig {
