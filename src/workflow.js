@@ -178,6 +178,8 @@ async function response(context) {
       status: 500,
       data: 'Internal Server Error'
     });
+    printer.yellow('[DEBUG] ');
+    debug.log(response);
   }
   context.response = response;
   if (context.app.config.debug) {
