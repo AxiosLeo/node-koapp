@@ -155,6 +155,9 @@ async function response(context) {
       },
     });
   } else if (context.app.config.debug) {
+    const err = new Error();
+    printer.yellow('[DEBUG] ');
+    debug.log({ response: context.response, stack: err.stack });
     response = new HttpResponse({
       format: 'json',
       status: 500,
@@ -168,18 +171,13 @@ async function response(context) {
         },
       }
     });
-    const err = new Error();
-    printer.yellow('[DEBUG] ');
-    debug.log(err);
-    printer.yellow('[DEBUG] ');
-    debug.log({ err: context.response });
   } else {
+    printer.yellow('[DEBUG] ');
+    debug.log(context.response);
     response = new HttpResponse({
       status: 500,
       data: 'Internal Server Error'
     });
-    printer.yellow('[DEBUG] ');
-    debug.log(response);
   }
   context.response = response;
   if (context.app.config.debug) {
