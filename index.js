@@ -25,6 +25,9 @@ const handleRes = (context) => {
   if (is.object(response.data)) {
     response.data.request_id = context.request_id;
     response.data.timestamp = (new Date()).getTime();
+    if (!response.data.code) {
+      response.data.code = response.status;
+    }
   }
   Object.keys(response.headers).forEach(k => {
     context.koa.set(k, response.headers[k]);
