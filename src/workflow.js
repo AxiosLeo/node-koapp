@@ -1,7 +1,8 @@
+/* eslint-disable no-console */
 'use strict';
 
 const os = require('os');
-const { debug, printer } = require('@axiosleo/cli-tool');
+const { printer } = require('@axiosleo/cli-tool');
 const Validator = require('validatorjs');
 const is = require('@axiosleo/cli-tool/src/helper/is');
 const { failed, error, HttpResponse, HttpError } = require('./response');
@@ -155,9 +156,6 @@ async function response(context) {
       },
     });
   } else if (context.app.config.debug) {
-    const err = new Error();
-    printer.yellow('[DEBUG] ');
-    debug.log({ response: context.response, stack: err.stack });
     response = new HttpResponse({
       format: 'json',
       status: 500,
@@ -172,8 +170,6 @@ async function response(context) {
       }
     });
   } else {
-    printer.yellow('[DEBUG] ');
-    debug.log(context.response);
     response = new HttpResponse({
       status: 500,
       data: 'Internal Server Error'
@@ -181,23 +177,26 @@ async function response(context) {
   }
   context.response = response;
   if (context.app.config.debug) {
+    printer.yellow('[DEBUG] ');
     if (context.response.stack) {
       let tmp = context.response.stack.split(os.EOL);
       let t1 = tmp[3] ? tmp[3].trim() : '';
       let t2 = tmp[4] ? tmp[4].trim() : '';
       if (t1.startsWith('at /')) {
         printer.yellow('[DEBUG] ').print('response '.data).print(t1.warning).println();
-        // eslint-disable-next-line no-console
         console.log('required id: ', context.request_id);
-        // eslint-disable-next-line no-console
         console.log(context.response.data);
       } else if (t2.startsWith('at /')) {
         printer.yellow('[DEBUG] ').print('response '.data).print(t2.warning).println();
-        // eslint-disable-next-line no-console
         console.log('required id: ', context.request_id);
-        // eslint-disable-next-line no-console
         console.log(context.response.data);
+      } else {
+        const e = new Error();
+        console.log({ message: context.response.message, data: context.response.data, stack: e.stack });
       }
+    } else if (context.response.data) {
+      console.log(context.response.data);
+
     }
   }
   context.app.emit('response', context);
