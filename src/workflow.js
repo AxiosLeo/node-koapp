@@ -181,22 +181,23 @@ async function response(context) {
   }
   context.response = response;
   if (context.app.config.debug) {
-    printer.yellow('[DEBUG] ');
     if (context.response.stack) {
       let tmp = context.response.stack.split(os.EOL);
       let t1 = tmp[3] ? tmp[3].trim() : '';
       let t2 = tmp[4] ? tmp[4].trim() : '';
       if (t1.startsWith('at /')) {
-        printer.print('response '.data).print(t1.warning).println();
+        printer.yellow('[DEBUG] ').print('response '.data).print(t1.warning).println();
+        // eslint-disable-next-line no-console
+        console.log('required id: ', context.request_id);
+        // eslint-disable-next-line no-console
+        console.log(context.response.data);
       } else if (t2.startsWith('at /')) {
-        printer.print('response '.data).print(t2.warning).println();
+        printer.yellow('[DEBUG] ').print('response '.data).print(t2.warning).println();
+        // eslint-disable-next-line no-console
+        console.log('required id: ', context.request_id);
+        // eslint-disable-next-line no-console
+        console.log(context.response.data);
       }
-      // eslint-disable-next-line no-console
-      console.log('required id: ', context.request_id);
-      // eslint-disable-next-line no-console
-      console.log(context.response.data);
-    } else {
-      debug.log('response', context.response);
     }
   }
   context.app.emit('response', context);
