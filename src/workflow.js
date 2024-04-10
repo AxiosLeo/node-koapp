@@ -126,7 +126,9 @@ function showDebugInfo(context, location) {
   }
   const wide = 12;
   printer.println('-'.repeat(30) + '[DEBUG Info]' + '-'.repeat(30));
-  printer.print('response '.data).print(location).println();
+  if (location) {
+    printer.print('response    '.data).print(': ').print(location.trim().yellow).println();
+  }
   printer.yellow(_fixed('datetime', wide)).print(': ').println(new Date().toLocaleString());
   printer.yellow(_fixed('method', wide)).print(': ').green(context.method).println();
   ['pathinfo', 'validators'].forEach(k => {
@@ -195,20 +197,18 @@ function response(context) {
   if (context.app.config.debug) {
     if (context.response.stack) {
       let tmp = context.response.stack.split(os.EOL);
-      let t1 = tmp[3] ? tmp[3].trim() : '';
-      let t2 = tmp[4] ? tmp[4].trim() : '';
-      if (t1.startsWith('at /')) {
-        showDebugInfo(context, t1.warning);
-      } else if (t2.startsWith('at /')) {
-        showDebugInfo(context, t2.warning);
+      let t = tmp.find((s) => !s.startsWith('Error:') && s.indexOf('node_modules') === -1);
+      if (t) {
+        showDebugInfo(context, t);
       } else if (error) {
         showDebugInfo(context);
         const e = new Error();
         console.log({ message: context.response.message, data: context.response.data, stack: e.stack });
+      } else {
+        showDebugInfo(context);
       }
     } else if (context.response.data) {
       console.log(context.response.data);
-
     }
   }
   context.app.emit('response', context);
