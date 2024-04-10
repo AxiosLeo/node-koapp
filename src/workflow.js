@@ -119,14 +119,14 @@ async function handle(context) {
  * 
  * @param {import("..").KoaContext} context 
  */
-function showDebugInfo(context, location) {
+function showDebugInfo(context, location, error) {
   const router = context.router;
   if (!router) {
     return;
   }
   const wide = 12;
   printer.println('-'.repeat(30) + '[DEBUG Info]' + '-'.repeat(30));
-  if (location) {
+  if (location && location.indexOf('node:internal') === -1) {
     printer.print('response    '.data).print(': ').print(location.trim().yellow).println();
   }
   printer.yellow(_fixed('datetime', wide)).print(': ').println(new Date().toLocaleString());
@@ -145,8 +145,10 @@ function showDebugInfo(context, location) {
   });
   // printer.println('-'.repeat(72));
   printer.yellow(_fixed('requestID', wide)).print(': ').println(context.request_id);
-  printer.yellow(_fixed('reponseData', wide)).print(': ');
-  console.log(context.response.data);
+  if (!error) {
+    printer.yellow('responseData').print(': ');
+    console.log(context.response.data);
+  }
 }
 
 /**
@@ -188,28 +190,22 @@ function response(context) {
       }
     });
   } else {
+    error = context.response;
     response = new HttpResponse({
       status: 500,
       data: 'Internal Server Error'
     });
   }
   context.response = response;
-  if (context.app.config.debug) {
-    if (context.response.stack) {
-      let tmp = context.response.stack.split(os.EOL);
-      let t = tmp.find((s) => !s.startsWith('Error:') && s.indexOf('node_modules') === -1);
-      if (t) {
-        showDebugInfo(context, t);
-      } else if (error) {
-        showDebugInfo(context);
-        const e = new Error();
-        console.log({ message: context.response.message, data: context.response.data, stack: e.stack });
-      } else {
-        showDebugInfo(context);
-      }
-    } else if (context.response.data) {
-      console.log(context.response.data);
-    }
+  if (error) {
+    showDebugInfo(context, '', error);
+    printer.red('requestError').print(': ');
+    console.log(error);
+  }
+  if (context.app.config.debug && !error) {
+    let tmp = context.response.stack.split(os.EOL);
+    let t = tmp.find((s) => !s.startsWith('Error:') && s.indexOf('node_modules') === -1);
+    showDebugInfo(context, t);
   }
   context.app.emit('response', context);
 }
