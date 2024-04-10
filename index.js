@@ -22,12 +22,16 @@ const { _assign } = require('@axiosleo/cli-tool/src/helper/obj');
 const handleRes = (context) => {
   let response = context.response;
   context.koa.type = response.format;
-  if (is.object(response.data)) {
+  if (!is.string(response.data)) {
+    let code, message;
+    if (response.code) {
+      [code, message] = response.code.split(';');
+    }
     response.data = {
       request_id: context.request_id,
       timestamp: (new Date()).getTime(),
-      code: response.code || `${response.status}`,
-      message: response.message || '',
+      code: code || `${response.status}`,
+      message: message || '',
       data: response.data,
     };
   }
