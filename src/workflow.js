@@ -14,7 +14,7 @@ const { _str, _fixed } = require('@axiosleo/cli-tool/src/helper/str');
  * receive request
  * @param {import("..").KoaContext} context 
  */
-async function receive(context) {
+function receive(context) {
   try {
     context.app.emit('receive', context);
     const router = getRouteInfo(context.routes, context.koa.path, context.koa.method);
@@ -27,24 +27,6 @@ async function receive(context) {
     context.query = context.koa.request.query ? JSON.parse(JSON.stringify(context.koa.request.query)) : {};
     context.headers = context.koa.request.headers;
     context.router = router;
-    if (context.app.config.debug) {
-      const wide = 12;
-      printer.println('-'.repeat(30) + '[DEBUG Info]' + '-'.repeat(30));
-      printer.yellow(_fixed('method', wide)).print(': ').green(context.method).println();
-      ['pathinfo', 'validators'].forEach(k => {
-        if (is.empty(router[k])) {
-          return;
-        }
-        printer.yellow(_fixed(k, wide)).print(': ').println(typeof router[k] === 'object' ? JSON.stringify(router[k]) : _str(router[k]));
-      });
-      ['query', 'params', 'body'].forEach(k => {
-        if (is.empty(context[k])) {
-          return;
-        }
-        printer.yellow(_fixed(k, wide)).print(': ').println(typeof context[k] === 'object' ? JSON.stringify(context[k]) : _str(context[k]));
-      });
-      printer.println('-'.repeat(72));
-    }
   } catch (err) {
     context.response = err;
     return 'response';
@@ -55,7 +37,7 @@ async function receive(context) {
  * validate request
  * @param {import("..").KoaContext} context 
  */
-async function validate(context) {
+function validate(context) {
   try {
     context.app.emit('validate', context);
     if (context.router && context.router.validators) {
@@ -134,10 +116,42 @@ async function handle(context) {
 }
 
 /**
+ * 
+ * @param {import("..").KoaContext} context 
+ */
+function showDebugInfo(context, location) {
+  const router = context.router;
+  if (!router) {
+    return;
+  }
+  const wide = 12;
+  printer.println('-'.repeat(30) + '[DEBUG Info]' + '-'.repeat(30));
+  printer.print('response '.data).print(location).println();
+  printer.yellow(_fixed('datetime', wide)).print(': ').println(new Date().toLocaleString());
+  printer.yellow(_fixed('method', wide)).print(': ').green(context.method).println();
+  ['pathinfo', 'validators'].forEach(k => {
+    if (is.empty(router[k])) {
+      return;
+    }
+    printer.yellow(_fixed(k, wide)).print(': ').println(typeof router[k] === 'object' ? JSON.stringify(router[k]) : _str(router[k]));
+  });
+  ['query', 'params', 'body'].forEach(k => {
+    if (is.empty(context[k])) {
+      return;
+    }
+    printer.yellow(_fixed(k, wide)).print(': ').println(typeof context[k] === 'object' ? JSON.stringify(context[k]) : _str(context[k]));
+  });
+  // printer.println('-'.repeat(72));
+  printer.yellow(_fixed('requestID', wide)).print(': ').println(context.request_id);
+  printer.yellow(_fixed('reponseData', wide)).print(': ');
+  console.log(context.response.data);
+}
+
+/**
  * set response
  * @param {import("..").KoaContext} context 
  */
-async function response(context) {
+function response(context) {
   if (!context.response) {
     return;
   }
@@ -145,6 +159,7 @@ async function response(context) {
     context.response = context.curr.error || new Error('unknown error');
   }
   let response;
+  let error;
   if (context.response instanceof HttpResponse) {
     response = context.response;
   } else if (context.response instanceof HttpError) {
@@ -156,6 +171,7 @@ async function response(context) {
       },
     });
   } else if (context.app.config.debug) {
+    error = context.response;
     response = new HttpResponse({
       format: 'json',
       status: 500,
@@ -177,20 +193,16 @@ async function response(context) {
   }
   context.response = response;
   if (context.app.config.debug) {
-    printer.yellow('[DEBUG] ');
     if (context.response.stack) {
       let tmp = context.response.stack.split(os.EOL);
       let t1 = tmp[3] ? tmp[3].trim() : '';
       let t2 = tmp[4] ? tmp[4].trim() : '';
       if (t1.startsWith('at /')) {
-        printer.yellow('[DEBUG] ').print('response '.data).print(t1.warning).println();
-        console.log('required id: ', context.request_id);
-        console.log(context.response.data);
+        showDebugInfo(context, t1.warning);
       } else if (t2.startsWith('at /')) {
-        printer.yellow('[DEBUG] ').print('response '.data).print(t2.warning).println();
-        console.log('required id: ', context.request_id);
-        console.log(context.response.data);
-      } else {
+        showDebugInfo(context, t2.warning);
+      } else if (error) {
+        showDebugInfo(context);
         const e = new Error();
         console.log({ message: context.response.message, data: context.response.data, stack: e.stack });
       }
