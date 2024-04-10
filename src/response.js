@@ -7,7 +7,9 @@ class HttpResponse extends Error {
       format: 'text',
       headers: {},
       status: 200,
-      data: null
+      data: null,
+      code: '',
+      message: '',
     }, config);
   }
 }
@@ -30,15 +32,10 @@ const result = (data, status = 200, headers = {}) => {
 };
 
 const response = (data, code = '200;Success', status = 200, headers = {}, format = 'json') => {
-  const [c, m] = code.split(';');
   throw new HttpResponse({
     status,
-    data: {
-      timestamp: (new Date()).getTime(),
-      code: c,
-      message: m,
-      data,
-    },
+    data,
+    code,
     headers,
     format
   });
@@ -48,7 +45,7 @@ const success = (data = {}, headers = {}) => {
   response(data, '200;Success', 200, headers);
 };
 
-const failed = (data = {}, code = '500;Internal Server Error', status = 501, headers = {}) => {
+const failed = (data = {}, code = '501;Internal Server Error', status = 501, headers = {}) => {
   response(data, code, status, headers);
 };
 

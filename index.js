@@ -23,11 +23,13 @@ const handleRes = (context) => {
   let response = context.response;
   context.koa.type = response.format;
   if (is.object(response.data)) {
-    response.data.request_id = context.request_id;
-    response.data.timestamp = (new Date()).getTime();
-    if (!response.data.code) {
-      response.data.code = `${response.status}`;
-    }
+    response.data = {
+      request_id: context.request_id,
+      timestamp: (new Date()).getTime(),
+      code: response.code || `${response.status}`,
+      message: response.message || '',
+      data: response.data,
+    };
   }
   Object.keys(response.headers).forEach(k => {
     context.koa.set(k, response.headers[k]);
