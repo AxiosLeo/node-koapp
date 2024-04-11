@@ -9,7 +9,6 @@ const response = require('./src/response');
 const session = require('koa-session');
 const KoaStaticServer = require('koa-static-server');
 const path = require('path');
-const is = require('@axiosleo/cli-tool/src/helper/is');
 const Koa = require('koa');
 const Model = require('./src/model');
 const { dispatcher } = require('./src/core');
@@ -21,8 +20,7 @@ const { _assign } = require('@axiosleo/cli-tool/src/helper/obj');
  */
 const handleRes = (context) => {
   let response = context.response;
-  context.koa.type = response.format;
-  if (!is.string(response.data)) {
+  if (response.format === 'json') {
     let code, message;
     if (response.code) {
       [code, message] = response.code.split(';');
@@ -35,6 +33,7 @@ const handleRes = (context) => {
       data: response.data,
     };
   }
+  context.koa.type = response.format;
   Object.keys(response.headers).forEach(k => {
     context.koa.set(k, response.headers[k]);
   });
