@@ -63,6 +63,11 @@ if (require.main === module) {
     });
   });
 
+  // send object res by result() method
+  root.get('/result/obj', async () => {
+    result([{ test: 123 }]);
+  });
+
   // send res by success() method
   root.push('any', '/success', async () => {
     success('Hello, World!');
