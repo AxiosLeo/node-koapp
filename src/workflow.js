@@ -170,9 +170,8 @@ function response(context) {
     response = new HttpResponse({
       format: 'json',
       status: context.response.status,
-      data: {
-        message: context.response.message,
-      },
+      message: context.response.message,
+      data: {}
     });
   } else if (context.app.config.debug) {
     error = context.response;
