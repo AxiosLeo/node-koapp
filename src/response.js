@@ -10,6 +10,7 @@ class HttpResponse extends Error {
       data: null,
       code: '',
       message: '',
+      notResolve: false
     }, config);
   }
 }
@@ -27,7 +28,8 @@ const result = (data, status = 200, headers = {}) => {
   throw new HttpResponse({
     status,
     data,
-    headers
+    headers,
+    notResolve: true
   });
 };
 
