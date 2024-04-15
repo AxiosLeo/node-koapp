@@ -77,7 +77,7 @@ class KoaApplication extends Application {
     if (this.config.session) {
       this.koa.keys = [this.app_id];
       let sessionConfig = {
-        key: `koa.sess.${this.app_id}`
+        key: `koa.sess.${this.config.listen_host}.${this.config.port}`
       };
       _assign(sessionConfig, this.config.session);
       this.koa.use(session({
