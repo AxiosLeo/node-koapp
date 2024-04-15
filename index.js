@@ -20,7 +20,7 @@ const { _assign } = require('@axiosleo/cli-tool/src/helper/obj');
  */
 const handleRes = (context) => {
   let response = context.response;
-  if (response.format === 'json') {
+  if (response.format === 'json' && response.notResolve !== true) {
     let code, message;
     if (response.code) {
       [code, message] = response.code.split(';');
@@ -29,7 +29,7 @@ const handleRes = (context) => {
       request_id: context.request_id,
       timestamp: (new Date()).getTime(),
       code: code || `${response.status}`,
-      message: message || '',
+      message: message || context.response.message,
       data: response.data,
     };
   }
