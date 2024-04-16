@@ -4,6 +4,7 @@ import { Context, Configuration, Workflow } from '@axiosleo/cli-tool';
 import { IncomingHttpHeaders } from 'http';
 import { Rules, ErrorMessages, Validator } from 'validatorjs';
 import { EventEmitter } from 'events';
+import { File } from '@koa/multer';
 
 type StatusCode = string | '000;Unknown Error' |
   '200;Success' | '404;Not Found' |
@@ -91,7 +92,6 @@ interface AppContext extends Context {
   config: AppConfiguration,
 }
 
-
 interface KoaContext extends AppContext {
   koa: Koa.ParameterizedContext,
   method: HttpMethod,
@@ -102,6 +102,8 @@ interface KoaContext extends AppContext {
   app_key?: string,
   params?: any,
   body?: any,
+  file?: File | null,
+  files?: File[],
   query?: any,
   headers?: IncomingHttpHeaders,
   response?: HttpResponse | HttpError,

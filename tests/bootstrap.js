@@ -134,6 +134,11 @@ if (require.main === module) {
     }
   });
 
+  root.post('/upload', async (context) => {
+    // read FormData
+    success(context.koa.request.files);
+  });
+
   const app = new KoaApplication({
     debug: true,
     routers: [root]

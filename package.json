@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "@types/node": "^18.14.2",
+    "@types/koa__multer": "^2.0.7",
     "chai": "^4.3.7",
     "chai-as-promised": "^7.1.1",
     "eslint": "^8.35",

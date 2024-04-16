@@ -27,6 +27,8 @@ function receive(context) {
     context.query = context.koa.request.query ? JSON.parse(JSON.stringify(context.koa.request.query)) : {};
     context.headers = context.koa.request.headers;
     context.router = router;
+    context.files = context.koa.request.files || [];
+    context.file = context.koa.request.file || null;
   } catch (err) {
     context.response = err;
     return 'response';
