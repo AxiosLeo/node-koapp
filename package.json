@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@axiosleo/cli-tool": "^1.6.1",
+    "@koa/multer": "^3.0.2",
     "json-schema-to-typescript": "^13.1.2",
     "koa": "^2.13.4",
     "koa-bodyparser": "^4.3.0",

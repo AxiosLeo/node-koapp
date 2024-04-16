@@ -13,9 +13,9 @@ const Koa = require('koa');
 const Model = require('./src/model');
 const { dispatcher } = require('./src/core');
 const { _assign } = require('@axiosleo/cli-tool/src/helper/obj');
+const multer = require('@koa/multer');
 
 /**
- * 
  * @param {import('./index').KoaContext} context 
  */
 const handleRes = (context) => {
@@ -67,6 +67,7 @@ class KoaApplication extends Application {
       static: {
         rootDir: path.join(__dirname, './public'),
       },
+      body_parser: {}
     }, config);
 
     printer.println().green('start on ').println(`http://localhost:${config.port}`).println();
@@ -76,15 +77,14 @@ class KoaApplication extends Application {
     // session middleware
     if (this.config.session) {
       this.koa.keys = [this.app_id];
-      let sessionConfig = {
-        key: `koa.sess.${this.config.listen_host}.${this.config.port}`
-      };
-      _assign(sessionConfig, this.config.session);
       this.koa.use(session({
         key: `koa.sess.${this.app_id}`, /** (string) cookie key (default is koa.sess) */
         ...this.config.session
       }, this.koa));
     }
+
+    const upload = multer();
+    this.koa.use(upload.any());
 
     // body parser
     this.koa.use(KoaBodyParser(this.config.body_parser));
