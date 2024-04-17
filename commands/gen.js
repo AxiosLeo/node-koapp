@@ -1,6 +1,5 @@
 'use strict';
 
-const os = require('os');
 const path = require('path');
 // eslint-disable-next-line no-unused-vars
 const { Command, printer, debug } = require('@axiosleo/cli-tool');
@@ -156,12 +155,12 @@ class GenTsCommand extends Command {
             return;
           }
           let content = await _read(routesFile);
-          let rows = content.split(os.EOL);
+          let rows = content.split('\n');
           const existRoute = rows.find((r) => r.indexOf(`root.add(${name})`) > -1);
           if (!existRoute) {
             rows.splice(1, 0, `import ${name} from './${name}.router';`);
             rows.splice(rows.length - 2, 0, `root.add(${name});`);
-            await _write(routesFile, rows.join(os.EOL));
+            await _write(routesFile, rows.join('\n'));
           }
           break;
         }
