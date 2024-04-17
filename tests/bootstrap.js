@@ -136,7 +136,8 @@ if (require.main === module) {
 
   root.post('/upload', async (context) => {
     // read FormData
-    success(context.koa.request.files);
+    debug.log(context.koa.request.files, context.koa.request.body);
+    success();
   });
 
   const app = new KoaApplication({
