@@ -2,7 +2,7 @@
 'use strict';
 
 const path = require('path');
-const { _search, _write, _mkdir } = require('@axiosleo/cli-tool/src/helper/fs');
+const { _search, _write, _mkdir, _exists } = require('@axiosleo/cli-tool/src/helper/fs');
 const { _foreach, _exec } = require('@axiosleo/cli-tool/src/helper/cmd');
 const { Command, printer, debug } = require('@axiosleo/cli-tool');
 const { _render_with_file } = require('@axiosleo/cli-tool/src/helper/str');
@@ -43,15 +43,23 @@ class InitCommand extends Command {
     });
 
     printer.success('Initialized successfully');
-    if (!await this.confirm('install dependencies?', true)) {
-      return;
+    if (await this.confirm('install dependencies?', true)) {
+      await _exec('npm install', dir);
     }
 
-    await _exec('npm install', dir);
-    if (!await this.confirm('start services right now?', true)) {
-      return;
+    const metaDir = path.join(dir, './meta');
+    const metaExists = await _exists(metaDir);
+    const moduleDir = path.join(dir, './services/src/modules');
+    const moduleExists = await _exists(moduleDir);
+    if (metaExists && moduleExists && await this.confirm('Do you want to generate code by meta json schema?', true)) {
+      await _exec('koapp gen -d ./meta -o ./services/src/modules', dir);
+    } else {
+      printer.warning('you also can run `npm run gen:services` to generate code');
     }
-    await _exec('npm run dev:services', dir);
+
+    if (await this.confirm('start services right now?')) {
+      await _exec('npm run dev:services', dir);
+    }
   }
 }
 

@@ -2,10 +2,10 @@
   "scripts": {
     "start:services": "cd ./services/ && nodemon",
     "build:services": "cd ./services/ && npm run build",
-    "gen:services": "koapp generate ./meta -d ./services/src/modules"
+    "gen:services": "koapp generate -d ./meta -o ./services/src/modules"
   },
   "dependencies": {
     "${name}-services": "file:services",
-    "json-schema-to-typescript": "^13.1.2",
+    "json-schema-to-typescript": "^13.1.2"
   }
 }
