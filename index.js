@@ -49,6 +49,7 @@ class KoaApplication extends Application {
       debug: false,
       routers: [],
       app_id: '',
+      // session_key: '',
       session: {
         /** (number || 'session') maxAge in ms (default is 1 days) */
         /** 'session' will result in a cookie that expires when session/browser is closed */
@@ -72,16 +73,20 @@ class KoaApplication extends Application {
 
     printer.println().green('start on ').println(`http://localhost:${config.port}`).println();
     super(config);
-    this.koa = new Koa();
+    this.koa = new Koa(this.config.server);
 
     // session middleware
     if (this.config.session) {
       this.koa.keys = [this.app_id];
       this.koa.use(session({
-        key: `koa.sess.${this.app_id}`, /** (string) cookie key (default is koa.sess) */
+        key: this.config.session_key || 'koa.sess', /** (string) cookie key (default is koa.sess) */
         ...this.config.session
       }, this.koa));
     }
+
+    ['a', 'b', 'c'].forEach((item, index) => {
+      index;
+    });
 
     const upload = multer();
     this.koa.use(upload.any());

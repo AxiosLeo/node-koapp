@@ -5,6 +5,7 @@ import { IncomingHttpHeaders } from 'http';
 import { Rules, ErrorMessages, Validator } from 'validatorjs';
 import { EventEmitter } from 'events';
 import { File } from '@koa/multer';
+import * as session from 'koa-session';
 
 type StatusCode = string | '000;Unknown Error' |
   '200;Success' | '404;Not Found' |
@@ -170,6 +171,8 @@ interface AppConfiguration {
     proxyIpHeader?: string | undefined,
     maxIpsCount?: number | undefined,
   },
+  session_key?: string,
+  session?: Partial<session.opts>,
   static?: KoaStaticServer.Options
 }
 
