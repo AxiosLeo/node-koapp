@@ -16,7 +16,7 @@
     "test": "mocha --reporter spec --timeout 3000 tests/*.tests.js",
     "test-cov": "nyc -r=lcov -r=html -r=text -r=json mocha -t 10000 -R spec tests/*.tests.js",
     "ci": "npm run lint && npm run test-cov",
-    "clear": "rm -rf ./nyc_output ./coverage"
+    "clear": "rm -rf ./.nyc_output ./coverage ./.uploads/ ./node_modules ./package-lock.json ./pnpm-lock.yaml"
   },
   "directories": {
     "lib": "src"
@@ -26,30 +26,23 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "@axiosleo/cli-tool": "^1.6.1",
+    "@axiosleo/cli-tool": "^1.6.4",
     "@koa/multer": "^3.0.2",
-    "koa": "^2.13.4",
-    "koa-bodyparser": "^4.3.0",
-    "koa-session": "^6.2.0",
+    "koa": "^2.15.3",
+    "koa-bodyparser": "^4.4.1",
+    "koa-session": "^6.4.0",
     "koa-static-server": "^1.5.2",
     "multer": "^1.4.5-lts.1",
-    "uuid": "^8.3.2",
+    "uuid": "^9.0.1",
     "validatorjs": "^3.22.1"
   },
   "devDependencies": {
     "@types/koa__multer": "^2.0.7",
-    "@types/node": "^18.14.2",
+    "@types/node": "^20.12.12",
     "chai": "^4.3.7",
-    "chai-as-promised": "^7.1.1",
     "eslint": "^8.35",
-    "expect.js": "^0.3.1",
-    "has-flag": "^5.0.1",
-    "mm": "^3.2.1",
-    "mocha": "^10.2.0",
-    "mocha-sinon": "^2.1.2",
+    "mocha": "^10.4.0",
     "nyc": "^15.1.0",
-    "pre-commit": "^1.2.2",
-    "sinon": "^15.0.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.4.5"
   }
 }
