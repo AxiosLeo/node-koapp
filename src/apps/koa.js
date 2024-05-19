@@ -13,7 +13,7 @@ const { _assign } = require('@axiosleo/cli-tool/src/helper/obj');
 const Application = require('./app');
 
 /**
- * @param {import('./index').KoaContext} context 
+ * @param {import('../../index').KoaContext} context 
  */
 const handleRes = (context) => {
   let response = context.response;
