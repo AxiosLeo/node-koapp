@@ -68,7 +68,8 @@ class HttpCommand extends Command {
     const router = new Router('/***', {
       method: 'any',
       handlers: [async (context) => {
-        let d = path.join(dir, context.url);
+        const url = new URL(context.url, 'http://localhost');
+        let d = path.join(dir, url.pathname);
         printer.yellow(_fixed('[' + context.method + ']', 12, 'r')).green(context.url).println();
         if (!await _exists(d)) {
           error(404, 'Not Found');
