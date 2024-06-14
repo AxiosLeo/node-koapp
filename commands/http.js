@@ -6,7 +6,12 @@ const { error, Router, KoaApplication, result } = require('../');
 const path = require('path');
 const promisify = require('util').promisify;
 const readdir = promisify(fs.readdir);
-const { _exists, _is_file, _read, _is_dir, _ext } = require('@axiosleo/cli-tool/src/helper/fs');
+const {
+  _exists,
+  _is_file,
+  _is_dir,
+  _ext
+} = require('@axiosleo/cli-tool/src/helper/fs');
 const { _fixed } = require('@axiosleo/cli-tool/src/helper/str');
 
 const mimeTypes = {
@@ -60,8 +65,6 @@ class HttpCommand extends Command {
   /**
    * @param {*} args 
    * @param {*} options 
-   * @param {string[]} argList 
-   * @param {import('@axiosleo/cli-tool').App} app 
    */
   async exec(args, options) {
     let dir = path.resolve(args.dir);
@@ -75,17 +78,18 @@ class HttpCommand extends Command {
           error(404, 'Not Found');
         }
         if (await _is_file(d)) {
-          let c = await _read(d);
-          let tmp = context.url.split('/');
-          const ext = _ext(d);
-          if (mimeTypes[ext]) {
-            result(c, 200, {
-              'Content-Type': mimeTypes[ext]
-            });
+          const extname = _ext(d);
+          context.koa.type = extname;
+          if (mimeTypes[extname]) {
+            context.koa.headers['Content-Type'] = mimeTypes[extname];
+          } else {
+            let tmp = context.url.split('/');
+            context.koa.headers['Content-disposition'] = 'attachment; filename=' + tmp[tmp.length - 1];
           }
-          result(c, 200, {
-            'Content-disposition': 'attachment; filename=' + tmp[tmp.length - 1]
-          });
+          context.koa.headers['Content-Type'] = mimeTypes[extname];
+          const stream = fs.createReadStream(d);
+          context.koa.body = stream;
+          return;
         }
         let htmlContent = `<ul><li><a href="${path.join(context.url, '../')}">../</a></li>`;
         let files = await this.list(d);
