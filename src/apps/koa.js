@@ -81,11 +81,9 @@ class KoaApplication extends Application {
       }, this.koa));
     }
 
-    ['a', 'b', 'c'].forEach((item, index) => {
-      index;
+    const upload = multer({
+      dest: config.static.rootDir
     });
-
-    const upload = multer();
     this.koa.use(upload.any());
 
     // body parser
