@@ -1,6 +1,6 @@
 'use strict';
 
-const { Application, KoaApplication } = require('./src/apps');
+const { Application, KoaApplication, NetSocketApplication } = require('./src/apps');
 const Controller = require('./src/controller');
 const { Router } = require('./src/router');
 const response = require('./src/response');
@@ -10,6 +10,7 @@ module.exports = {
   Controller,
   Application,
   KoaApplication,
+  NetSocketApplication,
 
   Model,
   Router,
