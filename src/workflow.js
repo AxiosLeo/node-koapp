@@ -139,7 +139,6 @@ function showDebugInfo(context, location, error) {
     }
     printer.yellow(_fixed(k, wide)).print(': ').println(typeof context[k] === 'object' ? JSON.stringify(context[k]) : _str(context[k]));
   });
-  // printer.println('-'.repeat(72));
   printer.yellow(_fixed('requestID', wide)).print(': ').println(context.request_id);
   if (!error) {
     printer.yellow('responseData').print(': ');
