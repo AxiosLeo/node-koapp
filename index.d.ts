@@ -1,11 +1,12 @@
-import * as KoaStaticServer from 'koa-static-server';
-import * as Koa from 'koa';
-import { Context, Configuration, Workflow } from '@axiosleo/cli-tool';
-import { IncomingHttpHeaders } from 'http';
-import { Rules, ErrorMessages, Validator } from 'validatorjs';
-import { EventEmitter } from 'events';
+import { Configuration, Context, Workflow } from '@axiosleo/cli-tool';
 import { File } from '@koa/multer';
+import { EventEmitter } from 'events';
+import { IncomingHttpHeaders } from 'http';
+import * as Koa from 'koa';
 import * as session from 'koa-session';
+import * as KoaStaticServer from 'koa-static-server';
+import net from 'net';
+import { ErrorMessages, Rules, Validator } from 'validatorjs';
 
 type StatusCode = string | '000;Unknown Error' |
   '200;Success' | '404;Not Found' |
@@ -88,26 +89,37 @@ interface RouterInfo {
 }
 
 interface AppContext extends Context {
+  // eslint-disable-next-line no-use-before-define
+  router?: RouterInfo | null,
+
   app: Application,
   app_id: string,
   config: AppConfiguration,
+
+  method: HttpMethod,
+  path: string,
+  params?: any,
 }
 
 interface KoaContext extends AppContext {
   koa: Koa.ParameterizedContext,
-  method: HttpMethod,
   url: string,
   // eslint-disable-next-line no-use-before-define
-  router?: RouterInfo | null,
   access_key_id?: string,
   app_key?: string,
-  params?: any,
   body?: any,
   file?: File | null,
   files?: File[],
   query?: any,
   headers?: IncomingHttpHeaders,
   response?: HttpResponse | HttpError,
+}
+
+interface NetSocketContext extends AppContext {
+  query?: any,
+  body?: any,
+  headers?: IncomingHttpHeaders,
+  connection: net.Socket
 }
 
 type ContextHandler<T extends KoaContext> = (context: T) => Promise<void>
