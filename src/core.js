@@ -1,6 +1,5 @@
 'use strict';
 
-const { v4, v5, validate } = require('uuid');
 const is = require('@axiosleo/cli-tool/src/helper/is');
 
 const resolvePathinfo = (pathinfo) => {
@@ -180,45 +179,7 @@ const getRouteInfo = (routers, pathinfo, method) => {
   return null;
 };
 
-/**
- * @param {import('..').Application} app 
- * @param {import('koa').ParameterizedContext} ctx 
- * @param {string} app_id 
- * @returns {import('..').KoaContext}
- */
-const initContext = (app, ctx, app_id, routes) => {
-  const context = {
-    app,
-    koa: ctx,
-    app_id,
-    curr: {},
-    step_data: {},
-    method: ctx.req.method ? ctx.req.method : '',
-    url: ctx.req.url ? ctx.req.url : '/',
-    request_id: `${v5(v4(), !validate(app_id) ? v4() : app_id)}`,
-    routes
-  };
-  return context;
-};
-
-/**
- * @param {import('..').Application} app 
- */
-const dispatcher = ({ app, app_id, workflow, routes }) => {
-  return async (ctx, next) => {
-    let context = initContext(app, ctx, app_id, routes);
-    try {
-      await workflow.start(context);
-    } catch (exContext) {
-      context = exContext;
-      await next();
-    }
-  };
-};
-
 module.exports = {
-  dispatcher,
-  initContext,
   getRouteInfo,
   resolveRouters,
 };

@@ -6,11 +6,54 @@ const KoaStaticServer = require('koa-static-server');
 const multer = require('@koa/multer');
 const path = require('path');
 const Koa = require('koa');
-const { dispatcher } = require('../core');
 const { printer } = require('@axiosleo/cli-tool');
 const { _assign } = require('@axiosleo/cli-tool/src/helper/obj');
 
 const Application = require('./app');
+const { _request_id } = require('../utils');
+
+/**
+ * @param {import('..').Application} app 
+ * @param {import('koa').ParameterizedContext} ctx 
+ * @param {string} app_id 
+ * @returns {import('../../').KoaContext}
+ */
+const initContext = (app, ctx, app_id, routes) => {
+  const context = {
+    app,
+    koa: ctx,
+    app_id,
+    curr: {},
+    step_data: {},
+    request_id: _request_id(app_id),
+    routes,
+
+    method: ctx.req.method ? ctx.req.method : '',
+    path: ctx.path ? ctx.path : '',
+    url: ctx.req.url ? ctx.req.url : '/',
+    body: ctx.request.body,
+    query: ctx.request.query ? JSON.parse(JSON.stringify(ctx.request.query)) : {},
+    headers: ctx.request.headers,
+    files: ctx.request.files || [],
+    file: ctx.request.file || null
+  };
+  return context;
+};
+
+/**
+ * @param {import('.').Application} app 
+ */
+const dispatcher = ({ app, app_id, workflow, routes }) => {
+  return async (ctx, next) => {
+    let context = initContext(app, ctx, app_id, routes);
+    try {
+      await workflow.start(context);
+    } catch (exContext) {
+      context = exContext;
+      await next();
+    }
+  };
+};
 
 /**
  * @param {import('../../index').KoaContext} context 
