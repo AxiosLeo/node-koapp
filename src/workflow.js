@@ -12,23 +12,17 @@ const { _str, _fixed } = require('@axiosleo/cli-tool/src/helper/str');
 
 /**
  * receive request
- * @param {import("..").KoaContext} context 
+ * @param {import("..").AppContext} context 
  */
 function receive(context) {
   try {
     context.app.emit('receive', context);
-    const router = getRouteInfo(context.routes, context.koa.path, context.koa.method);
+    const router = getRouteInfo(context.routes, context.path, context.method);
     if (!router) {
       error(404, 'Not Found');
     }
     context.params = router && router.params ? router.params : {};
-    context.method = context.koa.method;
-    context.body = context.koa.request.body;
-    context.query = context.koa.request.query ? JSON.parse(JSON.stringify(context.koa.request.query)) : {};
-    context.headers = context.koa.request.headers;
     context.router = router;
-    context.files = context.koa.request.files || [];
-    context.file = context.koa.request.file || null;
   } catch (err) {
     context.response = err;
     return 'response';
@@ -37,7 +31,7 @@ function receive(context) {
 
 /**
  * validate request
- * @param {import("..").KoaContext} context 
+ * @param {import("..").AppContext} context 
  */
 function validate(context) {
   try {
@@ -81,7 +75,7 @@ function validate(context) {
 
 /**
  * exec middleware for common request
- * @param {import("..").KoaContext} context 
+ * @param {import("..").AppContext} context 
  */
 async function middleware(context) {
   try {
@@ -100,7 +94,7 @@ async function middleware(context) {
 
 /**
  * handle request
- * @param {import("..").KoaContext} context 
+ * @param {import("..").AppContext} context 
  */
 async function handle(context) {
   try {
@@ -119,7 +113,7 @@ async function handle(context) {
 
 /**
  * 
- * @param {import("..").KoaContext} context 
+ * @param {import("..").AppContext} context 
  */
 function showDebugInfo(context, location, error) {
   const router = context.router;
@@ -155,7 +149,7 @@ function showDebugInfo(context, location, error) {
 
 /**
  * set response
- * @param {import("..").KoaContext} context 
+ * @param {import("..").AppContext} context 
  */
 function response(context) {
   if (!context.response) {
@@ -213,7 +207,7 @@ function response(context) {
 
 /**
  * Executes the after logic for the given context.
- * @param {import("..").KoaContext & { app: import("..").Application}} context - The context object.
+ * @param {import("..").AppContext} context - The context object.
  */
 async function after(context) {
   try {
