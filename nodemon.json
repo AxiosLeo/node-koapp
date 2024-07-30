@@ -9,5 +9,5 @@
     "index.js",
     "./tests/bootstrap.js"
   ],
-  "exec": "node --trace-warnings ./runtimes/socket.js"
+  "exec": "node --trace-warnings ./tests/bootstrap.js"
 }
