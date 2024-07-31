@@ -1,7 +1,6 @@
 
 'use strict';
 
-// eslint-disable-next-line no-unused-vars
 const { debug } = require('@axiosleo/cli-tool');
 const { success, result, failed } = require('../src/response');
 
