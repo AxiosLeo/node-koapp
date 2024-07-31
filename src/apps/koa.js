@@ -64,6 +64,7 @@ class KoaApplication extends Application {
       },
       static: {
         rootDir: path.join(__dirname, './public'),
+        // uploadDir: path.join(__dirname, './public/upload'), default is undefined
       },
       body_parser: {}
     }, config);
@@ -82,7 +83,8 @@ class KoaApplication extends Application {
     }
 
     const upload = multer({
-      dest: config.static.rootDir
+      // eslint-disable-next-line no-undefined
+      dest: config.static && config.static.uploadDir ? config.static.uploadDir : undefined
     });
     this.koa.use(upload.any());
 
