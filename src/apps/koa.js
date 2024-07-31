@@ -63,8 +63,8 @@ class KoaApplication extends Application {
         // sameSite: null, /** (string) session cookie sameSite options (default null, don't set it) */
       },
       static: {
-        rootDir: path.join(__dirname, './public'),
-        // uploadDir: path.join(__dirname, './public/upload'), default is undefined
+        rootDir: path.join(process.cwd(), './public'),
+        // uploadDir: path.join(process.cwd(), './public/upload'), default is undefined
       },
       body_parser: {}
     }, config);
