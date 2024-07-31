@@ -7,6 +7,13 @@ const { debug, printer } = require('@axiosleo/cli-tool');
 const { _uuid, _request_id } = require('../utils');
 const is = require('@axiosleo/cli-tool/src/helper/is');
 
+/**
+ * @param {*} app 
+ * @param {*} ctx 
+ * @param {*} app_id 
+ * @param {*} routes 
+ * @returns {import('../../').NetSocketContext}
+ */
 const initContext = (app, ctx, app_id, routes) => {
   const context = {
     app,
@@ -29,7 +36,7 @@ const initContext = (app, ctx, app_id, routes) => {
 const dispatcher = ({ app, app_id, workflow, routes, connection }) => {
   return async (ctx) => {
     let context = initContext(app, ctx, app_id, routes);
-    context.connection = connection;
+    context.socket = connection;
     try {
       await workflow.start(context);
     } catch (exContext) {
@@ -59,7 +66,7 @@ const handleRes = (context) => {
   } else {
     data = response.data;
   }
-  context.connection.write(data + '@@@@@@');
+  context.socket.write(data + '@@@@@@');
 };
 
 class NetSocketApplication extends Application {

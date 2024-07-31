@@ -119,7 +119,7 @@ interface NetSocketContext extends AppContext {
   query?: any,
   body?: any,
   headers?: IncomingHttpHeaders,
-  connection: net.Socket
+  socket: net.Socket
 }
 
 type ContextHandler<T extends KoaContext> = (context: T) => Promise<void>
