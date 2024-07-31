@@ -64,7 +64,7 @@ class KoaApplication extends Application {
       },
       static: {
         rootDir: path.join(process.cwd(), './public'),
-        // uploadDir: path.join(process.cwd(), './public/upload'), default is undefined
+        // uploadDir: path.join(process.cwd(), './public/upload'), // default is undefined. Once this configuration is set, files will be transferred to this path.
       },
       body_parser: {}
     }, config);
