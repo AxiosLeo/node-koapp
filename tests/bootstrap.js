@@ -140,6 +140,19 @@ if (require.main === module) {
     success();
   });
 
+  root.get('/session', async (context) => {
+    context.koa.session.test = { a: 'A' };
+    context.koa.session.save();
+    context.koa.redirect('/redirect');
+  });
+
+  root.get('/redirect', async (context) => {
+    const data = JSON.stringify({
+      session: context.koa.session.test,
+    });
+    success(data);
+  });
+
   const app = new KoaApplication({
     debug: true,
     routers: [root]
