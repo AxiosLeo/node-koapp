@@ -91,11 +91,13 @@ class HttpCommand extends Command {
           context.koa.body = stream;
           return;
         }
-        let htmlContent = `<ul><li><a href="${path.join(context.url, '../')}">../</a></li>`;
+        let htmlContent = '<ul><li><a href="../">../</a></li>';
         let files = await this.list(d);
+        files = files.sort((a, b) => {
+          return a.filename.toLowerCase() < b.filename.toLowerCase() ? -1 : 1;
+        });
         files.forEach(f => {
-          let u = context.url.endsWith('/') ? context.url : context.url + '/';
-          htmlContent += `<li><a href="${u + f.filename}">${f.filename}</a></li>`;
+          htmlContent += `<li><a href="./${f.filename}">${f.filename}</a></li>`;
         });
         htmlContent += '</ul>';
         result(htmlContent, 200, { 'Content-Type': 'text/html' });
