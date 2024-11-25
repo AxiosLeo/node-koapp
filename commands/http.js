@@ -97,7 +97,7 @@ class HttpCommand extends Command {
           return a.filename.toLowerCase() < b.filename.toLowerCase() ? -1 : 1;
         });
         files.forEach(f => {
-          htmlContent += `<li><a href="./${f.filename}">${f.filename}</a></li>`;
+          htmlContent += `<li><a href="${url.pathname}/${f.filename}">${f.filename}</a></li>`;
         });
         htmlContent += '</ul>';
         result(htmlContent, 200, { 'Content-Type': 'text/html' });
