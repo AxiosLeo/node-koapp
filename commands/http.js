@@ -41,7 +41,7 @@ class HttpCommand extends Command {
       name: 'http',
       desc: 'Start a http server quickly',
     });
-    this.addArgument('dir', 'Static diractory', 'optional', process.cwd());
+    this.addArgument('dir', 'Static directory', 'optional', process.cwd());
     this.addOption('port', 'p', 'Port', 'optional', 80);
   }
 
