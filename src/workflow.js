@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-'use strict';
 
 const os = require('os');
 const { printer } = require('@axiosleo/cli-tool');
@@ -127,6 +125,7 @@ function showDebugInfo(context, location, error) {
   printer.yellow(_fixed('requestID', wide)).print(': ').println(context.request_id);
   if (!error) {
     printer.yellow('responseData').print(': ');
+    // eslint-disable-next-line no-console
     console.log(context.response.data);
   }
   if (location && location.indexOf('node:internal') === -1) {
@@ -200,6 +199,7 @@ function response(context) {
   if (error) {
     showDebugInfo(context, '', error);
     printer.red('requestError').print(': ');
+    // eslint-disable-next-line no-console
     console.log(error);
   }
   if (context.app.config.debug && !error) {
