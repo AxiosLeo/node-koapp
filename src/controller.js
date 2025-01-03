@@ -1,12 +1,6 @@
 'use strict';
 
-const {
-  response,
-  result,
-  success,
-  failed,
-  error,
-} = require('./response');
+const { response, result, success, failed, error } = require('./response');
 const { debug } = require('@axiosleo/cli-tool');
 
 class Controller {
