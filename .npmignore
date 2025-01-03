@@ -12,3 +12,4 @@ node_modules/*
 ./app.js
 .gitignore
 nodemon.json
+.vscode/*
