@@ -122,17 +122,22 @@ async function handle(context) {
  * @param {import("..").KoaContext} context 
  */
 function showDebugInfo(context, location, error) {
-  const router = context.router;
-  if (!router) {
-    return;
-  }
   const wide = 12;
   printer.println('-'.repeat(30) + '[DEBUG Info]' + '-'.repeat(30));
+  printer.yellow(_fixed('requestID', wide)).print(': ').println(context.request_id);
+  if (!error) {
+    printer.yellow('responseData').print(': ');
+    console.log(context.response.data);
+  }
   if (location && location.indexOf('node:internal') === -1) {
     printer.print('response    '.data).print(': ').print(location.trim().yellow).println();
   }
   printer.yellow(_fixed('datetime', wide)).print(': ').println(new Date().toLocaleString());
   printer.yellow(_fixed('method', wide)).print(': ').green(context.method).println();
+  if (!context.router) {
+    return;
+  }
+  const router = context.router;
   ['pathinfo', 'validators'].forEach(k => {
     if (is.empty(router[k])) {
       return;
@@ -145,12 +150,6 @@ function showDebugInfo(context, location, error) {
     }
     printer.yellow(_fixed(k, wide)).print(': ').println(typeof context[k] === 'object' ? JSON.stringify(context[k]) : _str(context[k]));
   });
-  // printer.println('-'.repeat(72));
-  printer.yellow(_fixed('requestID', wide)).print(': ').println(context.request_id);
-  if (!error) {
-    printer.yellow('responseData').print(': ');
-    console.log(context.response.data);
-  }
 }
 
 /**
