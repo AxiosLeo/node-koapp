@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         operating-system: [macos-latest, ubuntu-latest]
-        node-version: [20]
+        node-version: [16, 18, 20]
     name: Node.js ${{ matrix.node-version }} Test on ${{ matrix.operating-system }}
 
     steps:
@@ -24,7 +24,12 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-      - run: npm install
+      - name: Install dependencies
+        run: |
+          if [ "${{ matrix.node-version }}" = "16" ]; then
+            npm install eslint@8.56.0 @eslint/eslintrc@2.1.4 @eslint/js@8.56.0
+          fi
+          npm install
       - run: npm run lint
       # - uses: codecov/codecov-action@v3
       #   with:
