@@ -28,6 +28,7 @@ jobs:
         run: |
           if [ "${{ matrix.node-version }}" = "16" ]; then
             npm install eslint@8.56.0 @eslint/eslintrc@2.1.4 @eslint/js@8.56.0
+            cp ./assets/.eslintrc ./.eslintrc
           fi
           npm install
       - run: npm run lint
