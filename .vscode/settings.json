@@ -1,7 +1,6 @@
 {
   // workbench
   "workbench.list.smoothScrolling": true,
-  "workbench.startupEditor": "newUntitledFile",
   "workbench.tree.indent": 10,
   "workbench.editor.highlightModifiedTabs": true,
   "workbench.editor.closeOnFileDelete": true,
