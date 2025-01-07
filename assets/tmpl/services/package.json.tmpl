@@ -9,7 +9,6 @@
   "scripts": {
     "lint": "eslint --fix src/",
     "build": "tsc && tsc-alias -p tsconfig.prod.json",
-    "build:pkg": "npm run build && pkg .",
     "start": "DEPLOY_ENV=prod && npm run build && node ./dist/src/bootstrap.js",
     "dev": "nodemon",
     "test": "mocha -r @swc-node/register src/**/*.test.ts",
@@ -21,7 +20,7 @@
   },
   "dependencies": {
     "@axiosleo/koapp": "^1.0.24",
-    "@axiosleo/orm-mysql": "^0.10.3",
+    "@axiosleo/orm-mysql": "^0.11.2",
     "cluster": "^0.7.7",
     "dotenv": "^16.4.5"
   },
@@ -39,7 +38,6 @@
     "eslint": "^9.0.0",
     "json-schema-to-ts": "^3.0.1",
     "nodemon": "^3.1.0",
-    "pkg": "^5.8.0",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.8",
     "tsconfig-paths": "^4.2.0",
