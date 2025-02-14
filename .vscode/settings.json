@@ -113,7 +113,6 @@
   // search
   "search.searchEditor.singleClickBehaviour": "peekDefinition",
   "search.followSymlinks": false,
-  // 在使用搜索功能时，将这些文件夹/文件排除在外
   "search.exclude": {
     "**/node_modules": true,
     "**/*.log": true,
@@ -185,7 +184,6 @@
     "yaml": false
   },
 
-  // 控制相关文件嵌套展示
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.expand": false,
   "explorer.fileNesting.patterns": {
