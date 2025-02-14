@@ -58,7 +58,7 @@ class InitCommand extends Command {
     }
 
     if (await this.confirm('start services right now?')) {
-      await _exec('npm run dev:services', dir);
+      await _exec('npm run start:services', dir);
     }
   }
 }
