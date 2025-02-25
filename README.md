@@ -92,7 +92,11 @@ const test = async (context) => {
   context.koa.sse.end();
 };
 
+const { KoaSSEMiddleware } = require("@axiosleo/koapp");
+
 root.any("/sse", async (context) => {
+  const func = KoaSSEMiddleware();
+  await func(context.koa, async () => {});
   context.koa.sse.send({ data: "hello, world!" });
   process.nextTick(test, context);
 });
