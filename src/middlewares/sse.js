@@ -177,5 +177,5 @@ const middleware = (options = {}) => {
 
 module.exports = {
   KoaSSE,
-  middleware
+  KoaSSEMiddleware: middleware
 };

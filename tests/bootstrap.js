@@ -161,14 +161,19 @@ if (require.main === module) {
     context.koa.sse.end();
   };
 
+  const { KoaSSEMiddleware } = require('../index');
   root.any('/sse', async (context) => {
+    const func = KoaSSEMiddleware();
+    await func(context.koa, async () => { });
     context.koa.sse.send({ data: 'hello, world!' });
     process.nextTick(test, context);
   });
+
   const app = new KoaApplication({
     debug: true,
     sse: true,
     routers: [root]
   });
+
   app.start();
 }
