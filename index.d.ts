@@ -294,7 +294,6 @@ interface AppConfiguration {
   session_key?: string;
   session?: Partial<session.opts>;
   static?: KoaStaticServer.Options;
-  sse?: boolean | SSEOptions;
 }
 
 interface KoaApplicationConfig extends AppConfiguration {
