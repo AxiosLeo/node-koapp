@@ -1,8 +1,8 @@
 
 'use strict';
 
-// eslint-disable-next-line no-unused-vars
 const { debug } = require('@axiosleo/cli-tool');
+const { _foreach, _sleep } = require('@axiosleo/cli-tool/src/helper/cmd');
 const { success, result, failed } = require('../src/response');
 
 const { KoaApplication, Router, Model } = require('..');
@@ -153,8 +153,21 @@ if (require.main === module) {
     success(data);
   });
 
+  const test = async (context) => {
+    await _foreach(['0', '1', '2', '3'], async (item, index) => {
+      context.koa.sse.send({ data: { item, index } });
+      await _sleep(1000);
+    });
+    context.koa.sse.end();
+  };
+
+  root.any('/sse', async (context) => {
+    context.koa.sse.send({ data: 'hello, world!' });
+    process.nextTick(test, context);
+  });
   const app = new KoaApplication({
     debug: true,
+    sse: true,
     routers: [root]
   });
   app.start();
