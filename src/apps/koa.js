@@ -9,6 +9,7 @@ const Koa = require('koa');
 const { dispatcher } = require('../core');
 const { printer } = require('@axiosleo/cli-tool');
 const { _assign } = require('@axiosleo/cli-tool/src/helper/obj');
+const is = require('@axiosleo/cli-tool/src/helper/is');
 
 const Application = require('./app');
 
@@ -66,7 +67,8 @@ class KoaApplication extends Application {
         rootDir: path.join(process.cwd(), './public'),
         // uploadDir: path.join(process.cwd(), './public/upload'), // default is undefined. Once this configuration is set, files will be transferred to this path.
       },
-      body_parser: {}
+      body_parser: {},
+      sse: false, // { pingInterval: 60000, closeEvent: "close" }
     }, config);
 
     printer.println().green('start on ').println(`http://localhost:${config.port}`).println();
@@ -90,6 +92,12 @@ class KoaApplication extends Application {
 
     // body parser
     this.koa.use(KoaBodyParser(this.config.body_parser));
+
+    if (this.config.sse !== false) {
+      const { middleware } = require('../middlewares/sse');
+      // eslint-disable-next-line no-undefined
+      this.koa.use(middleware(is.object(this.config.see) ? this.config.sse : undefined));
+    }
 
     // dispatcher request
     this.koa.use(dispatcher({
