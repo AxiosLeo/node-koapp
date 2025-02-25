@@ -1,11 +1,12 @@
-import * as KoaStaticServer from "koa-static-server";
-import * as Koa from "koa";
-import { Context, Configuration, Workflow } from "@axiosleo/cli-tool";
-import { IncomingHttpHeaders } from "http";
-import { Rules, ErrorMessages, Validator } from "validatorjs";
-import { EventEmitter } from "events";
+import { Configuration, Context, Workflow } from "@axiosleo/cli-tool";
 import { File } from "@koa/multer";
+import { EventEmitter } from "events";
+import { IncomingHttpHeaders } from "http";
+import * as Koa from "koa";
 import * as session from "koa-session";
+import * as KoaStaticServer from "koa-static-server";
+import { Transform } from "stream";
+import { ErrorMessages, Rules, Validator } from "validatorjs";
 
 type StatusCode =
   | string
@@ -295,6 +296,13 @@ interface AppConfiguration {
   session?: Partial<session.opts>;
   static?: KoaStaticServer.Options;
 }
+
+type SSEContextHandler = (
+  context: Koa.ParameterizedContext,
+  next: () => Promise<void>
+) => Promise<void>;
+
+export function KoaSSEMiddleware(options?: SSEOptions): SSEContextHandler;
 
 interface KoaApplicationConfig extends AppConfiguration {
   listen_host: "localhost";
