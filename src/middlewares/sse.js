@@ -82,21 +82,21 @@ class KoaSSE extends Transform {
 
     // Handle string data 
     if (typeof data === 'string') {
-      this.push(`data: ${data}\n\n`);
+      this.push(`data:${data}\n\n`);
       return cb();
     }
 
     // Handle object data 
     if (data.id) {
-      this.push(`id: ${data.id}\n`);
+      this.push(`id:${data.id}\n`);
     }
     if (data.event) {
-      this.push(`event: ${data.event}\n`);
+      this.push(`event:${data.event}\n`);
     }
     const text = typeof data.data === 'object'
       ? JSON.stringify(data.data)
       : data.data;
-    this.push(`data: ${text}\n\n`);
+    this.push(`data:${text}\n\n`);
     return cb();
   }
 }
