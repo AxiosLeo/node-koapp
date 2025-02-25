@@ -55,7 +55,7 @@ app.start();
 - Validation
 
 > see [validatorjs](https://github.com/mikeerickson/validatorjs) for more rule examples
-> 
+>
 > see `Router` examples for more usage: [tests/bootstrap.js](tests/bootstrap.js)
 
 ```javascript
@@ -76,6 +76,25 @@ const router = new Router("/test", {
     }
   }
   handlers: [],
+});
+```
+
+- SSE
+
+```javascript
+const { _foreach, _sleep } = require("@axiosleo/cli-tool/src/helper/cmd");
+
+const test = async (context) => {
+  await _foreach(["0", "1", "2", "3"], async (item, index) => {
+    context.koa.sse.send({ data: { item, index } });
+    await _sleep(1000);
+  });
+  context.koa.sse.end();
+};
+
+root.any("/sse", async (context) => {
+  context.koa.sse.send({ data: "hello, world!" });
+  process.nextTick(test, context);
 });
 ```
 
