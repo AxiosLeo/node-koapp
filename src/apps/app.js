@@ -2,9 +2,8 @@
 
 const EventEmitter = require('events');
 const { v4 } = require('uuid');
-const { Configuration, Workflow } = require('@axiosleo/cli-tool');
+const { Configuration } = require('@axiosleo/cli-tool');
 const { resolveRouters } = require('../core');
-const flowOperator = require('../workflow');
 
 class Application extends EventEmitter {
   constructor(config) {
@@ -17,7 +16,6 @@ class Application extends EventEmitter {
     });
     this.app_id = this.config.app_id || v4();
     this.routes = resolveRouters(this.config.routers);
-    this.workflow = new Workflow(this.config.operator || flowOperator);
     this.emit('starting', this);
   }
 
