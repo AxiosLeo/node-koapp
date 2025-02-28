@@ -3,12 +3,12 @@
 const KoaBodyParser = require('koa-bodyparser');
 const session = require('koa-session');
 const KoaStaticServer = require('koa-static-server');
-const multer = require('@koa/multer');
 const path = require('path');
 const Koa = require('koa');
-const { dispatcher } = require('../core');
-const { printer } = require('@axiosleo/cli-tool');
+const { initContext } = require('../core');
+const { printer, Workflow } = require('@axiosleo/cli-tool');
 const { _assign } = require('@axiosleo/cli-tool/src/helper/obj');
+const flowOperator = require('../workflows/koa.workflow');
 
 const Application = require('./app');
 
@@ -72,6 +72,7 @@ class KoaApplication extends Application {
 
     printer.println().green('start on ').println(`http://localhost:${config.port}`).println();
     super(config);
+    this.workflow = new Workflow(flowOperator);
     this.koa = new Koa(this.config.server);
 
     // session middleware
@@ -83,22 +84,27 @@ class KoaApplication extends Application {
       }, this.koa));
     }
 
-    const upload = multer({
-      // eslint-disable-next-line no-undefined
-      dest: config.static && config.static.uploadDir ? config.static.uploadDir : undefined
-    });
-    this.koa.use(upload.any());
-
     // body parser
     this.koa.use(KoaBodyParser(this.config.body_parser));
 
     // dispatcher request
-    this.koa.use(dispatcher({
-      app: this,
-      app_id: this.app_id,
-      workflow: this.workflow,
-      routes: this.routes
-    }));
+    const self = this;
+    this.koa.use(async (ctx, next) => {
+      let context = initContext({
+        app: self,
+        method: ctx.req.method ? ctx.req.method : '',
+        pathinfo: ctx.req.url ? ctx.req.url : '/',
+        app_id: self.app_id,
+      });
+      context.koa = ctx;
+      context.url = ctx.req.url ? ctx.req.url : '/';
+      try {
+        await self.workflow.start(context);
+      } catch (exContext) {
+        context = exContext;
+        await next();
+      }
+    });
 
     // koa static services
     if (this.config.static) {
