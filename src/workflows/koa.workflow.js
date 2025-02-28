@@ -3,19 +3,19 @@ const os = require('os');
 const { printer } = require('@axiosleo/cli-tool');
 const Validator = require('validatorjs');
 const is = require('@axiosleo/cli-tool/src/helper/is');
-const { failed, error, HttpResponse, HttpError } = require('./response');
+const { failed, error, HttpResponse, HttpError } = require('../response');
 const { _foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
-const { getRouteInfo } = require('./core');
+const { getRouteInfo } = require('../core');
 const { _str, _fixed } = require('@axiosleo/cli-tool/src/helper/str');
 
 /**
  * receive request
- * @param {import("..").KoaContext} context 
+ * @param {import("../../index").KoaContext} context 
  */
 function receive(context) {
   try {
     context.app.emit('receive', context);
-    const router = getRouteInfo(context.routes, context.koa.path, context.koa.method);
+    const router = getRouteInfo(context.app.routes, context.koa.path, context.koa.method);
     if (!router) {
       error(404, 'Not Found');
     }
