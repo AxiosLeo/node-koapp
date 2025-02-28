@@ -1,7 +1,6 @@
 'use strict';
 
 const { Transform, Writable } = require('stream');
-// const { debug } = require('@axiosleo/cli-tool');
 
 /**
  * Koa Server Side Events Middleware
@@ -18,7 +17,6 @@ class KoaSSE extends Transform {
    * @param {IKoaSSEOptions} options
    */
   constructor(ctx, options) {
-
     super({
       writableObjectMode: true
     });
