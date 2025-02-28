@@ -6,15 +6,25 @@ const { Router } = require('./src/router');
 const response = require('./src/response');
 const Model = require('./src/model');
 const { KoaSSEMiddleware } = require('./src/middlewares/sse');
+const { initContext } = require('./src/core');
+const multer = require('@koa/multer');
+const session = require('koa-session');
 
 module.exports = {
   Controller,
   Application,
   KoaApplication,
 
-  KoaSSEMiddleware,
-
   Model,
   Router,
-  ...response
+
+  middlewares: {
+    KoaSSEMiddleware,
+    KoaMulterMiddleware: multer,
+    KoaSessionMiddleware: session
+  },
+
+  // functions
+  ...response,
+  initContext
 };
