@@ -166,7 +166,11 @@ interface RouterInfo {
 interface AppContext extends Context {
   app: Application;
   app_id: string;
+  method?: string;
+  pathinfo?: string;
   config: AppConfiguration;
+  request_id: string;
+  router?: RouterInfo | null;
 }
 
 interface IKoaSSEvent {
@@ -278,12 +282,24 @@ type SSEOptions = {
 interface AppConfiguration {
   [key: string]: any;
   debug?: boolean;
+  app_id?: string;
+  routers?: Router[];
+}
+
+type SSEContextHandler = (
+  context: Koa.ParameterizedContext,
+  next: () => Promise<void>
+) => Promise<void>;
+
+export namespace middlewares {
+  function KoaSSEMiddleware(options?: SSEOptions): SSEContextHandler;
+}
+
+export type KoaApplicationConfig = AppConfiguration & {
+  listen_host: "localhost";
   count?: number;
   port?: number;
-  app_id?: string;
   paths?: Record<string, string>;
-  routers?: Router[];
-  operator?: Record<string, ContextHandler<KoaContext>>;
   server?: {
     env?: string | undefined;
     keys?: string[] | undefined;
@@ -295,18 +311,7 @@ interface AppConfiguration {
   session_key?: string;
   session?: Partial<session.opts>;
   static?: KoaStaticServer.Options;
-}
-
-type SSEContextHandler = (
-  context: Koa.ParameterizedContext,
-  next: () => Promise<void>
-) => Promise<void>;
-
-export function KoaSSEMiddleware(options?: SSEOptions): SSEContextHandler;
-
-interface KoaApplicationConfig extends AppConfiguration {
-  listen_host: "localhost";
-}
+};
 
 type TriggerFunc = (...args: any[]) => void;
 
@@ -314,14 +319,14 @@ export declare abstract class Application extends EventEmitter {
   routes: any;
   app_id: string;
   config: Configuration;
-  workflow: Workflow<KoaContext>;
   constructor(config: AppConfiguration);
   abstract start(): Promise<void>;
 }
 
 export declare class KoaApplication extends Application {
   koa: Koa;
-  constructor(config: AppConfiguration);
+  workflow: Workflow<KoaContext>;
+  constructor(config: KoaApplicationConfig);
   start(): Promise<void>;
 }
 
@@ -342,3 +347,14 @@ export declare class Model {
 
   validate(rules: Rules, msg?: ErrorMessages): Validator<this>;
 }
+
+export function initContext<
+  T extends Application,
+  F extends AppContext
+>(options: {
+  app: T;
+  routes: Router[];
+  method?: string;
+  pathinfo?: string;
+  app_id?: string;
+}): F & { app: T };
