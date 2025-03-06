@@ -296,7 +296,7 @@ export namespace middlewares {
 }
 
 export type KoaApplicationConfig = AppConfiguration & {
-  listen_host: "localhost";
+  listen_host: string;
   count?: number;
   port?: number;
   paths?: Record<string, string>;
