@@ -12,6 +12,7 @@ class HttpResponse extends Error {
       message: '',
       notResolve: false
     }, config);
+    Error.captureStackTrace(this, this.constructor);
   }
 }
 
@@ -21,6 +22,7 @@ class HttpError extends Error {
     this.status = httpStatus;
     this.message = message;
     this.headers = headers;
+    Error.captureStackTrace(this, this.constructor);
   }
 }
 
