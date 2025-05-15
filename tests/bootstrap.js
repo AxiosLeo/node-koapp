@@ -30,6 +30,10 @@ if (require.main === module) {
     context.koa.body = 'hello, world!';
   });
 
+  root.push('get', '/', async (context) => {
+    success('hello, world!');
+  });
+
   // return NotFound response when not set method
   root.push('', '/invalid', async (context) => {
     context.koa.body = 'cannot be here, will return NotFound response';
@@ -154,14 +158,15 @@ if (require.main === module) {
   });
 
   const test = async (context) => {
-    await _foreach(['0', '1', '2', '3'], async (item, index) => {
+    const arr = new Array(100).fill('');
+    await _foreach(arr, async (item, index) => {
       context.koa.sse.send({ data: { item, index } });
       await _sleep(1000);
     });
     context.koa.sse.end();
   };
 
-  const { KoaSSEMiddleware } = require('../index');
+  const { KoaSSEMiddleware } = require('../index').middlewares;
   root.any('/sse', async (context) => {
     const func = KoaSSEMiddleware();
     await func(context.koa, async () => { });
@@ -169,9 +174,16 @@ if (require.main === module) {
     process.nextTick(test, context);
   });
 
+  root.push('get', '/append', async (context) => {
+    for (let i = 0; i < 100; i++) {
+      await _sleep(100);
+      // context.koa.body += `hello, world! ${i}\n`;
+      // writer.write(`hello, world! ${i}\n`);
+    }
+  });
+
   const app = new KoaApplication({
     debug: true,
-    sse: true,
     routers: [root]
   });
 
