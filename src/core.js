@@ -1,7 +1,7 @@
 'use strict';
 
-const { v4, v5, validate } = require('uuid');
 const is = require('@axiosleo/cli-tool/src/helper/is');
+const { _request_id } = require('./utils');
 
 const resolvePathinfo = (pathinfo) => {
   let trace = [];
@@ -200,7 +200,7 @@ const initContext = (options = {}) => {
     step_data: {},
     method: method,
     pathinfo,
-    request_id: `${v5(v4(), !validate(app_id) ? v4() : app_id)}`,
+    request_id: _request_id(app_id),
   };
   return context;
 };
