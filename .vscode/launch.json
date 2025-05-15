@@ -11,6 +11,14 @@
       "skipFiles": ["<node_internals>/**"],
       "program": "${workspaceFolder}/bin/koapp.js",
       "args": ["http", "-p", "8080"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Test Program",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${workspaceFolder}/tests/bootstrap.js",
+      "args": []
     }
   ]
 }
