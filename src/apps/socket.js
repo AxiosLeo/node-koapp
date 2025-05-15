@@ -1,0 +1,147 @@
+'use strict';
+
+const net = require('net');
+const EventEmitter = require('events');
+const Application = require('./app');
+const { debug, printer, Workflow } = require('@axiosleo/cli-tool');
+const { _uuid, _request_id } = require('../utils');
+const { initContext } = require('../core');
+const is = require('@axiosleo/cli-tool/src/helper/is');
+const operator = require('../workflows/socket.workflow');
+
+const dispatcher = ({ app, app_id, workflow, connection }) => {
+  return async (ctx) => {
+    let context = initContext({
+      app,
+      connection,
+      method: ctx.method ? ctx.method.toUpperCase() : 'GET',
+      pathinfo: ctx.path,
+      app_id,
+    });
+    context.socket = connection;
+    context.query = ctx.query || {};
+    context.body = ctx.body || {};
+    try {
+      await workflow.start(context);
+    } catch (exContext) {
+      context = exContext;
+    }
+  };
+};
+
+/**
+ * @param {import('../../').SocketContext} context 
+ */
+const handleRes = (context) => {
+  let response = context.response;
+  let data = '';
+  if (response.format === 'json' && response.notResolve !== true) {
+    let code, message;
+    if (response.code) {
+      [code, message] = response.code.split(';');
+    }
+    data = JSON.stringify({
+      request_id: context.request_id,
+      timestamp: (new Date()).getTime(),
+      code: code || `${response.status}`,
+      message: message || context.response.message,
+      data: response.data
+    });
+  } else {
+    data = response.data;
+  }
+  context.socket.write(data + '@@@@@@');
+};
+
+async function ping() {
+  this.broadcast(123, 'ping', 0);
+  setTimeout(() => {
+    ping.call(this);
+  }, 1000);
+}
+
+class SocketApplication extends Application {
+  constructor(options) {
+    super(options);
+
+    this.event = new EventEmitter();
+    this.port = this.config.port || 8081;
+    this.connections = {};
+    this.on('response', handleRes);
+    this.workflow = new Workflow(operator);
+  }
+
+  async start() {
+    const server = net.createServer((connection) => {
+      try {
+        let connection_id = _uuid();
+        this.connections[connection_id] = connection;
+        debug.log('[Socket App]', 'Current connections:', Object.keys(this.connections).length);
+        this.event.emit('connection', connection);
+        connection.pipe(connection);
+        const self = this;
+        connection.on('data', function (data) {
+          try {
+            /**
+             * @example '##{"path":"/test","method":"GET","query":{"test":123}}@@'
+             */
+            let msg = Buffer.from(data.subarray(0, data.length - 6)).toString();
+            const context = JSON.parse(msg);
+            const callback = dispatcher({
+              app: self,
+              app_id: self.app_id,
+              workflow: self.workflow,
+              connection
+            });
+            process.nextTick(callback, context);
+          } catch (err) {
+            debug.log('[Socket App]', err.message);
+          }
+        });
+        connection.on('end', () => {
+          delete this.connections[connection_id];
+          debug.log('[Socket App]', 'Current connections:', Object.keys(this.connections).length);
+        });
+      } catch (err) {
+        debug.log('[Socket App]', 'create socket server failed.', err);
+      }
+    });
+
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        debug.error('[Socket App]', 'The listening port is in use.', this.port);
+      } else {
+        debug.error('[Socket App]', 'socket server error:', err);
+      }
+    });
+    const self = this;
+    process.nextTick(() => {
+      ping.call(self);
+    });
+
+    server.listen(this.port, () => {
+      printer.info(`Server is running on port ${this.port}`);
+      this.event.emit('listen', this.port);
+    });
+  }
+
+  broadcast(data = '', msg = 'ok', code = 0, connections = null) {
+    data = JSON.stringify({
+      request_id: _request_id(this.app_id),
+      timestamp: (new Date()).getTime(),
+      code,
+      message: msg,
+      data: data
+    });
+    data = `${data}@@@@@@`;
+    if (connections === null) {
+      Object.keys(this.connections).map((id) => this.connections[id].write(data));
+    } else if (is.array(connections)) {
+      connections.map((conn) => conn.write(data));
+    } else if (is.object(connections)) {
+      Object.keys(connections).map((id) => connections[id].write(data));
+    }
+  }
+}
+
+module.exports = SocketApplication;

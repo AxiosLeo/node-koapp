@@ -1,32 +1,27 @@
+'use strict';
 
 const os = require('os');
 const { printer } = require('@axiosleo/cli-tool');
-const Validator = require('validatorjs');
-const is = require('@axiosleo/cli-tool/src/helper/is');
-const { failed, error, HttpResponse, HttpError } = require('../response');
-const { _foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
 const { getRouteInfo } = require('../core');
+const { error, failed, HttpResponse, HttpError } = require('../response');
+const is = require('@axiosleo/cli-tool/src/helper/is');
+const Validator = require('validatorjs');
+const { _foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
 const { _debug } = require('../utils');
 
 /**
- * receive request
- * @param {import("../../index").KoaContext} context 
+ * @param {import('../../index').SocketContext} context 
+ * @returns 
  */
 function receive(context) {
   try {
     context.app.emit('receive', context);
-    const router = getRouteInfo(context.app.routes, context.koa.path, context.koa.method);
+    const router = getRouteInfo(context.app.routes, context.pathinfo, context.method);
     if (!router) {
       error(404, 'Not Found');
     }
     context.params = router && router.params ? router.params : {};
-    context.method = context.koa.method;
-    context.body = context.koa.request.body;
-    context.query = context.koa.request.query ? JSON.parse(JSON.stringify(context.koa.request.query)) : {};
-    context.headers = context.koa.request.headers;
     context.router = router;
-    context.files = context.koa.request.files || [];
-    context.file = context.koa.request.file || null;
   } catch (err) {
     context.response = err;
     return 'response';
@@ -34,8 +29,8 @@ function receive(context) {
 }
 
 /**
- * validate request
- * @param {import("..").KoaContext} context 
+ * @param {import('../../index').SocketContext} context 
+ * @returns 
  */
 function validate(context) {
   try {
@@ -78,8 +73,8 @@ function validate(context) {
 }
 
 /**
- * exec middleware for common request
- * @param {import("..").KoaContext} context 
+ * @param {import('../../index').SocketContext} context 
+ * @returns 
  */
 async function middleware(context) {
   try {
@@ -97,8 +92,8 @@ async function middleware(context) {
 }
 
 /**
- * handle request
- * @param {import("..").KoaContext} context 
+ * @param {import('../../index').SocketContext} context 
+ * @returns 
  */
 async function handle(context) {
   try {
@@ -116,8 +111,8 @@ async function handle(context) {
 }
 
 /**
- * set response
- * @param {import("..").KoaContext} context 
+ * @param {import('../../index').SocketContext} context 
+ * @returns 
  */
 function response(context) {
   if (!context.response) {
@@ -175,8 +170,8 @@ function response(context) {
 }
 
 /**
- * Executes the after logic for the given context.
- * @param {import("..").KoaContext & { app: import("..").Application}} context - The context object.
+ * @param {import('../../index').SocketContext} context 
+ * @returns 
  */
 async function after(context) {
   try {
