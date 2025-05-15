@@ -46,32 +46,38 @@ const recur = (tree, prefix, router, middlewares = [], afters = []) => {
       }
       curr = curr[key];
     });
-    let routeNode = {};
-    if (!is.empty(params)) {
-      routeNode.params = params;
+  } else if (trace.length === 1) {
+    key = trace[0];
+    if (!curr[key]) {
+      curr[key] = {};
     }
-    if (router.method) {
-      routeNode.method = router.method;
-    }
-    if (!is.empty(router.handlers)) {
-      routeNode.handlers = router.handlers;
-    }
-    if (!is.empty(router.validators)) {
-      routeNode.validators = router.validators;
-    }
-    if (!is.empty(middlewaresClone)) {
-      routeNode.middlewares = middlewaresClone;
-    }
-    if (!is.empty(aftersClone)) {
-      routeNode.afters = aftersClone;
-    }
+    curr = curr[key];
+  }
+  let routeNode = {};
+  if (!is.empty(params)) {
+    routeNode.params = params;
+  }
+  if (router.method) {
+    routeNode.method = router.method;
+  }
+  if (!is.empty(router.handlers)) {
+    routeNode.handlers = router.handlers;
+  }
+  if (!is.empty(router.validators)) {
+    routeNode.validators = router.validators;
+  }
+  if (!is.empty(middlewaresClone)) {
+    routeNode.middlewares = middlewaresClone;
+  }
+  if (!is.empty(aftersClone)) {
+    routeNode.afters = aftersClone;
+  }
 
-    if (!is.empty(routeNode)) {
-      if (!curr['__route___']) {
-        curr['__route___'] = [routeNode];
-      } else {
-        curr['__route___'].push(routeNode);
-      }
+  if (!is.empty(routeNode)) {
+    if (!curr['__route___']) {
+      curr['__route___'] = [routeNode];
+    } else {
+      curr['__route___'].push(routeNode);
     }
   }
 };
