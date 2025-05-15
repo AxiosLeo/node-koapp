@@ -133,6 +133,7 @@ function showDebugInfo(context, location, error) {
   }
   printer.yellow(_fixed('datetime', wide)).print(': ').println(new Date().toLocaleString());
   printer.yellow(_fixed('method', wide)).print(': ').green(context.method).println();
+  printer.yellow(_fixed('path', wide)).print(': ').println(context.url);
   if (!context.router) {
     return;
   }
