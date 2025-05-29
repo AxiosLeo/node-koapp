@@ -1,7 +1,7 @@
 'use strict';
 
 const is = require('@axiosleo/cli-tool/src/helper/is');
-const { _request_id } = require('./utils');
+const { _uuid_salt } = require('./utils');
 
 const resolvePathinfo = (pathinfo) => {
   let trace = [];
@@ -200,7 +200,7 @@ const initContext = (options = {}) => {
     step_data: {},
     method: method,
     pathinfo,
-    request_id: _request_id(app_id),
+    request_id: _uuid_salt(app_id),
   };
   return context;
 };
