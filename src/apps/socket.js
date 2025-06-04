@@ -4,10 +4,12 @@ const net = require('net');
 const EventEmitter = require('events');
 const Application = require('./app');
 const { debug, printer, Workflow } = require('@axiosleo/cli-tool');
-const { _uuid, _request_id } = require('../utils');
+const { _uuid_salt } = require('../utils');
 const { initContext } = require('../core');
 const is = require('@axiosleo/cli-tool/src/helper/is');
 const operator = require('../workflows/socket.workflow');
+const { _assign } = require('@axiosleo/cli-tool/src/helper/obj');
+const { _sleep } = require('@axiosleo/cli-tool/src/helper/cmd');
 
 const dispatcher = ({ app, app_id, workflow, connection }) => {
   return async (ctx) => {
@@ -53,11 +55,12 @@ const handleRes = (context) => {
   context.socket.write(data + '@@@@@@');
 };
 
-async function ping() {
-  this.broadcast(123, 'ping', 0);
-  setTimeout(() => {
-    ping.call(this);
-  }, 1000);
+async function ping(data, interval) {
+  this.broadcast(data, 'ping', 0);
+  await _sleep(interval);
+  process.nextTick(() => {
+    ping.call(this, data, interval);
+  });
 }
 
 class SocketApplication extends Application {
@@ -69,12 +72,18 @@ class SocketApplication extends Application {
     this.connections = {};
     this.on('response', handleRes);
     this.workflow = new Workflow(operator);
+    this.ping = {};
+    _assign(this.ping, {
+      open: false,
+      interval: 1000 * 60 * 5,
+      data: 'this is a ping message'
+    }, this.config.ping || {});
   }
 
   async start() {
     const server = net.createServer((connection) => {
       try {
-        let connection_id = _uuid();
+        let connection_id = _uuid_salt('connect:' + this.app_id);
         this.connections[connection_id] = connection;
         debug.log('[Socket App]', 'Current connections:', Object.keys(this.connections).length);
         this.event.emit('connection', connection);
@@ -83,7 +92,7 @@ class SocketApplication extends Application {
         connection.on('data', function (data) {
           try {
             /**
-             * @example '##{"path":"/test","method":"GET","query":{"test":123}}@@'
+             * @example '{"path":"/test","method":"GET","query":{"test":123}}@@@@@@'
              */
             let msg = Buffer.from(data.subarray(0, data.length - 6)).toString();
             const context = JSON.parse(msg);
@@ -114,10 +123,13 @@ class SocketApplication extends Application {
         debug.error('[Socket App]', 'socket server error:', err);
       }
     });
-    const self = this;
-    process.nextTick(() => {
-      ping.call(self);
-    });
+    if (this.ping.open) {
+      const self = this;
+      printer.info('[Socket App] ping is open.');
+      process.nextTick(() => {
+        ping.call(self, self.ping.data, self.ping.interval);
+      });
+    }
 
     server.listen(this.port, () => {
       printer.info(`Server is running on port ${this.port}`);
@@ -127,7 +139,7 @@ class SocketApplication extends Application {
 
   broadcast(data = '', msg = 'ok', code = 0, connections = null) {
     data = JSON.stringify({
-      request_id: _request_id(this.app_id),
+      request_id: _uuid_salt(this.app_id),
       timestamp: (new Date()).getTime(),
       code,
       message: msg,
