@@ -5,6 +5,7 @@ import { IncomingHttpHeaders } from "http";
 import * as Koa from "koa";
 import * as session from "koa-session";
 import * as KoaStaticServer from "koa-static-server";
+import type { Socket } from "net";
 import { Transform } from "stream";
 import { ErrorMessages, Rules, Validator } from "validatorjs";
 
@@ -168,9 +169,11 @@ interface AppContext extends Context {
   app_id: string;
   method?: string;
   pathinfo?: string;
+  params?: any;
   config: AppConfiguration;
   request_id: string;
-  router?: RouterInfo | null;
+  router?: RouterInfo;
+  response?: HttpResponse | HttpError;
 }
 
 interface IKoaSSEvent {
@@ -193,7 +196,6 @@ interface KoaContext extends AppContext {
   router?: RouterInfo | null;
   access_key_id?: string;
   app_key?: string;
-  params?: any;
   body?: any;
   file?: File | null;
   files?: File[];
@@ -330,6 +332,10 @@ export declare class KoaApplication extends Application {
   start(): Promise<void>;
 }
 
+export interface SocketContext extends AppContext {
+  socket: Socket;
+}
+
 export declare class Model {
   constructor(obj?: { [key: string]: any }, rules?: Rules, msg?: ErrorMessages);
 
@@ -358,3 +364,30 @@ export function initContext<
   pathinfo?: string;
   app_id?: string;
 }): F & { app: T };
+
+export declare class SocketClient {
+  options: {
+    port: number;
+    host: string;
+    name?: string;
+  };
+  event: EventEmitter;
+  client: Socket;
+  constructor(socket: Socket, app_id: string);
+  send(data: any): void;
+  close(): void;
+}
+
+export type SocketAppConfiguration = AppConfiguration & {
+  port: number;
+  ping?: {
+    open?: boolean;
+    interval?: number;
+    data?: any;
+  };
+};
+
+export declare class SocketApplication extends Application {
+  constructor(config: SocketAppConfiguration);
+  start(): Promise<void>;
+}

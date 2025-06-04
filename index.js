@@ -1,6 +1,6 @@
 'use strict';
 
-const { Application, KoaApplication } = require('./src/apps');
+const { Application, KoaApplication, SocketApplication } = require('./src/apps');
 const Controller = require('./src/controller');
 const { Router } = require('./src/router');
 const response = require('./src/response');
@@ -9,11 +9,13 @@ const { KoaSSEMiddleware } = require('./src/middlewares/sse');
 const { initContext } = require('./src/core');
 const multer = require('@koa/multer');
 const session = require('koa-session');
+const { SocketClient } = require('./src/utils');
 
 module.exports = {
   Controller,
   Application,
   KoaApplication,
+  SocketApplication,
 
   Model,
   Router,
@@ -26,5 +28,7 @@ module.exports = {
 
   // functions
   ...response,
-  initContext
+  initContext,
+
+  SocketClient
 };
