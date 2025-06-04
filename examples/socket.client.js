@@ -30,12 +30,12 @@ async function main() {
     debug.log('error', err.code);
   }
 
-  // await _sleep(3000);
-  // process.nextTick(main);
+  await _sleep(3000);
+  process.nextTick(main);
 }
 
 main().then(() => {
   // debug.log('done');
 }).catch((err) => {
-  // debug.log(err);
+  debug.log(err);
 });
