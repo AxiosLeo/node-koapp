@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebSocket Example</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .status {
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 10px;
+      }
+      .connected {
+        background-color: #d4edda;
+        color: #155724;
+      }
+      .disconnected {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
+      .message-container {
+        border: 1px solid #ddd;
+        padding: 10px;
+        height: 300px;
+        overflow-y: auto;
+        margin-bottom: 10px;
+      }
+      .message {
+        margin: 5px 0;
+        padding: 5px;
+        border-radius: 4px;
+      }
+      .received {
+        background-color: #e9ecef;
+      }
+      .sent {
+        background-color: #cce5ff;
+        text-align: right;
+      }
+      .input-group {
+        display: flex;
+        gap: 10px;
+      }
+      input[type="text"] {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      button {
+        padding: 8px 16px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>WebSocket Example</h1>
+
+      <div id="status" class="status disconnected">Disconnected</div>
+
+      <div class="input-group">
+        <input
+          type="text"
+          id="serverUrl"
+          value="ws://localhost:8081/api/test/123"
+          placeholder="WebSocket Server URL"
+        />
+        <button id="connectBtn">Connect</button>
+        <button id="disconnectBtn" disabled>Disconnect</button>
+      </div>
+
+      <div id="messageContainer" class="message-container"></div>
+
+      <div class="input-group">
+        <input
+          type="text"
+          id="messageInput"
+          placeholder="Type your message..."
+          disabled
+        />
+        <button id="sendBtn" disabled>Send</button>
+      </div>
+    </div>
+
+    <script>
+      let socket = null;
+      const statusDiv = document.getElementById("status");
+      const serverUrlInput = document.getElementById("serverUrl");
+      const messageInput = document.getElementById("messageInput");
+      const messageContainer = document.getElementById("messageContainer");
+      const connectBtn = document.getElementById("connectBtn");
+      const disconnectBtn = document.getElementById("disconnectBtn");
+      const sendBtn = document.getElementById("sendBtn");
+
+      function updateStatus(connected) {
+        statusDiv.className = `status ${
+          connected ? "connected" : "disconnected"
+        }`;
+        statusDiv.textContent = connected ? "Connected" : "Disconnected";
+
+        connectBtn.disabled = connected;
+        disconnectBtn.disabled = !connected;
+        messageInput.disabled = !connected;
+        sendBtn.disabled = !connected;
+      }
+
+      function addMessage(message, type) {
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `message ${type}`;
+        messageDiv.textContent = message;
+        messageContainer.appendChild(messageDiv);
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+      }
+
+      connectBtn.addEventListener("click", () => {
+        const url = serverUrlInput.value;
+        try {
+          socket = new WebSocket(url);
+
+          socket.onopen = () => {
+            updateStatus(true);
+            addMessage("Connected to server", "received");
+          };
+
+          socket.onclose = () => {
+            updateStatus(false);
+            addMessage("Disconnected from server", "received");
+          };
+
+          socket.onerror = (error) => {
+            console.error("WebSocket error:", error);
+            addMessage("Error occurred", "received");
+          };
+
+          socket.onmessage = (event) => {
+            addMessage(`Received: ${event.data}`, "received");
+          };
+        } catch (error) {
+          console.error("Connection error:", error);
+          addMessage("Failed to connect", "received");
+        }
+      });
+
+      disconnectBtn.addEventListener("click", () => {
+        if (socket) {
+          socket.close();
+          socket = null;
+        }
+      });
+
+      sendBtn.addEventListener("click", () => {
+        const message = messageInput.value;
+        const url = serverUrlInput.value;
+        const urlObj = new URL(url);
+        if (message && socket) {
+          socket.send(JSON.stringify({ message }));
+          addMessage(`Sent: ${message}`, "sent");
+          messageInput.value = "";
+        }
+      });
+
+      messageInput.addEventListener("keypress", (event) => {
+        if (event.key === "Enter") {
+          sendBtn.click();
+        }
+      });
+    </script>
+  </body>
+</html>
