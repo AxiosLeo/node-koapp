@@ -8,7 +8,11 @@ const root = new Router(null, {
     debug.log(`[${context.app_id}] ${context.method}: ${context.router.pathinfo}`);
   }],
   afters: [async (context) => {
-    // debug.log(context);
+    debug.log({
+      query: context.query,
+      body: context.body,
+      test: context.params.id
+    });
   }]
 });
 
