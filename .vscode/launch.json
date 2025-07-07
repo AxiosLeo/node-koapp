@@ -7,7 +7,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Web api",
+      "name": "Web server",
       "skipFiles": ["<node_internals>/**"],
       "program": "${workspaceFolder}/bin/koapp.js",
       "args": ["http", "-p", "8080"]
@@ -15,7 +15,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Test server",
+      "name": "Test web server",
       "skipFiles": ["<node_internals>/**"],
       "program": "${workspaceFolder}/tests/bootstrap.js",
       "args": []
@@ -23,7 +23,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Socket Client",
+      "name": "Example: Socket Client",
       "skipFiles": ["<node_internals>/**"],
       "program": "${workspaceFolder}/examples/socket.client.js",
       "args": []
@@ -31,9 +31,17 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Socket Server",
+      "name": "Example: Socket Server",
       "skipFiles": ["<node_internals>/**"],
       "program": "${workspaceFolder}/examples/socket.server.js",
+      "args": []
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Example: WebSocket Server",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${workspaceFolder}/examples/websocket.server.js",
       "args": []
     }
   ]
