@@ -70,6 +70,10 @@ async function ping(data, interval) {
 }
 
 class WebSocketApplication extends Application {
+  /**
+   * 
+   * @param {import('../../').WebSocketAppConfiguration} options 
+   */
   constructor(options) {
     super(options);
 
@@ -84,10 +88,12 @@ class WebSocketApplication extends Application {
       interval: 1000 * 60 * 5,
       data: 'this is a ping message'
     }, this.config.ping || {});
+    delete options.ping;
+    this.websocketOptions = options;
   }
 
   async start() {
-    const wss = new WebSocketServer({ port: this.port });
+    const wss = new WebSocketServer(this.websocketOptions);
     printer.info(`Server is running on port ${this.port}`);
     this.event.emit('listen', this.port);
     const self = this;
