@@ -34,7 +34,8 @@
     "koa-static-server": "^1.5.2",
     "multer": "^1.4.5-lts.1",
     "uuid": "^9.0.1",
-    "validatorjs": "^3.22.1"
+    "validatorjs": "^3.22.1",
+    "ws": "^8.18.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
