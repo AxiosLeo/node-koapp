@@ -1,6 +1,5 @@
 'use strict';
 
-const { Application, KoaApplication, SocketApplication } = require('./src/apps');
 const Controller = require('./src/controller');
 const { Router } = require('./src/router');
 const response = require('./src/response');
@@ -10,12 +9,19 @@ const { initContext } = require('./src/core');
 const multer = require('@koa/multer');
 const session = require('koa-session');
 const { SocketClient } = require('./src/utils');
+const {
+  Application,
+  KoaApplication,
+  SocketApplication,
+  WebSocketApplication
+} = require('./src/apps');
 
 module.exports = {
   Controller,
   Application,
   KoaApplication,
   SocketApplication,
+  WebSocketApplication,
 
   Model,
   Router,
