@@ -8,7 +8,16 @@ import * as KoaStaticServer from "koa-static-server";
 import type { Socket } from "net";
 import { Transform } from "stream";
 import { ErrorMessages, Rules, Validator } from "validatorjs";
+import type { ServerOptions, WebSocket } from "ws";
 
+// ========================================
+// Status Code Types
+// ========================================
+
+/**
+ * Predefined status codes with format "code;message"
+ * Used for standardized API responses
+ */
 type StatusCode =
   | string
   | "000;Unknown Error"
@@ -22,6 +31,14 @@ type StatusCode =
   | "501;Failed"
   | "409;Data Already Exists";
 
+// ========================================
+// HTTP Method Types
+// ========================================
+
+/**
+ * HTTP methods supported by the framework
+ * Includes both uppercase and lowercase variants
+ */
 type HttpMethod =
   | "ANY"
   | "GET"
@@ -45,38 +62,104 @@ type HttpMethod =
   | "connect"
   | string;
 
-export function response(
-  data: unknown,
+// ========================================
+// Response Functions
+// ========================================
+
+/**
+ * Send a response with data, status code, and optional headers
+ * @template T Type of response data
+ * @param data Response data
+ * @param code Status code in format "code;message"
+ * @param httpStatus HTTP status code (default: 200)
+ * @param headers Optional response headers
+ */
+export function response<T = unknown>(
+  data: T,
   code?: StatusCode,
   httpStatus?: number,
   headers?: Record<string, string>
 ): void;
-export function result(
-  data: unknown,
+
+/**
+ * Send a result response with data and optional headers
+ * @template T Type of response data
+ * @param data Response data
+ * @param httpStatus HTTP status code (default: 200)
+ * @param headers Optional response headers
+ */
+export function result<T = unknown>(
+  data: T,
   httpStatus?: number,
   headers?: Record<string, string>
 ): void;
-export function success(data?: unknown, headers?: Record<string, string>): void;
-export function failed(
-  data?: unknown,
+
+/**
+ * Send a success response with optional data and headers
+ * @template T Type of response data
+ * @param data Optional response data
+ * @param headers Optional response headers
+ */
+export function success<T = unknown>(
+  data?: T,
+  headers?: Record<string, string>
+): void;
+
+/**
+ * Send a failed response with error data and status
+ * @template T Type of response data
+ * @param data Error data
+ * @param code Status code in format "code;message"
+ * @param httpStatus HTTP status code (default: 500)
+ * @param headers Optional response headers
+ */
+export function failed<T = unknown>(
+  data?: T,
   code?: StatusCode,
   httpStatus?: number,
   headers?: Record<string, string>
 ): void;
+
+/**
+ * Send an error response with HTTP status and message
+ * @param httpStatus HTTP status code
+ * @param msg Error message
+ * @param headers Optional response headers
+ */
 export function error(
   httpStatus: number,
   msg: string,
   headers?: Record<string, string>
 ): void;
+
+/**
+ * Log data to console (development utility)
+ * @param data Data to log
+ */
 export function log(...data: any): void;
 
+// ========================================
+// HTTP Response Classes
+// ========================================
+
+/**
+ * Configuration for HTTP response
+ */
 export interface HttpResponseConfig {
+  /** HTTP status code */
   status?: number;
+  /** Response headers */
   headers?: IncomingHttpHeaders;
+  /** Response data */
   data?: unknown;
+  /** Response format */
   format?: "json" | "text";
 }
 
+/**
+ * HTTP response class for structured responses
+ * Extends Error to work with error handling middleware
+ */
 export declare class HttpResponse extends Error {
   public readonly status: number;
   public readonly headers: IncomingHttpHeaders;
@@ -84,6 +167,10 @@ export declare class HttpResponse extends Error {
   constructor(config?: HttpResponseConfig);
 }
 
+/**
+ * HTTP error class for error responses
+ * Extends Error to work with error handling middleware
+ */
 export declare class HttpError extends Error {
   public readonly status: number;
   public readonly headers: IncomingHttpHeaders;
@@ -95,21 +182,28 @@ export declare class HttpError extends Error {
   );
 }
 
+// ========================================
+// Controller Interface and Class
+// ========================================
+
+/**
+ * Interface defining controller response methods
+ */
 interface ControllerInterface {
-  response(
-    data: unknown,
+  response<T = unknown>(
+    data: T,
     code?: StatusCode,
     status?: number,
     headers?: Record<string, string>
   ): void;
-  result(
-    data: unknown,
+  result<T = unknown>(
+    data: T,
     status?: number,
     headers?: Record<string, string>
   ): void;
-  success(data?: unknown, headers?: Record<string, string>): void;
-  failed(
-    data?: unknown,
+  success<T = unknown>(data?: T, headers?: Record<string, string>): void;
+  failed<T = unknown>(
+    data?: T,
     code?: StatusCode,
     status?: number,
     headers?: Record<string, string>
@@ -118,21 +212,25 @@ interface ControllerInterface {
   log(...data: any): void;
 }
 
+/**
+ * Base controller class providing response methods
+ * Implements standard response patterns for API endpoints
+ */
 export declare class Controller implements ControllerInterface {
-  response(
-    data: unknown,
+  response<T = unknown>(
+    data: T,
     code?: StatusCode,
     status?: number,
     headers?: Record<string, string>
   ): void;
-  result(
-    data: unknown,
+  result<T = unknown>(
+    data: T,
     status?: number,
     headers?: Record<string, string>
   ): void;
-  success(data?: unknown, headers?: Record<string, string>): void;
-  failed(
-    data?: unknown,
+  success<T = unknown>(data?: T, headers?: Record<string, string>): void;
+  failed<T = unknown>(
+    data?: T,
     code?: StatusCode,
     status?: number,
     headers?: Record<string, string>
@@ -141,97 +239,428 @@ export declare class Controller implements ControllerInterface {
   log(...data: any): void;
 }
 
+// ========================================
+// Validation Types
+// ========================================
+
+/**
+ * Configuration for request validation
+ */
 interface ValidatorConfig {
+  /** Validation rules */
   rules: Rules;
+  /** Custom error messages */
   messages?: ErrorMessages;
 }
 
+/**
+ * Validators for different parts of the request
+ */
 interface RouterValidator {
+  /** Path parameter validation */
   params?: ValidatorConfig;
+  /** Query parameter validation */
   query?: ValidatorConfig;
+  /** Request body validation */
   body?: ValidatorConfig;
 }
 
-interface RouterInfo {
+// ========================================
+// Router Types
+// ========================================
+
+/**
+ * Information about a matched route
+ * @template TParams Type of route parameters (defaults to Record<string, string>)
+ * @template TBody Type of request body (defaults to any)
+ * @template TQuery Type of query parameters (defaults to any)
+ *
+ * @example
+ * ```typescript
+ * // RouterInfo is now framework-agnostic, using base AppContext
+ * interface UserParams { id: string; action: 'view' | 'edit'; }
+ * interface UserBody { name: string; email: string; }
+ * interface UserQuery { include?: 'profile'; }
+ *
+ * type UserRouterInfo = RouterInfo<UserParams, UserBody, UserQuery>;
+ *
+ * // Can be used with any context type that extends AppContext
+ * const routerInfo: UserRouterInfo = {
+ *   pathinfo: '/user/{:id}/{:action}',
+ *   validators: {},
+ *   middlewares: [], // ContextHandler<AppContext<UserParams, UserBody, UserQuery>>[]
+ *   handlers: [],    // ContextHandler<AppContext<UserParams, UserBody, UserQuery>>[]
+ *   afters: [],      // ContextHandler<AppContext<UserParams, UserBody, UserQuery>>[]
+ *   methods: ['POST', 'PUT'],
+ *   params: { id: '123', action: 'edit' }
+ * };
+ * ```
+ */
+interface RouterInfo<
+  TParams = Record<string, string>,
+  TBody = any,
+  TQuery = any
+> {
+  /** Route path pattern */
   pathinfo: string;
+  /** Route validators */
   validators: RouterValidator;
-  middlewares: ContextHandler<KoaContext>[];
-  handlers: ContextHandler<KoaContext>[];
-  afters: ContextHandler<KoaContext>[];
+  /** Middleware functions */
+  middlewares: ContextHandler<AppContext<TParams, TBody, TQuery>>[];
+  /** Handler functions */
+  handlers: ContextHandler<AppContext<TParams, TBody, TQuery>>[];
+  /** After middleware functions */
+  afters: ContextHandler<AppContext<TParams, TBody, TQuery>>[];
+  /** Supported HTTP methods */
   methods: string[];
-  params: {
-    [key: string]: string;
-  };
+  /** Extracted path parameters */
+  params: TParams;
 }
 
-interface AppContext extends Context {
-  app: Application;
-  app_id: string;
-  method?: string;
-  pathinfo?: string;
-  params?: any;
-  config: AppConfiguration;
-  request_id: string;
-  router?: RouterInfo;
-  response?: HttpResponse | HttpError;
-}
+// ========================================
+// Context Types
+// ========================================
 
+// ========================================
+// Server-Sent Events Types
+// ========================================
+
+/**
+ * Server-sent event data structure
+ */
 interface IKoaSSEvent {
+  /** Event ID */
   id?: number;
+  /** Event data */
   data?: string | object;
+  /** Event type */
   event?: string;
 }
 
+/**
+ * Server-sent events interface extending Transform stream
+ */
 interface IKoaSSE extends Transform {
+  /** Send SSE event */
   send(data: IKoaSSEvent | string): void;
+  /** Send keep-alive ping */
   keepAlive(): void;
+  /** Close SSE connection */
   close(): void;
 }
 
-interface KoaContext extends AppContext {
+/**
+ * Base application context interface
+ * @template TParams Type of route parameters (defaults to Record<string, string>)
+ * @template TBody Type of request body (defaults to any)
+ * @template TQuery Type of query parameters (defaults to any)
+ *
+ * @example
+ * ```typescript
+ * // Basic usage with default types
+ * interface MyContext extends AppContext {}
+ *
+ * // Usage with specific types
+ * interface UserParams { id: string; action: 'view' | 'edit'; }
+ * interface UserBody { name: string; email: string; }
+ * interface UserQuery { include?: 'profile' | 'settings'; }
+ *
+ * interface UserContext extends AppContext<UserParams, UserBody, UserQuery> {}
+ *
+ * // In route handler
+ * const handler = async (context: UserContext) => {
+ *   // context.router is now fully typed
+ *   const routerParams = context.router.params; // UserParams
+ *   const handlers = context.router.handlers;   // ContextHandler<KoaContext<UserParams, UserBody, UserQuery>>[]
+ * };
+ * ```
+ */
+interface AppContext<
+  TParams = Record<string, string>,
+  TBody = any,
+  TQuery = any
+> extends Context {
+  app:
+    | KoaApplication
+    | SocketApplication
+    | WebSocketApplication
+    | Application
+    | null;
+  app_id: string;
+  method: string;
+  pathinfo: string;
+  request_id?: string;
+  router?: RouterInfo<TParams, TBody, TQuery> | null;
+}
+
+/**
+ * Koa-specific context extending AppContext
+ * @template TParams Type of route parameters (defaults to Record<string, string>)
+ * @template TBody Type of request body (defaults to any)
+ * @template TQuery Type of query parameters (defaults to any)
+ *
+ * @example
+ * ```typescript
+ * // Define specific parameter and body types
+ * interface ProductParams {
+ *   id: string;
+ *   category: string;
+ * }
+ *
+ * interface CreateProductBody {
+ *   name: string;
+ *   price: number;
+ *   description?: string;
+ *   tags?: string[];
+ * }
+ *
+ * interface ProductQuery {
+ *   sort?: 'asc' | 'desc';
+ *   limit?: number;
+ *   include?: 'details' | 'reviews' | 'images';
+ * }
+ *
+ * // Create fully typed context
+ * type ProductContext = KoaContext<ProductParams, CreateProductBody, ProductQuery>;
+ *
+ * // Use in route handler with full type safety
+ * router.post('/product/{:id}/category/{:category}', async (context: ProductContext) => {
+ *   // Full type safety for params
+ *   const productId = context.params.id;         // string
+ *   const category = context.params.category;    // string
+ *
+ *   // Type-safe body access - TypeScript will enforce required fields
+ *   const productName = context.body.name;       // string
+ *   const price = context.body.price;            // number
+ *   const desc = context.body.description;       // string | undefined
+ *   const tags = context.body.tags;              // string[] | undefined
+ *
+ *   // Type-safe query access
+ *   const sortOrder = context.query.sort;        // 'asc' | 'desc' | undefined
+ *   const limit = context.query.limit;           // number | undefined
+ *   const include = context.query.include;       // 'details' | 'reviews' | 'images' | undefined
+ *
+ *   // TypeScript will catch type errors at compile time
+ *   // const invalid = context.body.invalidField; // ❌ TypeScript error
+ *   // const wrongType = context.query.sort === 'invalid'; // ❌ TypeScript error
+ * });
+ *
+ * // Partial typing - only specify what you need
+ * type SimpleContext = KoaContext<{}, CreateProductBody>; // Only body typed
+ * type ParamsOnlyContext = KoaContext<ProductParams>;     // Only params typed
+ * type QueryOnlyContext = KoaContext<{}, any, ProductQuery>; // Only query typed
+ *
+ * // Real-world example: User management API
+ * interface UserParams { id: string; }
+ * interface UpdateUserBody {
+ *   name?: string;
+ *   email?: string;
+ *   role?: 'admin' | 'user';
+ * }
+ * interface UserQuery {
+ *   expand?: 'profile' | 'permissions';
+ *   format?: 'json' | 'xml';
+ * }
+ *
+ * const userRouter = new Router<KoaContext<UserParams, UpdateUserBody, UserQuery>>();
+ *
+ * userRouter.put('/user/{:id}', async (context) => {
+ *   // All properties are fully typed with IntelliSense support
+ *   const userId = context.params.id;
+ *   const updates = context.body; // UpdateUserBody
+ *   const options = context.query; // UserQuery
+ *
+ *   // Type-safe validation
+ *   if (updates.role && !['admin', 'user'].includes(updates.role)) {
+ *     // This would be caught at compile time due to literal types
+ *   }
+ * });
+ * ```
+ */
+interface KoaContext<
+  TParams = Record<string, string>,
+  TBody = any,
+  TQuery = any
+> extends AppContext<TParams, TBody, TQuery> {
+  /** Route parameters */
+  params?: TParams;
+  /** Application configuration */
+  config?: AppConfiguration;
+  /** Koa context with optional SSE support */
   koa: Koa.ParameterizedContext & { sse?: IKoaSSE };
-  method: HttpMethod;
+  /** Request URL */
   url: string;
-  // eslint-disable-next-line no-use-before-define
-  router?: RouterInfo | null;
-  access_key_id?: string;
-  app_key?: string;
-  body?: any;
+  /** Request body */
+  body?: TBody;
+  /** Uploaded file */
   file?: File | null;
+  /** Uploaded files array */
   files?: File[];
-  query?: any;
+  /** Query parameters */
+  query?: TQuery;
+  /** Request headers */
   headers?: IncomingHttpHeaders;
+  /** Response object */
   response?: HttpResponse | HttpError;
 }
 
-type ContextHandler<T extends KoaContext> = (context: T) => Promise<void>;
+/**
+ * Context handler function type
+ * @template T Context type extending AppContext
+ */
+type ContextHandler<T extends AppContext<any, any, any> = AppContext> = (
+  context: T
+) => Promise<void>;
 
-interface RouterOptions<T extends KoaContext> {
+// ========================================
+// Router Class
+// ========================================
+
+/**
+ * Router options for configuration
+ * @template T Context type extending AppContext
+ *
+ * @example
+ * ```typescript
+ * // RouterOptions now uses base AppContext, making it framework-agnostic
+ * interface UserParams { id: string; }
+ * interface UserBody { name: string; }
+ * interface UserQuery { format?: 'json' | 'xml'; }
+ *
+ * type UserContext = AppContext<UserParams, UserBody, UserQuery>;
+ *
+ * const routerOptions: RouterOptions<UserContext> = {
+ *   method: 'POST',
+ *   middlewares: [
+ *     async (context) => {
+ *       // context is typed as UserContext
+ *       console.log(`Processing user ${context.params?.id}`);
+ *     }
+ *   ],
+ *   handlers: [
+ *     async (context) => {
+ *       // Full type safety
+ *       const userId = context.params?.id;      // string | undefined
+ *       const userName = context.body?.name;    // string | undefined
+ *       const format = context.query?.format;   // 'json' | 'xml' | undefined
+ *     }
+ *   ]
+ * };
+ * ```
+ */
+interface RouterOptions<T extends AppContext<any, any, any> = AppContext> {
+  /** Default HTTP method */
   method?: HttpMethod;
+  /** Route handlers */
   handlers?: ContextHandler<T>[];
+  /** Middleware functions */
   middlewares?: ContextHandler<T>[];
+  /** After middleware functions */
   afters?: ContextHandler<T>[];
+  /** Route description */
   intro?: string;
-  routers?: Router[];
+  /** Sub-routers */
+  routers?: Router<T>[];
+  /** Route validators */
   validators?: RouterValidator;
 }
 
-export class Router<T extends KoaContext = KoaContext> {
+/**
+ * Router class for defining API routes and middleware
+ * @template T Context type extending AppContext (can be KoaContext, SocketContext, etc.)
+ *
+ * @example
+ * ```typescript
+ * // Basic router usage
+ * const router = new Router();
+ *
+ * // Router with typed params, body, and query using AppContext
+ * interface UserParams {
+ *   id: string;
+ *   action: 'view' | 'edit' | 'delete';
+ * }
+ *
+ * interface UpdateUserBody {
+ *   name?: string;
+ *   email?: string;
+ *   age?: number;
+ * }
+ *
+ * interface UserQuery {
+ *   include?: 'profile' | 'settings';
+ *   format?: 'json' | 'xml';
+ * }
+ *
+ * // Can use base AppContext
+ * type UserContext = AppContext<UserParams, UpdateUserBody, UserQuery>;
+ * const userRouter = new Router<UserContext>();
+ *
+ * // Or specific implementations like KoaContext
+ * type KoaUserContext = KoaContext<UserParams, UpdateUserBody, UserQuery>;
+ * const koaRouter = new Router<KoaUserContext>();
+ *
+ * // Or SocketContext
+ * type SocketUserContext = SocketContext<UserParams, UpdateUserBody, UserQuery>;
+ * const socketRouter = new Router<SocketUserContext>();
+ *
+ * userRouter.post('/user/{:id}/{:action}', async (context) => {
+ *   // context.params is fully typed
+ *   const userId = context.params?.id;       // string | undefined
+ *   const action = context.params?.action;   // 'view' | 'edit' | 'delete' | undefined
+ *
+ *   // Router info is also typed
+ *   if (context.router) {
+ *     const routerParams = context.router.params; // UserParams
+ *     const handlers = context.router.handlers;   // ContextHandler<UserContext>[]
+ *   }
+ * });
+ *
+ * // Router with middleware that uses typed context
+ * const apiRouter = new Router<UserContext>(null, {
+ *   middlewares: [
+ *     async (context) => {
+ *       console.log(`User ${context.params?.id} performing ${context.params?.action}`);
+ *       console.log(`App: ${context.app?.constructor.name}`);
+ *     }
+ *   ]
+ * });
+ * ```
+ */
+export class Router<T extends AppContext<any, any, any> = AppContext> {
+  /** Route prefix */
   prefix: string;
+  /** Default HTTP method */
   method: HttpMethod;
-  routers: Router[];
+  /** Sub-routers */
+  routers: Router<T>[];
+  /** Route handlers */
   handlers: ContextHandler<T>[];
+  /** Middleware functions */
   middlewares: ContextHandler<T>[];
+  /** Route validators */
   validators: RouterValidator;
+  /** After middleware functions */
   afters?: ContextHandler<T>[];
 
   constructor(prefix?: string, options?: RouterOptions<T>);
 
-  add<T extends KoaContext>(...router: Router<T>[]): this;
-  add<T extends KoaContext>(prefix: string, ...router: Router<T>[]): this;
+  /**
+   * Add sub-routers to this router
+   */
+  add<T extends AppContext<any, any, any>>(...router: Router<T>[]): this;
+  add<T extends AppContext<any, any, any>>(
+    prefix: string,
+    ...router: Router<T>[]
+  ): this;
 
+  /**
+   * Create a new sub-router
+   */
   new(prefix: string, options?: RouterOptions<T>): this;
 
+  /**
+   * Add a route with specific HTTP method
+   */
   push(
     method: HttpMethod,
     prefix: string,
@@ -239,36 +668,54 @@ export class Router<T extends KoaContext = KoaContext> {
     validator?: RouterValidator
   ): this;
 
+  /**
+   * Add a GET route
+   */
   get(
     prefix: string,
     handle: ContextHandler<T>,
     validator?: RouterValidator
   ): this;
 
+  /**
+   * Add a POST route
+   */
   post(
     prefix: string,
     handle: ContextHandler<T>,
     validator?: RouterValidator
   ): this;
 
+  /**
+   * Add a PUT route
+   */
   put(
     prefix: string,
     handle: ContextHandler<T>,
     validator?: RouterValidator
   ): this;
 
+  /**
+   * Add a PATCH route
+   */
   patch(
     prefix: string,
     handle: ContextHandler<T>,
     validator?: RouterValidator
   ): this;
 
+  /**
+   * Add a DELETE route
+   */
   delete(
     prefix: string,
     handle: ContextHandler<T>,
     validator?: RouterValidator
   ): this;
 
+  /**
+   * Add a route that accepts any HTTP method
+   */
   any(
     prefix: string,
     handle: ContextHandler<T>,
@@ -276,118 +723,539 @@ export class Router<T extends KoaContext = KoaContext> {
   ): this;
 }
 
+// ========================================
+// SSE Middleware Types
+// ========================================
+
+/**
+ * Options for Server-Sent Events middleware
+ */
 type SSEOptions = {
-  pingInterval?: number; // default is 60000
-  closeEvent?: string; // default is 'close'
+  /** Ping interval in milliseconds (default: 60000) */
+  pingInterval?: number;
+  /** Event name for close event (default: 'close') */
+  closeEvent?: string;
 };
 
-interface AppConfiguration {
-  [key: string]: any;
-  debug?: boolean;
-  app_id?: string;
-  routers?: Router[];
-}
-
+/**
+ * SSE context handler function type
+ */
 type SSEContextHandler = (
   context: Koa.ParameterizedContext,
   next: () => Promise<void>
 ) => Promise<void>;
 
+/**
+ * Middleware namespace containing utility middleware functions
+ */
 export namespace middlewares {
+  /**
+   * Create Server-Sent Events middleware
+   * @param options SSE configuration options
+   * @returns SSE middleware function
+   */
   function KoaSSEMiddleware(options?: SSEOptions): SSEContextHandler;
 }
 
+// ========================================
+// Application Configuration Types
+// ========================================
+
+/**
+ * Base application configuration interface
+ *
+ * @example
+ * ```typescript
+ * // Basic usage - supports mixed router types
+ * const config: AppConfiguration = {
+ *   debug: true,
+ *   app_id: 'my-app',
+ *   routers: [
+ *     userRouter,    // Router<KoaContext<UserParams, UserBody, UserQuery>>
+ *     productRouter, // Router<KoaContext<ProductParams, ProductBody, ProductQuery>>
+ *     apiRouter      // Router<KoaContext<ApiParams, ApiBody, ApiQuery>>
+ *   ]
+ * };
+ *
+ * // Type-safe usage with helper type
+ * const typedConfig: TypedAppConfiguration<
+ *   Router<KoaContext<UserParams, UserBody, UserQuery>>[]
+ * > = {
+ *   debug: true,
+ *   routers: [userRouter] // All routers must be of the same type
+ * };
+ * ```
+ */
+interface AppConfiguration {
+  [key: string]: any;
+  /** Enable debug mode */
+  debug?: boolean;
+  /** Application identifier */
+  app_id?: string;
+  /** Application routers - supports mixed router types for flexibility */
+  routers?: Router<any>[];
+}
+
+/**
+ * Typed application configuration for strict type checking when needed
+ * @template TRouters Array type of routers for strict typing
+ *
+ * @example
+ * ```typescript
+ * interface UserParams { id: string; }
+ * interface UserBody { name: string; }
+ * interface UserQuery { format?: 'json' | 'xml'; }
+ *
+ * type UserRouter = Router<KoaContext<UserParams, UserBody, UserQuery>>;
+ *
+ * // Strict typing when all routers are of the same type
+ * const config: TypedAppConfiguration<UserRouter[]> = {
+ *   debug: true,
+ *   routers: [
+ *     userRouter1, // Must be UserRouter
+ *     userRouter2  // Must be UserRouter
+ *   ]
+ * };
+ *
+ * // Or for multiple specific types
+ * const mixedConfig: TypedAppConfiguration<(UserRouter | ProductRouter)[]> = {
+ *   routers: [userRouter, productRouter]
+ * };
+ * ```
+ */
+interface TypedAppConfiguration<TRouters extends Router<any>[] = Router<any>[]>
+  extends Omit<AppConfiguration, "routers"> {
+  /** Strictly typed application routers */
+  routers?: TRouters;
+}
+
+/**
+ * Koa application specific configuration
+ *
+ * @example
+ * ```typescript
+ * // Basic usage with mixed router types
+ * const config: KoaApplicationConfig = {
+ *   listen_host: 'localhost',
+ *   port: 3000,
+ *   debug: true,
+ *   routers: [
+ *     userRouter,    // Different context types
+ *     productRouter, // are supported
+ *     apiRouter
+ *   ]
+ * };
+ *
+ * // Type-safe usage for specific router types
+ * interface UserParams { id: string; }
+ * interface UserBody { name: string; }
+ * type UserRouter = Router<KoaContext<UserParams, UserBody>>;
+ *
+ * const typedConfig: TypedKoaApplicationConfig<UserRouter[]> = {
+ *   listen_host: 'localhost',
+ *   port: 3000,
+ *   routers: [userRouter1, userRouter2] // All must be UserRouter
+ * };
+ * ```
+ */
 export type KoaApplicationConfig = AppConfiguration & {
+  /** Host to listen on */
   listen_host: string;
+  /** Number of server instances */
   count?: number;
+  /** Port to listen on */
   port?: number;
+  /** Path mappings */
   paths?: Record<string, string>;
+  /** Koa server configuration */
   server?: {
+    /** Environment mode */
     env?: string | undefined;
+    /** Signing keys for cookies */
     keys?: string[] | undefined;
+    /** Trust proxy headers */
     proxy?: boolean | undefined;
+    /** Subdomain offset */
     subdomainOffset?: number | undefined;
+    /** Proxy IP header */
     proxyIpHeader?: string | undefined;
+    /** Maximum IPs count */
     maxIpsCount?: number | undefined;
   };
+  /** Session key name */
   session_key?: string;
+  /** Session configuration */
   session?: Partial<session.opts>;
+  /** Static file serving options */
   static?: KoaStaticServer.Options;
 };
 
+/**
+ * Typed Koa application configuration for strict type checking
+ * @template TRouters Array type of routers for strict typing
+ */
+export type TypedKoaApplicationConfig<
+  TRouters extends Router<any>[] = Router<any>[]
+> = TypedAppConfiguration<TRouters> &
+  Omit<KoaApplicationConfig, keyof AppConfiguration>;
+
+/**
+ * Socket application configuration
+ *
+ * @example
+ * ```typescript
+ * // Basic usage with mixed router types
+ * const config: SocketAppConfiguration = {
+ *   port: 8080,
+ *   debug: true,
+ *   routers: [
+ *     chatRouter,    // Different context types
+ *     gameRouter,    // are supported
+ *     notifyRouter
+ *   ],
+ *   ping: { open: true, interval: 30000 }
+ * };
+ *
+ * // Type-safe usage for specific router types
+ * interface ChatParams { room: string; userId: string; }
+ * interface ChatBody { message: string; type: 'text' | 'image'; }
+ * type ChatRouter = Router<SocketContext<ChatParams, ChatBody>>;
+ *
+ * const typedConfig: TypedSocketAppConfiguration<ChatRouter[]> = {
+ *   port: 8080,
+ *   routers: [chatRouter1, chatRouter2] // All must be ChatRouter
+ * };
+ * ```
+ */
+export type SocketAppConfiguration = AppConfiguration & {
+  /** Port to listen on */
+  port: number;
+  /** Ping configuration */
+  ping?: {
+    /** Enable ping */
+    open?: boolean;
+    /** Ping interval in milliseconds */
+    interval?: number;
+    /** Ping data */
+    data?: any;
+  };
+};
+
+/**
+ * Typed Socket application configuration for strict type checking
+ * @template TRouters Array type of routers for strict typing
+ */
+export type TypedSocketAppConfiguration<
+  TRouters extends Router<any>[] = Router<any>[]
+> = TypedAppConfiguration<TRouters> &
+  Omit<SocketAppConfiguration, keyof AppConfiguration>;
+
+/**
+ * WebSocket application configuration
+ *
+ * @example
+ * ```typescript
+ * // Basic usage with mixed router types
+ * const config: WebSocketAppConfiguration = {
+ *   port: 8080,
+ *   debug: true,
+ *   routers: [
+ *     wsRouter1,     // Different context types
+ *     wsRouter2,     // are supported
+ *     wsRouter3
+ *   ],
+ *   // WebSocket server options
+ *   clientTracking: true,
+ *   maxPayload: 1024 * 1024
+ * };
+ *
+ * // Type-safe usage for specific router types
+ * interface WSParams { channel: string; userId: string; }
+ * interface WSBody { event: string; data: any; }
+ * type WSRouter = Router<SocketContext<WSParams, WSBody>>;
+ *
+ * const typedConfig: TypedWebSocketAppConfiguration<WSRouter[]> = {
+ *   port: 8080,
+ *   routers: [wsRouter1, wsRouter2] // All must be WSRouter
+ * };
+ * ```
+ */
+export type WebSocketAppConfiguration = ServerOptions & SocketAppConfiguration;
+
+/**
+ * Typed WebSocket application configuration for strict type checking
+ * @template TRouters Array type of routers for strict typing
+ */
+export type TypedWebSocketAppConfiguration<
+  TRouters extends Router<any>[] = Router<any>[]
+> = ServerOptions & TypedSocketAppConfiguration<TRouters>;
+
+// ========================================
+// Application Classes
+// ========================================
+
+/**
+ * Trigger function type for events
+ */
 type TriggerFunc = (...args: any[]) => void;
 
+/**
+ * Base application class extending EventEmitter
+ */
 export declare abstract class Application extends EventEmitter {
+  /** Application routes */
   routes: any;
+  /** Application identifier */
   app_id: string;
+  /** Application configuration */
   config: Configuration;
+
   constructor(config: AppConfiguration);
+
+  /**
+   * Start the application
+   * @returns Promise that resolves when application is started
+   */
   abstract start(): Promise<void>;
 }
 
+/**
+ * Koa-based HTTP application
+ */
 export declare class KoaApplication extends Application {
+  /** Koa instance */
   koa: Koa;
+  /** Workflow instance for request processing */
   workflow: Workflow<KoaContext>;
+
   constructor(config: KoaApplicationConfig);
+
+  /**
+   * Start the Koa application server
+   * @returns Promise that resolves when server is started
+   */
   start(): Promise<void>;
 }
 
-export interface SocketContext extends AppContext {
+/**
+ * Socket context extending AppContext
+ * @template TParams Type of route parameters (defaults to Record<string, string>)
+ * @template TBody Type of request body (defaults to any)
+ * @template TQuery Type of query parameters (defaults to any)
+ *
+ * @example
+ * ```typescript
+ * // Define socket-specific types
+ * interface SocketParams { room: string; userId: string; }
+ * interface SocketBody { message: string; type: 'text' | 'image'; }
+ * interface SocketQuery { token?: string; }
+ *
+ * type ChatContext = SocketContext<SocketParams, SocketBody, SocketQuery>;
+ *
+ * // Use in socket handler
+ * const socketHandler = async (context: ChatContext) => {
+ *   // All properties are fully typed
+ *   const room = context.params.room;           // string
+ *   const userId = context.params.userId;       // string
+ *   const message = context.body.message;       // string
+ *   const msgType = context.body.type;          // 'text' | 'image'
+ *   const token = context.query.token;          // string | undefined
+ *
+ *   // Router info is also typed
+ *   const routerParams = context.router?.params; // SocketParams
+ * };
+ * ```
+ */
+export interface SocketContext<
+  TParams = Record<string, string>,
+  TBody = any,
+  TQuery = any
+> extends AppContext<TParams, TBody, TQuery> {
+  /** Route parameters */
+  params?: TParams;
+  /** Application configuration */
+  config?: AppConfiguration;
+  /** Socket connection */
   socket: Socket;
+  /** Request body */
+  body?: TBody;
+  /** Query parameters */
+  query?: TQuery;
+  /** Request headers */
+  headers?: IncomingHttpHeaders;
+  /** Response object */
+  response?: HttpResponse | HttpError;
 }
 
+/**
+ * Socket client wrapper
+ */
+export declare class SocketClient {
+  /** Socket connection options */
+  options: {
+    /** Port number */
+    port: number;
+    /** Host address */
+    host: string;
+    /** Client name */
+    name?: string;
+  };
+  /** Event emitter for socket events */
+  event: EventEmitter;
+  /** Socket client instance */
+  client: Socket;
+
+  constructor(socket: Socket, app_id: string);
+
+  /**
+   * Send data to socket client
+   * @param data Data to send
+   */
+  send(data: any): void;
+
+  /**
+   * Close socket connection
+   */
+  close(): void;
+}
+
+/**
+ * Socket-based application
+ */
+export declare class SocketApplication extends Application {
+  constructor(config: SocketAppConfiguration);
+
+  /**
+   * Start the socket application server
+   * @returns Promise that resolves when server is started
+   */
+  start(): Promise<void>;
+
+  /**
+   * Broadcast data to all connected clients
+   * @param data Data to broadcast
+   * @param msg Message
+   * @param code Status code
+   * @param connections Specific connections to broadcast to
+   */
+  broadcast(
+    data?: any,
+    msg?: string,
+    code?: number,
+    connections?: Socket[]
+  ): void;
+}
+
+/**
+ * WebSocket-based application
+ */
+export declare class WebSocketApplication extends Application {
+  constructor(config: WebSocketAppConfiguration);
+
+  /**
+   * Start the WebSocket application server
+   * @returns Promise that resolves when server is started
+   */
+  start(): Promise<void>;
+
+  /**
+   * Broadcast data to all connected WebSocket clients
+   * @param data Data to broadcast
+   * @param msg Message
+   * @param code Status code
+   * @param connections Specific connections to broadcast to
+   */
+  broadcast(
+    data?: any,
+    msg?: string,
+    code?: number,
+    connections?: WebSocket[]
+  ): void;
+}
+
+// ========================================
+// Model Class
+// ========================================
+
+/**
+ * Base model class for data validation and manipulation
+ */
 export declare class Model {
   constructor(obj?: { [key: string]: any }, rules?: Rules, msg?: ErrorMessages);
 
+  /**
+   * Create a new model instance
+   * @param obj Initial data object
+   * @param rules Validation rules
+   * @param msg Custom error messages
+   * @returns New model instance
+   */
   static create<T extends Model>(
     obj?: { [key: string]: any },
     rules?: Rules,
     msg?: ErrorMessages
   ): T;
 
+  /**
+   * Convert model to JSON string
+   * @returns JSON string representation
+   */
   toJson(): string;
 
+  /**
+   * Get all property names
+   * @returns Array of property names
+   */
   properties(): Array<string>;
 
+  /**
+   * Get property count
+   * @returns Number of properties
+   */
   count(): number;
 
+  /**
+   * Validate model data
+   * @param rules Validation rules
+   * @param msg Custom error messages
+   * @returns Validator instance
+   */
   validate(rules: Rules, msg?: ErrorMessages): Validator<this>;
 }
 
+// ========================================
+// Utility Functions
+// ========================================
+
+/**
+ * Initialize application context
+ * @template T Application type
+ * @template F Context type extending AppContext
+ * @template TParams Type of route parameters
+ * @template TBody Type of request body
+ * @template TQuery Type of query parameters
+ * @param options Context initialization options
+ * @returns Initialized context
+ */
 export function initContext<
   T extends Application,
-  F extends AppContext
+  F extends AppContext<TParams, TBody, TQuery> = AppContext<
+    TParams,
+    TBody,
+    TQuery
+  >,
+  TParams = Record<string, string>,
+  TBody = any,
+  TQuery = any
 >(options: {
+  /** Application instance */
   app: T;
+  /** Application routes */
   routes: Router[];
+  /** HTTP method */
   method?: string;
+  /** Request path */
   pathinfo?: string;
+  /** Application ID */
   app_id?: string;
 }): F & { app: T };
-
-export declare class SocketClient {
-  options: {
-    port: number;
-    host: string;
-    name?: string;
-  };
-  event: EventEmitter;
-  client: Socket;
-  constructor(socket: Socket, app_id: string);
-  send(data: any): void;
-  close(): void;
-}
-
-export type SocketAppConfiguration = AppConfiguration & {
-  port: number;
-  ping?: {
-    open?: boolean;
-    interval?: number;
-    data?: any;
-  };
-};
-
-export declare class SocketApplication extends Application {
-  constructor(config: SocketAppConfiguration);
-  start(): Promise<void>;
-}
