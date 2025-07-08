@@ -643,8 +643,8 @@ interface RouterOptions<T extends AppContext<any, any, any> = KoaContext> {
   afters?: ContextHandler<T>[];
   /** Route description */
   intro?: string;
-  /** Sub-routers */
-  routers?: Router<T>[];
+  /** Sub-routers - can have different context types */
+  routers?: Router<AppContext<any, any, any>>[];
   /** Route validators */
   validators?: RouterValidator;
 }
@@ -656,61 +656,57 @@ interface RouterOptions<T extends AppContext<any, any, any> = KoaContext> {
  * @example
  * ```typescript
  * // Basic router usage (uses KoaContext by default)
- * const router = new Router();
+ * const mainRouter = new Router();
  *
- * // Router with typed params, body, and query using KoaContext
- * interface UserParams {
- *   id: string;
- *   action: 'view' | 'edit' | 'delete';
- * }
+ * // Define different context types for different sub-routers
+ * interface UserParams { id: string; action: 'view' | 'edit' | 'delete'; }
+ * interface UserBody { name?: string; email?: string; age?: number; }
+ * interface UserQuery { include?: 'profile' | 'settings'; format?: 'json' | 'xml'; }
+ * type UserContext = KoaContext<UserParams, UserBody, UserQuery>;
  *
- * interface UpdateUserBody {
- *   name?: string;
- *   email?: string;
- *   age?: number;
- * }
+ * interface ProductParams { productId: string; }
+ * interface ProductBody { name: string; price: number; }
+ * interface ProductQuery { category?: string; }
+ * type ProductContext = KoaContext<ProductParams, ProductBody, ProductQuery>;
  *
- * interface UserQuery {
- *   include?: 'profile' | 'settings';
- *   format?: 'json' | 'xml';
- * }
- *
- * // Default KoaContext usage
- * type UserContext = KoaContext<UserParams, UpdateUserBody, UserQuery>;
+ * // Create sub-routers with different context types
  * const userRouter = new Router<UserContext>();
- *
- * // Or explicit KoaContext usage
- * type KoaUserContext = KoaContext<UserParams, UpdateUserBody, UserQuery>;
- * const koaRouter = new Router<KoaUserContext>();
- *
- * // Or SocketContext
- * type SocketUserContext = SocketContext<UserParams, UpdateUserBody, UserQuery>;
- * const socketRouter = new Router<SocketUserContext>();
+ * const productRouter = new Router<ProductContext>();
  *
  * userRouter.post('/user/{:id}/{:action}', async (context) => {
- *   // context.params is fully typed
+ *   // context is typed as UserContext
  *   const userId = context.params?.id;       // string | undefined
  *   const action = context.params?.action;   // 'view' | 'edit' | 'delete' | undefined
- *   const url = context.url;                 // Available with KoaContext
- *   const koaCtx = context.koa;              // Available with KoaContext
- *
- *   // Router info is also typed
- *   if (context.router) {
- *     const routerParams = context.router.params; // UserParams
- *     const handlers = context.router.handlers;   // ContextHandler<UserContext>[]
- *   }
+ *   const userName = context.body?.name;     // string | undefined
+ *   const format = context.query?.format;   // 'json' | 'xml' | undefined
  * });
  *
- * // Router with middleware that uses typed context
- * const apiRouter = new Router<UserContext>(null, {
- *   middlewares: [
- *     async (context) => {
- *       console.log(`User ${context.params?.id} performing ${context.params?.action}`);
- *       console.log(`URL: ${context.url}`); // Available with KoaContext
- *       console.log(`App: ${context.app?.constructor.name}`);
- *     }
- *   ]
+ * productRouter.get('/product/{:productId}', async (context) => {
+ *   // context is typed as ProductContext
+ *   const productId = context.params?.productId; // string | undefined
+ *   const category = context.query?.category;    // string | undefined
  * });
+ *
+ * // Add sub-routers with different context types to main router
+ * mainRouter.add('/api/v1', userRouter);    // UserContext
+ * mainRouter.add('/api/v1', productRouter); // ProductContext
+ *
+ * // Or create sub-routers with different context types directly
+ * const adminRouter = mainRouter.new<AdminContext>('/admin', {
+ *   middlewares: [authMiddleware]
+ * });
+ *
+ * // You can also add routes with different context types to the same router
+ * mainRouter.get<UserContext>('/profile/{:id}', async (context) => {
+ *   const userId = context.params.id; // Typed as UserContext
+ * });
+ *
+ * mainRouter.post<ProductContext>('/products/{:productId}', async (context) => {
+ *   const productId = context.params.productId; // Typed as ProductContext
+ * });
+ *
+ * // This flexibility allows different sub-routers to have their own context types
+ * // while being managed by the same parent router
  * ```
  */
 export class Router<T extends AppContext<any, any, any> = KoaContext> {
@@ -718,8 +714,8 @@ export class Router<T extends AppContext<any, any, any> = KoaContext> {
   prefix: string;
   /** Default HTTP method */
   method: HttpMethod;
-  /** Sub-routers */
-  routers: Router<T>[];
+  /** Sub-routers - can have different context types as long as they extend AppContext */
+  routers: Router<AppContext<any, any, any>>[];
   /** Route handlers */
   handlers: ContextHandler<T>[];
   /** Middleware functions */
@@ -733,79 +729,91 @@ export class Router<T extends AppContext<any, any, any> = KoaContext> {
 
   /**
    * Add sub-routers to this router
+   * @template U Context type of the sub-router (can be different from parent)
    */
-  add<T extends AppContext<any, any, any>>(...router: Router<T>[]): this;
-  add<T extends AppContext<any, any, any>>(
+  add<U extends AppContext<any, any, any>>(...router: Router<U>[]): this;
+  add<U extends AppContext<any, any, any>>(
     prefix: string,
-    ...router: Router<T>[]
+    ...router: Router<U>[]
   ): this;
 
   /**
-   * Create a new sub-router
+   * Create a new sub-router with a different context type
+   * @template U Context type of the new sub-router (can be different from parent)
    */
-  new(prefix: string, options?: RouterOptions<T>): this;
+  new<U extends AppContext<any, any, any>>(
+    prefix: string,
+    options?: RouterOptions<U>
+  ): Router<U>;
 
   /**
    * Add a route with specific HTTP method
+   * @template U Context type for the route handler (can be different from router's context type)
    */
-  push(
+  push<U extends AppContext<any, any, any> = T>(
     method: HttpMethod,
     prefix: string,
-    handle: ContextHandler<T>,
+    handle: ContextHandler<U>,
     validator?: RouterValidator
   ): this;
 
   /**
    * Add a GET route
+   * @template U Context type for the route handler (can be different from router's context type)
    */
-  get(
+  get<U extends AppContext<any, any, any> = T>(
     prefix: string,
-    handle: ContextHandler<T>,
+    handle: ContextHandler<U>,
     validator?: RouterValidator
   ): this;
 
   /**
    * Add a POST route
+   * @template U Context type for the route handler (can be different from router's context type)
    */
-  post(
+  post<U extends AppContext<any, any, any> = T>(
     prefix: string,
-    handle: ContextHandler<T>,
+    handle: ContextHandler<U>,
     validator?: RouterValidator
   ): this;
 
   /**
    * Add a PUT route
+   * @template U Context type for the route handler (can be different from router's context type)
    */
-  put(
+  put<U extends AppContext<any, any, any> = T>(
     prefix: string,
-    handle: ContextHandler<T>,
+    handle: ContextHandler<U>,
     validator?: RouterValidator
   ): this;
 
   /**
    * Add a PATCH route
+   * @template U Context type for the route handler (can be different from router's context type)
    */
-  patch(
+  patch<U extends AppContext<any, any, any> = T>(
     prefix: string,
-    handle: ContextHandler<T>,
+    handle: ContextHandler<U>,
     validator?: RouterValidator
   ): this;
 
   /**
    * Add a DELETE route
+   * @template U Context type for the route handler (can be different from router's context type)
    */
-  delete(
+  delete<U extends AppContext<any, any, any> = T>(
     prefix: string,
-    handle: ContextHandler<T>,
+    handle: ContextHandler<U>,
     validator?: RouterValidator
   ): this;
 
   /**
    * Add a route that accepts any HTTP method
+   * @template U Context type for the route handler (can be different from router's context type)
    */
-  any(
+  any<U extends AppContext<any, any, any> = T>(
     prefix: string,
-    handle: ContextHandler<T>,
+    handle: ContextHandler<U>,
     validator?: RouterValidator
   ): this;
 }
