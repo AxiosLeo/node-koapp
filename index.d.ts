@@ -274,10 +274,11 @@ interface RouterValidator {
  * @template TParams Type of route parameters (defaults to Record<string, string>)
  * @template TBody Type of request body (defaults to any)
  * @template TQuery Type of query parameters (defaults to any)
+ * @template TContext Context type extending AppContext (defaults to KoaContext)
  *
  * @example
  * ```typescript
- * // RouterInfo is now framework-agnostic, using base AppContext
+ * // RouterInfo with default KoaContext
  * interface UserParams { id: string; action: 'view' | 'edit'; }
  * interface UserBody { name: string; email: string; }
  * interface UserQuery { include?: 'profile'; }
@@ -288,9 +289,9 @@ interface RouterValidator {
  * const routerInfo: UserRouterInfo = {
  *   pathinfo: '/user/{:id}/{:action}',
  *   validators: {},
- *   middlewares: [], // ContextHandler<AppContext<UserParams, UserBody, UserQuery>>[]
- *   handlers: [],    // ContextHandler<AppContext<UserParams, UserBody, UserQuery>>[]
- *   afters: [],      // ContextHandler<AppContext<UserParams, UserBody, UserQuery>>[]
+ *   middlewares: [], // ContextHandler<KoaContext<UserParams, UserBody, UserQuery>>[]
+ *   handlers: [],    // ContextHandler<KoaContext<UserParams, UserBody, UserQuery>>[]
+ *   afters: [],      // ContextHandler<KoaContext<UserParams, UserBody, UserQuery>>[]
  *   methods: ['POST', 'PUT'],
  *   params: { id: '123', action: 'edit' }
  * };
@@ -299,18 +300,23 @@ interface RouterValidator {
 interface RouterInfo<
   TParams = Record<string, string>,
   TBody = any,
-  TQuery = any
+  TQuery = any,
+  TContext extends AppContext<TParams, TBody, TQuery> = KoaContext<
+    TParams,
+    TBody,
+    TQuery
+  >
 > {
   /** Route path pattern */
   pathinfo: string;
   /** Route validators */
   validators: RouterValidator;
   /** Middleware functions */
-  middlewares: ContextHandler<AppContext<TParams, TBody, TQuery>>[];
+  middlewares: ContextHandler<TContext>[];
   /** Handler functions */
-  handlers: ContextHandler<AppContext<TParams, TBody, TQuery>>[];
+  handlers: ContextHandler<TContext>[];
   /** After middleware functions */
-  afters: ContextHandler<AppContext<TParams, TBody, TQuery>>[];
+  afters: ContextHandler<TContext>[];
   /** Supported HTTP methods */
   methods: string[];
   /** Extracted path parameters */
@@ -390,7 +396,7 @@ interface AppContext<
   method: string;
   pathinfo: string;
   request_id?: string;
-  router?: RouterInfo<TParams, TBody, TQuery> | null;
+  router?: RouterInfo<TParams, TBody, TQuery, any> | null;
 }
 
 /**
@@ -505,10 +511,86 @@ interface KoaContext<
 }
 
 /**
+ * Socket context extending AppContext
+ * @template TParams Type of route parameters (defaults to Record<string, string>)
+ * @template TBody Type of request body (defaults to any)
+ * @template TQuery Type of query parameters (defaults to any)
+ *
+ * @example
+ * ```typescript
+ * // Define socket-specific types
+ * interface SocketParams { room: string; userId: string; }
+ * interface SocketBody { message: string; type: 'text' | 'image'; }
+ * interface SocketQuery { token?: string; }
+ *
+ * type ChatContext = SocketContext<SocketParams, SocketBody, SocketQuery>;
+ *
+ * // Use in socket handler
+ * const socketHandler = async (context: ChatContext) => {
+ *   // All properties are fully typed
+ *   const room = context.params.room;           // string
+ *   const userId = context.params.userId;       // string
+ *   const message = context.body.message;       // string
+ *   const msgType = context.body.type;          // 'text' | 'image'
+ *   const token = context.query.token;          // string | undefined
+ *
+ *   // Router info is also typed
+ *   const routerParams = context.router?.params; // SocketParams
+ * };
+ * ```
+ */
+export interface SocketContext<
+  TParams = Record<string, string>,
+  TBody = any,
+  TQuery = any
+> extends AppContext<TParams, TBody, TQuery> {
+  /** Route parameters */
+  params?: TParams;
+  /** Application configuration */
+  config?: AppConfiguration;
+  /** Socket connection */
+  socket: Socket;
+  /** Request body */
+  body?: TBody;
+  /** Query parameters */
+  query?: TQuery;
+  /** Request headers */
+  headers?: IncomingHttpHeaders;
+  /** Response object */
+  response?: HttpResponse | HttpError;
+}
+
+/**
  * Context handler function type
  * @template T Context type extending AppContext
+ *
+ * @example
+ * ```typescript
+ * // Default usage (KoaContext)
+ * const handler: ContextHandler = async (context) => {
+ *   // context is KoaContext by default
+ *   const url = context.url;  // Available
+ *   const koa = context.koa;  // Available
+ * };
+ *
+ * // Explicit KoaContext usage
+ * const koaHandler: ContextHandler<KoaContext> = async (context) => {
+ *   const url = context.url;  // Available
+ *   const koa = context.koa;  // Available
+ * };
+ *
+ * // SocketContext usage
+ * const socketHandler: ContextHandler<SocketContext> = async (context) => {
+ *   const socket = context.socket;  // Available
+ * };
+ *
+ * // Base AppContext usage
+ * const baseHandler: ContextHandler<AppContext> = async (context) => {
+ *   const appId = context.app_id;  // Available
+ * };
+ * ```
  */
-type ContextHandler<T extends AppContext<any, any, any> = AppContext> = (
+type ContextHandler<T extends AppContext<any, any, any> = KoaContext> = (
   context: T
 ) => Promise<void>;
 
@@ -522,12 +604,12 @@ type ContextHandler<T extends AppContext<any, any, any> = AppContext> = (
  *
  * @example
  * ```typescript
- * // RouterOptions now uses base AppContext, making it framework-agnostic
+ * // RouterOptions now uses KoaContext by default
  * interface UserParams { id: string; }
  * interface UserBody { name: string; }
  * interface UserQuery { format?: 'json' | 'xml'; }
  *
- * type UserContext = AppContext<UserParams, UserBody, UserQuery>;
+ * type UserContext = KoaContext<UserParams, UserBody, UserQuery>;
  *
  * const routerOptions: RouterOptions<UserContext> = {
  *   method: 'POST',
@@ -535,6 +617,7 @@ type ContextHandler<T extends AppContext<any, any, any> = AppContext> = (
  *     async (context) => {
  *       // context is typed as UserContext
  *       console.log(`Processing user ${context.params?.id}`);
+ *       console.log(`URL: ${context.url}`); // Available with KoaContext
  *     }
  *   ],
  *   handlers: [
@@ -543,12 +626,13 @@ type ContextHandler<T extends AppContext<any, any, any> = AppContext> = (
  *       const userId = context.params?.id;      // string | undefined
  *       const userName = context.body?.name;    // string | undefined
  *       const format = context.query?.format;   // 'json' | 'xml' | undefined
+ *       const koaCtx = context.koa;             // Available with KoaContext
  *     }
  *   ]
  * };
  * ```
  */
-interface RouterOptions<T extends AppContext<any, any, any> = AppContext> {
+interface RouterOptions<T extends AppContext<any, any, any> = KoaContext> {
   /** Default HTTP method */
   method?: HttpMethod;
   /** Route handlers */
@@ -571,10 +655,10 @@ interface RouterOptions<T extends AppContext<any, any, any> = AppContext> {
  *
  * @example
  * ```typescript
- * // Basic router usage
+ * // Basic router usage (uses KoaContext by default)
  * const router = new Router();
  *
- * // Router with typed params, body, and query using AppContext
+ * // Router with typed params, body, and query using KoaContext
  * interface UserParams {
  *   id: string;
  *   action: 'view' | 'edit' | 'delete';
@@ -591,11 +675,11 @@ interface RouterOptions<T extends AppContext<any, any, any> = AppContext> {
  *   format?: 'json' | 'xml';
  * }
  *
- * // Can use base AppContext
- * type UserContext = AppContext<UserParams, UpdateUserBody, UserQuery>;
+ * // Default KoaContext usage
+ * type UserContext = KoaContext<UserParams, UpdateUserBody, UserQuery>;
  * const userRouter = new Router<UserContext>();
  *
- * // Or specific implementations like KoaContext
+ * // Or explicit KoaContext usage
  * type KoaUserContext = KoaContext<UserParams, UpdateUserBody, UserQuery>;
  * const koaRouter = new Router<KoaUserContext>();
  *
@@ -607,6 +691,8 @@ interface RouterOptions<T extends AppContext<any, any, any> = AppContext> {
  *   // context.params is fully typed
  *   const userId = context.params?.id;       // string | undefined
  *   const action = context.params?.action;   // 'view' | 'edit' | 'delete' | undefined
+ *   const url = context.url;                 // Available with KoaContext
+ *   const koaCtx = context.koa;              // Available with KoaContext
  *
  *   // Router info is also typed
  *   if (context.router) {
@@ -620,13 +706,14 @@ interface RouterOptions<T extends AppContext<any, any, any> = AppContext> {
  *   middlewares: [
  *     async (context) => {
  *       console.log(`User ${context.params?.id} performing ${context.params?.action}`);
+ *       console.log(`URL: ${context.url}`); // Available with KoaContext
  *       console.log(`App: ${context.app?.constructor.name}`);
  *     }
  *   ]
  * });
  * ```
  */
-export class Router<T extends AppContext<any, any, any> = AppContext> {
+export class Router<T extends AppContext<any, any, any> = KoaContext> {
   /** Route prefix */
   prefix: string;
   /** Default HTTP method */
@@ -1035,56 +1122,6 @@ export declare class KoaApplication extends Application {
    * @returns Promise that resolves when server is started
    */
   start(): Promise<void>;
-}
-
-/**
- * Socket context extending AppContext
- * @template TParams Type of route parameters (defaults to Record<string, string>)
- * @template TBody Type of request body (defaults to any)
- * @template TQuery Type of query parameters (defaults to any)
- *
- * @example
- * ```typescript
- * // Define socket-specific types
- * interface SocketParams { room: string; userId: string; }
- * interface SocketBody { message: string; type: 'text' | 'image'; }
- * interface SocketQuery { token?: string; }
- *
- * type ChatContext = SocketContext<SocketParams, SocketBody, SocketQuery>;
- *
- * // Use in socket handler
- * const socketHandler = async (context: ChatContext) => {
- *   // All properties are fully typed
- *   const room = context.params.room;           // string
- *   const userId = context.params.userId;       // string
- *   const message = context.body.message;       // string
- *   const msgType = context.body.type;          // 'text' | 'image'
- *   const token = context.query.token;          // string | undefined
- *
- *   // Router info is also typed
- *   const routerParams = context.router?.params; // SocketParams
- * };
- * ```
- */
-export interface SocketContext<
-  TParams = Record<string, string>,
-  TBody = any,
-  TQuery = any
-> extends AppContext<TParams, TBody, TQuery> {
-  /** Route parameters */
-  params?: TParams;
-  /** Application configuration */
-  config?: AppConfiguration;
-  /** Socket connection */
-  socket: Socket;
-  /** Request body */
-  body?: TBody;
-  /** Query parameters */
-  query?: TQuery;
-  /** Request headers */
-  headers?: IncomingHttpHeaders;
-  /** Response object */
-  response?: HttpResponse | HttpError;
 }
 
 /**
