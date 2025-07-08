@@ -9,7 +9,7 @@ const app = new App({
   name: 'koapp CLI',
   desc: 'koapp application generator',
   bin: 'koapp',
-  version: '1.0.28',
+  version: '1.1.0-alpha.0',
   commands_dir: path.join(__dirname, '../commands'),
 });
 
