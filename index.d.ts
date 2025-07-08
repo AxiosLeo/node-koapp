@@ -1230,23 +1230,23 @@ export declare class Model {
 /**
  * Initialize application context
  * @template T Application type
- * @template F Context type extending AppContext
  * @template TParams Type of route parameters
  * @template TBody Type of request body
  * @template TQuery Type of query parameters
+ * @template F Context type extending AppContext
  * @param options Context initialization options
  * @returns Initialized context
  */
 export function initContext<
   T extends Application,
+  TParams = Record<string, string>,
+  TBody = any,
+  TQuery = any,
   F extends AppContext<TParams, TBody, TQuery> = AppContext<
     TParams,
     TBody,
     TQuery
-  >,
-  TParams = Record<string, string>,
-  TBody = any,
-  TQuery = any
+  >
 >(options: {
   /** Application instance */
   app: T;
