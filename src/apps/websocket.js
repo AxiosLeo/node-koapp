@@ -149,10 +149,7 @@ class WebSocketApplication extends Application {
     }
   }
 
-  broadcast(data = '', msg = 'ok', code = 0, connections = null) {
-    if (connections === null && is.empty(this.connections)) {
-      return;
-    }
+  broadcast(data = '', msg = 'ok', code = 0, connections = []) {
     data = JSON.stringify({
       request_id: _uuid_salt(this.app_id),
       timestamp: (new Date()).getTime(),
@@ -161,6 +158,9 @@ class WebSocketApplication extends Application {
       data: data
     });
     if (connections === null) {
+      if (is.empty(this.connections)) {
+        return;
+      }
       Object.keys(this.connections).map((id) => this.connections[id].send(data));
     } else if (is.array(connections)) {
       connections.map((conn) => conn.send(data));
