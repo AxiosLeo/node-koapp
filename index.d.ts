@@ -560,6 +560,16 @@ export interface SocketContext<
   response?: HttpResponse | HttpError;
 }
 
+export type ContextWithRequiredData<
+  TParams extends Record<string, string> = Record<string, string>,
+  TQuery extends Record<string, string> = Record<string, string>,
+  TBody = any
+> = AppContext<TParams, TBody, TQuery> & {
+  params: TParams;
+  query: TQuery;
+  body: TBody;
+};
+
 /**
  * Context handler function type
  * @template T Context type extending AppContext
