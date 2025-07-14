@@ -560,15 +560,101 @@ export interface SocketContext<
   response?: HttpResponse | HttpError;
 }
 
-export type ContextWithRequiredData<
+/**
+ * Interface for defining context data specification
+ * This allows flexible type configuration without order dependency
+ */
+interface ContextDataSpec<
   TParams extends Record<string, string> = Record<string, string>,
-  TQuery extends Record<string, string> = Record<string, string>,
-  TBody = any
+  TBody = any,
+  TQuery extends Record<string, string> = Record<string, string>
+> {
+  params?: TParams;
+  body?: TBody;
+  query?: TQuery;
+}
+
+/**
+ * Context type with all data properties required (params, body, query)
+ * @template TParams Type of route parameters
+ * @template TBody Type of request body
+ * @template TQuery Type of query parameters
+ *
+ * @example
+ * ```typescript
+ * // All properties are required
+ * type StrictContext = RequiredContext<
+ *   { id: string },           // params
+ *   { name: string },         // body
+ *   { format: 'json' | 'xml' } // query
+ * >;
+ *
+ * // Usage in route handler
+ * router.post<StrictContext>('/users/{:id}', async (context) => {
+ *   const id = context.params.id;     // ✅ always available
+ *   const name = context.body.name;   // ✅ always available
+ *   const format = context.query.format; // ✅ always available
+ * });
+ * ```
+ */
+export type RequiredContext<
+  TParams extends Record<string, string> = Record<string, string>,
+  TBody = any,
+  TQuery extends Record<string, string> = Record<string, string>
 > = AppContext<TParams, TBody, TQuery> & {
   params: TParams;
-  query: TQuery;
   body: TBody;
+  query: TQuery;
 };
+
+/**
+ * Object-style context type definition for flexible configuration
+ * @template T ContextDataSpec object with optional params, body, and query types
+ *
+ * @example
+ * ```typescript
+ * // Object-style usage - no order dependency, only specify what you need
+ * type UserContext = ContextFromSpec<{
+ *   body: { name: string; email: string };
+ *   params: { id: string };
+ *   query: { format?: 'json' | 'xml' };
+ * }>;
+ *
+ * type ProductContext = ContextFromSpec<{
+ *   query: { sort: 'asc' | 'desc' };
+ *   body: { data: any };
+ * }>; // No params needed
+ *
+ * type SimpleContext = ContextFromSpec<{
+ *   params: { userId: string };
+ * }>; // Only params needed
+ *
+ * // Usage
+ * router.put<UserContext>('/user/{:id}', async (context) => {
+ *   const id = context.params.id;         // ✅ always available
+ *   const name = context.body.name;       // ✅ always available
+ *   const format = context.query.format;  // ✅ always available
+ * });
+ * ```
+ */
+export type ContextFromSpec<T extends ContextDataSpec = ContextDataSpec> =
+  AppContext<
+    T["params"] extends Record<string, string>
+      ? T["params"]
+      : Record<string, string>,
+    T["body"] extends undefined ? any : T["body"],
+    T["query"] extends Record<string, string>
+      ? T["query"]
+      : Record<string, string>
+  > & {
+    params: T["params"] extends Record<string, string>
+      ? T["params"]
+      : Record<string, string>;
+    body: T["body"] extends undefined ? any : T["body"];
+    query: T["query"] extends Record<string, string>
+      ? T["query"]
+      : Record<string, string>;
+  };
 
 /**
  * Context handler function type
