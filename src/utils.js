@@ -20,35 +20,35 @@ function _uuid_salt(salt = '') {
  */
 function _debug(context, location, error) {
   const wide = 12;
-  printer.println('-'.repeat(30) + '[DEBUG Info]' + '-'.repeat(30));
-  printer.yellow(_fixed('requestID', wide)).print(': ').println(context.request_id);
-  if (!error) {
-    printer.yellow('responseData').print(': ');
-    // eslint-disable-next-line no-console
-    console.log(context.response.data);
-  }
+  printer.yellow('-'.repeat(30) + '[DEBUG Info]' + '-'.repeat(30)).println();
   if (location && location.indexOf('node:internal') === -1) {
-    printer.print('response    '.data).print(': ').print(location.trim().yellow).println();
+    printer.yellow(_fixed('location', wide)).print(': ').print(location.trim().yellow).println();
   }
+  printer.yellow(_fixed('requestID', wide)).print(': ').println(context.request_id);
   printer.yellow(_fixed('datetime', wide)).print(': ').println(new Date().toLocaleString());
   printer.yellow(_fixed('method', wide)).print(': ').green(context.method).println();
   printer.yellow(_fixed('path', wide)).print(': ').println(context.url);
-  if (!context.router) {
-    return;
-  }
-  const router = context.router;
-  ['pathinfo', 'validators'].forEach(k => {
-    if (is.empty(router[k])) {
-      return;
-    }
-    printer.yellow(_fixed(k, wide)).print(': ').println(typeof router[k] === 'object' ? JSON.stringify(router[k]) : _str(router[k]));
-  });
   ['query', 'params', 'body'].forEach(k => {
     if (is.empty(context[k])) {
       return;
     }
     printer.yellow(_fixed(k, wide)).print(': ').println(typeof context[k] === 'object' ? JSON.stringify(context[k]) : _str(context[k]));
   });
+  if (context.router) {
+    const router = context.router;
+    ['pathinfo', 'validators'].forEach(k => {
+      if (is.empty(router[k])) {
+        return;
+      }
+      printer.yellow(_fixed(k, wide)).print(': ').println(typeof router[k] === 'object' ? JSON.stringify(router[k]) : _str(router[k]));
+    });
+  }
+  if (!error) {
+    printer.yellow(_fixed('httpStatus', wide)).print(': ').println(`${context.response.status} ${context.response.message}`.data);
+    printer.yellow(_fixed('responseData', wide)).print(': ');
+    // eslint-disable-next-line no-console
+    console.log(context.response.data);
+  }
 }
 
 class SocketClient {
