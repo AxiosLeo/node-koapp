@@ -79,7 +79,7 @@ export function response<T = unknown>(
   code?: StatusCode,
   httpStatus?: number,
   headers?: Record<string, string>
-): void;
+): never;
 
 /**
  * Send a result response with data and optional headers
@@ -92,7 +92,7 @@ export function result<T = unknown>(
   data: T,
   httpStatus?: number,
   headers?: Record<string, string>
-): void;
+): never;
 
 /**
  * Send a success response with optional data and headers
@@ -103,7 +103,7 @@ export function result<T = unknown>(
 export function success<T = unknown>(
   data?: T,
   headers?: Record<string, string>
-): void;
+): never;
 
 /**
  * Send a failed response with error data and status
@@ -118,7 +118,7 @@ export function failed<T = unknown>(
   code?: StatusCode,
   httpStatus?: number,
   headers?: Record<string, string>
-): void;
+): never;
 
 /**
  * Send an error response with HTTP status and message
@@ -130,13 +130,7 @@ export function error(
   httpStatus: number,
   msg: string,
   headers?: Record<string, string>
-): void;
-
-/**
- * Log data to console (development utility)
- * @param data Data to log
- */
-export function log(...data: any): void;
+): never;
 
 // ========================================
 // HTTP Response Classes
@@ -195,20 +189,20 @@ interface ControllerInterface {
     code?: StatusCode,
     status?: number,
     headers?: Record<string, string>
-  ): void;
+  ): never;
   result<T = unknown>(
     data: T,
     status?: number,
     headers?: Record<string, string>
-  ): void;
-  success<T = unknown>(data?: T, headers?: Record<string, string>): void;
+  ): never;
+  success<T = unknown>(data?: T, headers?: Record<string, string>): never;
   failed<T = unknown>(
     data?: T,
     code?: StatusCode,
     status?: number,
     headers?: Record<string, string>
-  ): void;
-  error(status: number, msg: string, headers?: Record<string, string>): void;
+  ): never;
+  error(status: number, msg: string, headers?: Record<string, string>): never;
   log(...data: any): void;
 }
 
@@ -222,20 +216,20 @@ export declare class Controller implements ControllerInterface {
     code?: StatusCode,
     status?: number,
     headers?: Record<string, string>
-  ): void;
+  ): never;
   result<T = unknown>(
     data: T,
     status?: number,
     headers?: Record<string, string>
-  ): void;
-  success<T = unknown>(data?: T, headers?: Record<string, string>): void;
+  ): never;
+  success<T = unknown>(data?: T, headers?: Record<string, string>): never;
   failed<T = unknown>(
     data?: T,
     code?: StatusCode,
     status?: number,
     headers?: Record<string, string>
-  ): void;
-  error(status: number, msg: string, headers?: Record<string, string>): void;
+  ): never;
+  error(status: number, msg: string, headers?: Record<string, string>): never;
   log(...data: any): void;
 }
 
