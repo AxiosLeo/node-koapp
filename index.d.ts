@@ -49,24 +49,27 @@ export function response(
   code?: StatusCode,
   httpStatus?: number,
   headers?: Record<string, string>
-): void;
+): never;
 export function result(
   data: unknown,
   httpStatus?: number,
   headers?: Record<string, string>
-): void;
-export function success(data?: unknown, headers?: Record<string, string>): void;
+): never;
+export function success(
+  data?: unknown,
+  headers?: Record<string, string>
+): never;
 export function failed(
   data?: unknown,
   code?: StatusCode,
   httpStatus?: number,
   headers?: Record<string, string>
-): void;
+): never;
 export function error(
   httpStatus: number,
   msg: string,
   headers?: Record<string, string>
-): void;
+): never;
 export function log(...data: any): void;
 
 export interface HttpResponseConfig {
@@ -100,20 +103,20 @@ interface ControllerInterface {
     code?: StatusCode,
     status?: number,
     headers?: Record<string, string>
-  ): void;
+  ): never;
   result(
     data: unknown,
     status?: number,
     headers?: Record<string, string>
-  ): void;
-  success(data?: unknown, headers?: Record<string, string>): void;
+  ): never;
+  success(data?: unknown, headers?: Record<string, string>): never;
   failed(
     data?: unknown,
     code?: StatusCode,
     status?: number,
     headers?: Record<string, string>
-  ): void;
-  error(status: number, msg: string, headers?: Record<string, string>): void;
+  ): never;
+  error(status: number, msg: string, headers?: Record<string, string>): never;
   log(...data: any): void;
 }
 
@@ -123,20 +126,20 @@ export declare class Controller implements ControllerInterface {
     code?: StatusCode,
     status?: number,
     headers?: Record<string, string>
-  ): void;
+  ): never;
   result(
     data: unknown,
     status?: number,
     headers?: Record<string, string>
-  ): void;
-  success(data?: unknown, headers?: Record<string, string>): void;
+  ): never;
+  success(data?: unknown, headers?: Record<string, string>): never;
   failed(
     data?: unknown,
     code?: StatusCode,
     status?: number,
     headers?: Record<string, string>
-  ): void;
-  error(status: number, msg: string, headers?: Record<string, string>): void;
+  ): never;
+  error(status: number, msg: string, headers?: Record<string, string>): never;
   log(...data: any): void;
 }
 
