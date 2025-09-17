@@ -119,7 +119,7 @@ class HttpCommand extends Command {
       handlers: [async (context) => {
         const url = new URL(context.url, 'http://localhost');
         let d = path.join(dir, decodeURIComponent(url.pathname));
-        printer.yellow(_fixed('[' + context.method + ']', 12, 'r')).green(context.url).println();
+        printer.yellow(_fixed('[' + context.method + ']', 12, 'r')).green(decodeURIComponent(context.url)).println();
         if (!await _exists(d)) {
           if (!this.html404Content) {
             // 读取 404.html 文件内容
@@ -200,8 +200,22 @@ class HttpCommand extends Command {
 
         // Add parent directory link if not at root
         if (url.pathname !== '/') {
+          // 计算正确的上级目录路径
+          let parentPath = url.pathname;
+          // 移除末尾的斜杠（如果有）
+          if (parentPath.endsWith('/')) {
+            parentPath = parentPath.slice(0, -1);
+          }
+          // 获取上级目录路径
+          const lastSlashIndex = parentPath.lastIndexOf('/');
+          parentPath = lastSlashIndex > 0 ? parentPath.substring(0, lastSlashIndex) : '/';
+          // 确保路径以斜杠结尾（除了根目录）
+          if (parentPath !== '/' && !parentPath.endsWith('/')) {
+            parentPath += '/';
+          }
+
           fileItemsHTML += `
-            <div class="file-item" data-type="folder" onclick="window.location.href='../'">
+            <div class="file-item" data-type="folder" onclick="window.location.href='${parentPath}'">
               <div class="file-icon folder">📁</div>
               <div class="file-info">
                 <div class="file-name">../</div>
@@ -213,7 +227,12 @@ class HttpCommand extends Command {
 
         files.forEach(f => {
           let p = url.pathname === '/' ? '.' : url.pathname;
-          p = p + '/' + f.filename;
+          // 确保路径正确拼接，避免双斜杠
+          if (p.endsWith('/')) {
+            p = p + f.filename;
+          } else {
+            p = p + '/' + f.filename;
+          }
           const fileType = this.getFileType(f.filename, f.is_dir, f.ext);
           const fileIcon = this.getFileIcon(fileType);
           const fileSize = this.formatFileSize(f.size);
