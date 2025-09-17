@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>404 - 页面未找到 | Page Not Found</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue",
+          Helvetica, Arial, sans-serif;
+        background: #f5f5f5;
+        min-height: 100vh;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .container {
+        max-width: 800px;
+        width: 100%;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        text-align: center;
+      }
+
+      .header {
+        background: linear-gradient(45deg, #ff6b6b, #ffa726);
+        color: white;
+        padding: 50px 30px;
+      }
+
+      .error-code {
+        font-size: 8rem;
+        font-weight: 300;
+        margin-bottom: 20px;
+        opacity: 0.9;
+        text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+
+      .error-title {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+        font-weight: 300;
+      }
+
+      .error-subtitle {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin-bottom: 10px;
+      }
+
+      .error-description {
+        font-size: 1rem;
+        opacity: 0.8;
+      }
+
+      .content {
+        padding: 50px 30px;
+      }
+
+      .error-icon {
+        font-size: 6rem;
+        margin-bottom: 30px;
+        opacity: 0.6;
+      }
+
+      .error-message {
+        font-size: 1.2rem;
+        color: #666;
+        margin-bottom: 30px;
+        line-height: 1.6;
+      }
+
+      .suggestions {
+        text-align: left;
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 30px;
+        margin: 30px 0;
+      }
+
+      .suggestions h3 {
+        font-size: 1.3rem;
+        color: #333;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+      }
+
+      .suggestions h3::before {
+        content: "💡";
+        margin-right: 10px;
+        font-size: 1.5rem;
+      }
+
+      .suggestions ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      .suggestions li {
+        padding: 10px 0;
+        color: #666;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        align-items: center;
+      }
+
+      .suggestions li:last-child {
+        border-bottom: none;
+      }
+
+      .suggestions li::before {
+        content: "→";
+        color: #2196f3;
+        font-weight: bold;
+        margin-right: 10px;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 30px;
+      }
+
+      .btn {
+        padding: 15px 30px;
+        border: none;
+        border-radius: 25px;
+        font-size: 16px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.3s;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-primary {
+        background: linear-gradient(45deg, #2196f3, #21cbf3);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(33, 150, 243, 0.3);
+      }
+
+      .btn-secondary {
+        background: #f5f5f5;
+        color: #666;
+        border: 2px solid #e0e0e0;
+      }
+
+      .btn-secondary:hover {
+        background: #e0e0e0;
+        border-color: #ccc;
+        transform: translateY(-2px);
+      }
+
+      .stats {
+        display: flex;
+        justify-content: space-around;
+        padding: 20px;
+        background: #f8f9fa;
+        border-top: 1px solid #e0e0e0;
+      }
+
+      .stat-item {
+        text-align: center;
+      }
+
+      .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #ff6b6b;
+        display: block;
+      }
+
+      .stat-label {
+        font-size: 14px;
+        color: #666;
+        margin-top: 5px;
+      }
+
+      .breadcrumb {
+        padding: 15px 30px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
+        font-size: 14px;
+        color: #666;
+        text-align: left;
+      }
+
+      .breadcrumb a {
+        color: #2196f3;
+        text-decoration: none;
+      }
+
+      .breadcrumb a:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          margin: 10px;
+          border-radius: 5px;
+        }
+
+        .header {
+          padding: 30px 20px;
+        }
+
+        .error-code {
+          font-size: 5rem;
+        }
+
+        .error-title {
+          font-size: 2rem;
+        }
+
+        .content {
+          padding: 30px 20px;
+        }
+
+        .error-icon {
+          font-size: 4rem;
+        }
+
+        .action-buttons {
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .btn {
+          width: 100%;
+          max-width: 300px;
+        }
+
+        .stats {
+          flex-direction: column;
+          gap: 15px;
+        }
+      }
+
+      /* 动画效果 */
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+
+      .error-icon {
+        animation: float 3s ease-in-out infinite;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .fade-in-up {
+        animation: fadeInUp 0.6s ease-out;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- <div class="breadcrumb">
+        <a href="/" onclick="goHome()">🏠 首页</a> /
+        <a href="javascript:history.back()">📄 上一页</a> /
+        <span>404 错误</span>
+      </div> -->
+
+      <!-- <div class="header">
+        <div class="error-code fade-in-up">404</div>
+        <h1 class="error-title fade-in-up">页面未找到</h1>
+        <p class="error-subtitle fade-in-up">Page Not Found</p>
+        <p class="error-description fade-in-up">
+          抱歉，您访问的页面不存在或已被移动
+        </p>
+      </div> -->
+
+      <div class="content">
+        <div class="error-icon">🔍</div>
+
+        <div class="error-message fade-in-up">
+          很抱歉，无法找到您要访问的页面。<br />
+          这可能是因为页面已被删除、移动或者您输入的网址有误。
+        </div>
+
+        <div class="suggestions fade-in-up">
+          <h3>您可以尝试以下操作</h3>
+          <ul>
+            <li>检查网址是否输入正确</li>
+            <li>返回上一页继续浏览</li>
+            <li>访问网站首页</li>
+            <li>使用搜索功能查找内容</li>
+            <li>联系网站管理员报告此问题</li>
+          </ul>
+        </div>
+
+        <div class="action-buttons fade-in-up">
+          <a href="/" class="btn btn-primary" onclick="goHome()">
+            🏠 返回首页
+          </a>
+          <a href="javascript:history.back()" class="btn btn-secondary">
+            ← 返回上页
+          </a>
+          <!-- <a href="javascript:location.reload()" class="btn btn-secondary">
+            🔄 刷新页面
+          </a> -->
+        </div>
+      </div>
+
+      <!-- <div class="stats">
+        <div class="stat-item">
+          <span class="stat-number">404</span>
+          <div class="stat-label">错误代码</div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number" id="currentTime">--:--</span>
+          <div class="stat-label">当前时间</div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number" id="stayTime">0</span>
+          <div class="stat-label">停留时间(秒)</div>
+        </div>
+      </div> -->
+    </div>
+
+    <script>
+      // 返回首页功能
+      function goHome() {
+        // 尝试多种方式返回首页
+        if (window.location.origin) {
+          window.location.href = window.location.origin;
+        } else {
+          window.location.href = "/";
+        }
+      }
+
+      // 更新当前时间
+      function updateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString("zh-CN", {
+          hour12: false,
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        document.getElementById("currentTime").textContent = timeString;
+      }
+
+      // 计算停留时间
+      let staySeconds = 0;
+      function updateStayTime() {
+        document.getElementById("stayTime").textContent = staySeconds;
+        staySeconds++;
+      }
+
+      // 初始化
+      updateTime();
+      setInterval(updateTime, 1000);
+      setInterval(updateStayTime, 1000);
+
+      // 添加加载动画
+      window.addEventListener("load", function () {
+        const fadeElements = document.querySelectorAll(".fade-in-up");
+        fadeElements.forEach((element, index) => {
+          element.style.opacity = "0";
+          element.style.transform = "translateY(30px)";
+
+          setTimeout(() => {
+            element.style.transition = "all 0.6s ease-out";
+            element.style.opacity = "1";
+            element.style.transform = "translateY(0)";
+          }, index * 100);
+        });
+      });
+
+      // 键盘快捷键
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+          history.back();
+        } else if (e.key === "Home" || (e.ctrlKey && e.key === "h")) {
+          e.preventDefault();
+          goHome();
+        } else if (e.key === "F5" || (e.ctrlKey && e.key === "r")) {
+          // 允许默认的刷新行为
+        }
+      });
+
+      // 记录访问信息（可选）
+      console.log("404 页面访问信息:", {
+        url: window.location.href,
+        referrer: document.referrer,
+        userAgent: navigator.userAgent,
+        timestamp: new Date().toISOString(),
+      });
+    </script>
+  </body>
+</html>
