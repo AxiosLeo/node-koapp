@@ -149,7 +149,10 @@ if (require.main === module) {
       files: context.koa.request.files,
       body: context.koa.request.body
     });
-    success();
+    const file = context.koa.request.files[0];
+    context.koa.set('content-type', file.mimetype);
+    context.koa.body = file.buffer;
+    context.koa.attachment(file.originalname);
   });
 
   root.get('/session', async (context) => {
