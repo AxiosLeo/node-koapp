@@ -7,9 +7,9 @@
 [![License](https://img.shields.io/github/license/AxiosLeo/node-koapp?color=%234bc524)](LICENSE)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FAxiosLeo%2Fnode-koapp.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FAxiosLeo%2Fnode-koapp/refs/branch/master)
 
-> Design for quickly developing Web applications using Node.js
+> A framework designed for rapid web application development with Node.js
 >
-> Based on [koa](https://koajs.com/)
+> Built on [Koa](https://koajs.com/)
 
 ```bash
 npm install @axiosleo/koapp
@@ -20,7 +20,7 @@ npm install @axiosleo/koapp
 ```bash
 npx @axiosleo/koapp init <app-name> -d <optional-dir>
 
-# show help info
+# Show help information
 # npx @axiosleo/koapp init -h
 ```
 
@@ -42,21 +42,21 @@ const router = new Router("/test", {
 
 const app = new KoaApplication({
   port: 8088,
-  listen_host: "localhost", // 0.0.0.0 for public access
+  listen_host: "localhost", // Use 0.0.0.0 for public access
   routers: [router],
 });
 app.start();
 
-// open http://localhost:8088/test
+// Open http://localhost:8088/test
 ```
 
 ## More Examples
 
-- Validation
+- Request Validation
 
-> see [validatorjs](https://github.com/mikeerickson/validatorjs) for more rule examples
+> See [validatorjs](https://github.com/mikeerickson/validatorjs) for more rule examples
 >
-> see `Router` examples for more usage: [tests/bootstrap.js](tests/bootstrap.js)
+> See `Router` examples for more usage: [tests/bootstrap.js](tests/bootstrap.js)
 
 ```javascript
 const { Router } = require("@axiosleo/koapp");
@@ -64,7 +64,7 @@ const { Router } = require("@axiosleo/koapp");
 const router = new Router("/test", {
   method: "any",
   validator: {
-    // url params, like `/test/{:id}`, the 'id' is required and must be an integer
+    // URL params, like `/test/{:id}`, where 'id' is required and must be an integer
     params: {
       id: "required|integer",
     },
@@ -73,13 +73,32 @@ const router = new Router("/test", {
     },
     body: {
       age: "required|integer",
-    }
-  }
+    },
+  },
   handlers: [],
 });
 ```
 
-- SSE
+- File Operations
+
+```javascript
+// npm install @koa/multer
+// npm install -D @types/koa__multer
+
+const multer = require("@koa/multer");
+
+root.post("/upload", async (context) => {
+  const upload = multer();
+  const func = upload.any();
+  await func(context.koa, async () => {});
+  const file = context.koa.request.files[0];
+  context.koa.set("content-type", file.mimetype);
+  context.koa.body = file.buffer;
+  context.koa.attachment(file.originalname);
+});
+```
+
+- Server-Sent Events (SSE)
 
 ```javascript
 const { _foreach, _sleep } = require("@axiosleo/cli-tool/src/helper/cmd");
