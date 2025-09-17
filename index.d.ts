@@ -1,5 +1,4 @@
 import { Configuration, Context, Workflow } from "@axiosleo/cli-tool";
-import { File } from "@koa/multer";
 import { EventEmitter } from "events";
 import { IncomingHttpHeaders } from "http";
 import * as Koa from "koa";
@@ -492,10 +491,6 @@ interface KoaContext<
   url: string;
   /** Request body */
   body?: TBody;
-  /** Uploaded file */
-  file?: File | null;
-  /** Uploaded files array */
-  files?: File[];
   /** Query parameters */
   query?: TQuery;
   /** Request headers */
