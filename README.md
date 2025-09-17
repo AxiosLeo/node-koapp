@@ -88,6 +88,7 @@ const router = new Router("/test", {
 const multer = require("@koa/multer");
 
 root.post("/upload", async (context) => {
+  // Array of files
   const upload = multer();
   const func = upload.any();
   await func(context.koa, async () => {});

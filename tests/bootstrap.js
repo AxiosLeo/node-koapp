@@ -140,19 +140,63 @@ if (require.main === module) {
   });
 
   root.post('/upload', async (context) => {
+    // Array of files
     const upload = multer();
     const func = upload.any();
     await func(context.koa, async () => { });
     // read FormData
     debug.log({
-      request: context.koa.request,
       files: context.koa.request.files,
-      body: context.koa.request.body
     });
     const file = context.koa.request.files[0];
     context.koa.set('content-type', file.mimetype);
     context.koa.body = file.buffer;
     context.koa.attachment(file.originalname);
+  });
+
+  root.post('/upload/single', async (context) => {
+    // Single file
+    try {
+      const upload = multer();
+      const func = upload.single('file');
+      await func(context.koa, async () => { });
+      const file = context.koa.request.file;
+      debug.log({
+        files: context.koa.request.files,
+        file: context.koa.request.file,
+      });
+      context.koa.set('content-type', file.mimetype);
+      context.koa.body = file.buffer;
+      context.koa.attachment(file.originalname);
+    } catch (err) {
+      if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        failed({ data: 'must be a single file', field: err.field }, '400;Bad Request', 400);
+      }
+    }
+
+  });
+
+  root.post('/upload/fields', async (context) => {
+    try {
+      // Multiple files
+      const upload = multer();
+      const func = upload.fields([{ name: 'file', maxCount: 1 }, { name: 'file2', maxCount: 2 }]);
+      await func(context.koa, async () => { });
+      const file = context.koa.request.files.file[0];
+      const file2 = context.koa.request.files.file2[0];
+      debug.log({
+        file1: file,
+        file2
+      });
+      context.koa.set('content-type', file.mimetype);
+      context.koa.body = file.buffer;
+      context.koa.attachment(file.originalname);
+    } catch (err) {
+      debug.log(err);
+      if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        failed({ data: 'must be a multiple files', field: err.field }, '400;Bad Request', 400);
+      }
+    }
   });
 
   root.get('/session', async (context) => {
