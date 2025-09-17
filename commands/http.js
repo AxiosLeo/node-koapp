@@ -118,7 +118,7 @@ class HttpCommand extends Command {
       method: 'any',
       handlers: [async (context) => {
         const url = new URL(context.url, 'http://localhost');
-        let d = path.join(dir, url.pathname);
+        let d = path.join(dir, decodeURIComponent(url.pathname));
         printer.yellow(_fixed('[' + context.method + ']', 12, 'r')).green(context.url).println();
         if (!await _exists(d)) {
           if (!this.html404Content) {
