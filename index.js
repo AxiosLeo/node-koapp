@@ -6,7 +6,6 @@ const response = require('./src/response');
 const Model = require('./src/model');
 const { KoaSSEMiddleware } = require('./src/middlewares/sse');
 const { initContext } = require('./src/core');
-const multer = require('@koa/multer');
 const session = require('koa-session');
 const { SocketClient } = require('./src/utils');
 const {
@@ -28,7 +27,6 @@ module.exports = {
 
   middlewares: {
     KoaSSEMiddleware,
-    KoaMulterMiddleware: multer,
     KoaSessionMiddleware: session
   },
 

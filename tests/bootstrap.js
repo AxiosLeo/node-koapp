@@ -4,6 +4,7 @@
 const { debug } = require('@axiosleo/cli-tool');
 const { _foreach, _sleep } = require('@axiosleo/cli-tool/src/helper/cmd');
 const { success, result, failed } = require('../src/response');
+const multer = require('@koa/multer');
 
 const { KoaApplication, Router, Model } = require('..');
 
@@ -139,8 +140,15 @@ if (require.main === module) {
   });
 
   root.post('/upload', async (context) => {
+    const upload = multer();
+    const func = upload.any();
+    await func(context.koa, async () => { });
     // read FormData
-    debug.log(context.koa.request.files, context.koa.request.body);
+    debug.log({
+      request: context.koa.request,
+      files: context.koa.request.files,
+      body: context.koa.request.body
+    });
     success();
   });
 
