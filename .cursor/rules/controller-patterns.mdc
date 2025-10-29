@@ -1,0 +1,50 @@
+---
+globs: *.js,*.ts
+description: Controller patterns and conventions
+---
+
+# Controller Patterns
+
+## Controller Base Class
+
+Extend the [Controller](mdc:src/controller.js) class for organized request handling:
+
+```javascript
+const { Controller } = require("@axiosleo/koapp");
+
+class UserController extends Controller {
+  async getUser(context) {
+    // Access path params: context.params.id
+    // Access query params: context.query
+    // Access request body: context.body
+
+    this.success({ user: userData });
+  }
+
+  async createUser(context) {
+    this.success({ message: "User created" });
+  }
+}
+```
+
+## Response Methods
+
+Controllers inherit response methods:
+
+- `this.success(data, headers)` - 200 OK
+- `this.failed(data, code, status, headers)` - Error response
+- `this.result(data, status, headers)` - Custom response
+- `this.error(status, msg, headers)` - HTTP error
+- `this.response(data, code, status, headers)` - Full control
+
+## Logging
+
+Use `this.log(...data)` for debug logging within controllers.
+
+## Best Practices
+
+1. Keep controllers thin - delegate business logic to services/models
+2. Use async/await for asynchronous operations
+3. Validate input using router validators rather than in controllers
+4. Use appropriate response methods for different scenarios
+5. Handle errors gracefully with try/catch blocks

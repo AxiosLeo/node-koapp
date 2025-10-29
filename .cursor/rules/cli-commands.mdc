@@ -1,0 +1,69 @@
+---
+globs: commands/*.js,bin/*.js
+description: CLI command patterns and development
+---
+
+# CLI Command Patterns
+
+## CLI Entry Point
+
+The main CLI is defined in [bin/koapp.js](mdc:bin/koapp.js) and provides:
+
+- `koapp init <app-name>` - Initialize new project
+- `koapp gen` - Generate code/components
+- `koapp http` - HTTP-related utilities
+
+## Command Structure
+
+Commands are implemented in the `commands/` directory:
+
+- [commands/init.js](mdc:commands/init.js) - Project initialization
+- [commands/gen.js](mdc:commands/gen.js) - Code generation
+- [commands/http.js](mdc:commands/http.js) - HTTP utilities
+
+## Project Initialization
+
+The init command creates new projects using templates from `assets/tmpl/`:
+
+```bash
+npx @axiosleo/koapp init <app-name> -d <optional-dir>
+```
+
+This generates:
+
+- TypeScript service structure
+- Database configuration
+- Docker compose setup
+- Package.json with dependencies
+- Basic application structure
+
+## Template System
+
+Templates use `.tmpl` extension and are processed during project generation:
+
+- `assets/tmpl/services/` - Service templates
+- `assets/tmpl/database/` - Database setup
+- `assets/tmpl/docker-compose.yml.tmpl` - Docker configuration
+- `assets/tmpl/package.json.tmpl` - Package configuration
+
+## Command Development
+
+When creating new CLI commands:
+
+1. Create command file in `commands/` directory
+2. Extend base Command class from `@axiosleo/cli-tool`
+3. Implement `exec(args, options)` method
+4. Register command in main CLI file
+
+## Usage Examples
+
+```bash
+# Initialize new project
+npx @axiosleo/koapp init my-app
+
+# Initialize in specific directory
+npx @axiosleo/koapp init my-app -d ./projects
+
+# Show help
+npx @axiosleo/koapp init -h
+```

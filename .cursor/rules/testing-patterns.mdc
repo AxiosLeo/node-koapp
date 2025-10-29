@@ -1,0 +1,61 @@
+---
+globs: *.test.js,*.tests.js,test/**/*.js,tests/**/*.js
+description: Testing patterns and conventions
+---
+
+# Testing Patterns
+
+## Test Structure
+
+Tests use Mocha and Chai as seen in [tests/routes.tests.js](mdc:tests/routes.tests.js):
+
+```javascript
+const { expect } = require("chai");
+const { Router } = require("../index");
+
+describe("feature test case", () => {
+  it("should test specific functionality", () => {
+    // Test implementation
+    expect(result).not.to.be.null;
+  });
+});
+```
+
+## Router Testing
+
+Test router configuration and resolution:
+
+```javascript
+const { resolveRouters, getRouteInfo } = require("../src/core");
+
+const router = new Router("/api/v1", {
+  method: "any",
+  handlers: [async () => {}],
+});
+
+const routes = resolveRouters(router);
+const result = getRouteInfo(routes, "/api/v1/test");
+```
+
+## Test Examples
+
+See [tests/bootstrap.js](mdc:tests/bootstrap.js) for comprehensive examples:
+
+- Route handling patterns
+- Request validation testing
+- File upload testing
+- Session management
+- SSE (Server-Sent Events) testing
+- Error handling scenarios
+
+## Running Tests
+
+Available test scripts in [package.json](mdc:package.json):
+
+- `npm test` - Run basic tests
+- `npm run test-cov` - Run tests with coverage
+- `npm run ci` - Run linting and tests with coverage
+
+## Test Coverage
+
+Project uses NYC for code coverage reporting. Coverage reports are generated in the `coverage/` directory.

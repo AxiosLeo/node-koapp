@@ -1,0 +1,62 @@
+---
+globs: *.js,*.ts
+description: Router and routing patterns in koapp framework
+---
+
+# Router Patterns and Best Practices
+
+## Router Structure
+
+Routers are defined using the [Router](mdc:src/router.js) class:
+
+```javascript
+const router = new Router("/api/v1", {
+  method: "any", // GET, POST, PUT, DELETE, or "any"
+  handlers: [handlerFunction],
+  middlewares: [middlewareFunction],
+  validators: {
+    params: { id: "required|integer" },
+    query: { name: "required|string" },
+    body: { age: "required|integer" },
+  },
+});
+```
+
+## Path Parameters
+
+Use `{:paramName}` syntax for dynamic path segments:
+
+- `/users/{:id}` - Single parameter
+- `/users/{:id}/posts/{:postId}` - Multiple parameters
+
+## HTTP Methods
+
+- Use specific methods: `router.get()`, `router.post()`, `router.put()`, `router.delete()`
+- Use `router.push(method, path, handler)` for custom methods
+- Use `method: "any"` to accept all HTTP methods
+
+## Validation
+
+Request validation uses [validatorjs](https://github.com/mikeerickson/validatorjs) rules:
+
+- `params` - URL path parameters
+- `query` - Query string parameters
+- `body` - Request body data
+
+## Handler Functions
+
+Handler functions receive a `context` object with:
+
+- `context.koa` - Koa context
+- `context.params` - Path parameters
+- `context.query` - Query parameters
+- `context.body` - Request body
+- `context.method` - HTTP method
+
+## Response Methods
+
+Use response helpers from [src/response.js](mdc:src/response.js):
+
+- `success(data)` - 200 OK response
+- `failed(data, code, status)` - Error response
+- `result(data, status, headers)` - Custom response

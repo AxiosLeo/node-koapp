@@ -1,0 +1,35 @@
+---
+alwaysApply: true
+---
+
+# @axiosleo/koapp Project Structure
+
+This is a Node.js web framework built on Koa.js for rapid application development.
+
+## Core Architecture
+
+The main entry point is [index.js](mdc:index.js), which exports all framework components:
+
+- **Applications**: KoaApplication, SocketApplication, WebSocketApplication
+- **Core Classes**: Router, Controller, Model
+- **Utilities**: Response helpers, middlewares, context initialization
+
+## Key Directories
+
+- `src/` - Framework source code
+  - `apps/` - Application types (Koa, Socket, WebSocket)
+  - `workflows/` - Request processing workflows
+  - `middlewares/` - Custom middleware implementations
+- `assets/` - Templates and static assets
+  - `tmpl/` - Project scaffolding templates
+- `commands/` - CLI command implementations
+- `tests/` - Test files and examples
+- `bin/` - Executable CLI entry point
+
+## Application Types
+
+1. **KoaApplication** - Standard HTTP web server
+2. **SocketApplication** - Socket.io server
+3. **WebSocketApplication** - Native WebSocket server
+
+All applications extend the base [Application](mdc:src/apps/app.js) class.

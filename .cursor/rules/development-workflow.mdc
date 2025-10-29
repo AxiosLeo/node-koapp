@@ -1,0 +1,73 @@
+---
+alwaysApply: true
+---
+
+# Development Workflow and Standards
+
+## Code Quality
+
+### Linting
+
+- ESLint configuration in [eslint.config.mjs](mdc:eslint.config.mjs)
+- Run linting: `npm run lint`
+- TypeScript checking included in lint process
+
+### Testing
+
+- Mocha + Chai testing framework
+- Test files in `tests/` directory with `.tests.js` suffix
+- Run tests: `npm test`
+- Coverage reports: `npm run test-cov`
+
+## Development Scripts
+
+Available in [package.json](mdc:package.json):
+
+- `npm run dev` - Development server with nodemon
+- `npm run lint` - ESLint + TypeScript checking
+- `npm test` - Run test suite
+- `npm run test-cov` - Tests with coverage
+- `npm run ci` - Full CI pipeline (lint + test-cov)
+- `npm run clear` - Clean build artifacts
+
+## File Organization
+
+### Source Code (`src/`)
+
+- Keep related functionality grouped in subdirectories
+- Use clear, descriptive file names
+- Follow existing patterns for consistency
+
+### Templates (`assets/tmpl/`)
+
+- Template files use `.tmpl` extension
+- Maintain template structure for project scaffolding
+- Update templates when adding new features
+
+### Examples
+
+- Comprehensive examples in [tests/bootstrap.js](mdc:tests/bootstrap.js)
+- Simple examples in `examples/` directory
+- Keep examples up-to-date with API changes
+
+## Dependencies
+
+### Runtime Dependencies
+
+- Koa.js ecosystem (koa, koa-bodyparser, koa-session, etc.)
+- Validation with validatorjs
+- WebSocket support with ws
+- UUID generation
+- CLI tools from @axiosleo/cli-tool
+
+### Development Dependencies
+
+- TypeScript for type checking
+- ESLint for code quality
+- Mocha/Chai for testing
+- NYC for coverage reporting
+
+## Version Requirements
+
+- Node.js >= 16.0.0
+- Use modern JavaScript features (async/await, destructuring, etc.)

@@ -1,0 +1,62 @@
+---
+globs: *.js,*.ts
+description: Application configuration and setup patterns
+---
+
+# Application Configuration
+
+## KoaApplication Setup
+
+Standard HTTP server configuration:
+
+```javascript
+const { KoaApplication, Router } = require("@axiosleo/koapp");
+
+const app = new KoaApplication({
+  port: 8080,
+  listen_host: "localhost", // Use '0.0.0.0' for public access
+  debug: false,
+  routers: [router1, router2],
+
+  // Session configuration
+  session: {
+    maxAge: 1296000000, // 15 days in ms
+    httpOnly: true,
+    signed: true,
+    rolling: false,
+    renew: true,
+  },
+
+  // Static file serving
+  static: {
+    rootDir: "./public",
+    // uploadDir: './public/upload' // Optional upload directory
+  },
+
+  // Body parser options
+  body_parser: {},
+
+  // Server-Sent Events
+  sse: false, // or { pingInterval: 60000, closeEvent: "close" }
+});
+
+app.start();
+```
+
+## Environment-Specific Configuration
+
+- Use `debug: true` for development
+- Set `listen_host: '0.0.0.0'` for production deployment
+- Configure session security based on environment
+- Enable HTTPS in production with `secure: true` for sessions
+
+## Application Events
+
+Applications emit events that can be handled:
+
+- `starting` - Before server starts
+- `response` - After each response
+
+## Required Node.js Version
+
+Minimum Node.js version: **16.0.0** (as specified in [package.json](mdc:package.json))
