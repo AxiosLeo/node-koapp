@@ -38,6 +38,9 @@ const recur = (tree, prefix, router, middlewares = [], afters = []) => {
       if (t.indexOf('{:') === 0) {
         key = '*';
         params.push(t.substring(2, t.length - 1));
+      } else if (t.indexOf(':') === 0) {
+        key = '*';
+        params.push(t.substring(1));
       } else {
         key = t;
       }
