@@ -177,13 +177,6 @@
     "json5"
   ],
 
-  "github.copilot.enable": {
-    "*": true,
-    "markdown": true,
-    "plaintext": false,
-    "yaml": false
-  },
-
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.expand": false,
   "explorer.fileNesting.patterns": {
@@ -192,6 +185,5 @@
     "package.json": "pnpm-lock.yaml,pnpm-workspace.yaml,.gitattributes,.gitignore,.gitpod.yml,.npmrc,.browserslistrc,.node-version,.git*,.tazerc.json,nodemon.json,.appveyor.yml,.npmignore,nyc.config.js",
     ".eslintrc": ".eslintrc,.eslintignore,.prettierignore,.stylelintignore,.commitlintrc.*,.prettierrc.*,stylelint.config.*,.lintstagedrc.mjs,cspell.json"
   },
-  "vue.server.hybridMode": true,
   "typescript.tsdk": "node_modules/typescript/lib"
 }
