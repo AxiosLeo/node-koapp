@@ -77,7 +77,7 @@ export function response<T = unknown>(
   data: T,
   code?: StatusCode,
   httpStatus?: number,
-  headers?: Record<string, string>
+  headers?: Record<string, string>,
 ): never;
 
 /**
@@ -90,7 +90,7 @@ export function response<T = unknown>(
 export function result<T = unknown>(
   data: T,
   httpStatus?: number,
-  headers?: Record<string, string>
+  headers?: Record<string, string>,
 ): never;
 
 /**
@@ -101,7 +101,7 @@ export function result<T = unknown>(
  */
 export function success<T = unknown>(
   data?: T,
-  headers?: Record<string, string>
+  headers?: Record<string, string>,
 ): never;
 
 /**
@@ -116,7 +116,7 @@ export function failed<T = unknown>(
   data?: T,
   code?: StatusCode,
   httpStatus?: number,
-  headers?: Record<string, string>
+  headers?: Record<string, string>,
 ): never;
 
 /**
@@ -128,7 +128,7 @@ export function failed<T = unknown>(
 export function error(
   httpStatus: number,
   msg: string,
-  headers?: Record<string, string>
+  headers?: Record<string, string>,
 ): never;
 
 // ========================================
@@ -171,7 +171,7 @@ export declare class HttpError extends Error {
   constructor(
     httpStatus: number,
     message: string,
-    headers?: IncomingHttpHeaders
+    headers?: IncomingHttpHeaders,
   );
 }
 
@@ -187,19 +187,19 @@ interface ControllerInterface {
     data: T,
     code?: StatusCode,
     status?: number,
-    headers?: Record<string, string>
+    headers?: Record<string, string>,
   ): never;
   result<T = unknown>(
     data: T,
     status?: number,
-    headers?: Record<string, string>
+    headers?: Record<string, string>,
   ): never;
   success<T = unknown>(data?: T, headers?: Record<string, string>): never;
   failed<T = unknown>(
     data?: T,
     code?: StatusCode,
     status?: number,
-    headers?: Record<string, string>
+    headers?: Record<string, string>,
   ): never;
   error(status: number, msg: string, headers?: Record<string, string>): never;
   log(...data: any): void;
@@ -214,19 +214,19 @@ export declare class Controller implements ControllerInterface {
     data: T,
     code?: StatusCode,
     status?: number,
-    headers?: Record<string, string>
+    headers?: Record<string, string>,
   ): never;
   result<T = unknown>(
     data: T,
     status?: number,
-    headers?: Record<string, string>
+    headers?: Record<string, string>,
   ): never;
   success<T = unknown>(data?: T, headers?: Record<string, string>): never;
   failed<T = unknown>(
     data?: T,
     code?: StatusCode,
     status?: number,
-    headers?: Record<string, string>
+    headers?: Record<string, string>,
   ): never;
   error(status: number, msg: string, headers?: Record<string, string>): never;
   log(...data: any): void;
@@ -298,7 +298,7 @@ interface RouterInfo<
     TParams,
     TBody,
     TQuery
-  >
+  >,
 > {
   /** Route path pattern */
   pathinfo: string;
@@ -377,7 +377,7 @@ interface IKoaSSE extends Transform {
 interface AppContext<
   TParams = Record<string, string>,
   TBody = any,
-  TQuery = any
+  TQuery = any,
 > extends Context {
   app:
     | KoaApplication
@@ -479,7 +479,7 @@ interface AppContext<
 interface KoaContext<
   TParams = Record<string, string>,
   TBody = any,
-  TQuery = any
+  TQuery = any,
 > extends AppContext<TParams, TBody, TQuery> {
   /** Route parameters */
   params?: TParams;
@@ -531,7 +531,7 @@ interface KoaContext<
 export interface SocketContext<
   TParams = Record<string, string>,
   TBody = any,
-  TQuery = any
+  TQuery = any,
 > extends AppContext<TParams, TBody, TQuery> {
   /** Route parameters */
   params?: TParams;
@@ -578,7 +578,7 @@ export interface SocketContext<
 export interface WebSocketContext<
   TParams = Record<string, string>,
   TBody = any,
-  TQuery = any
+  TQuery = any,
 > extends AppContext<TParams, TBody, TQuery> {
   /** Route parameters */
   params?: TParams;
@@ -603,7 +603,7 @@ export interface WebSocketContext<
 interface ContextDataSpec<
   TParams extends Record<string, string> = Record<string, string>,
   TBody = any,
-  TQuery extends Record<string, string> = Record<string, string>
+  TQuery extends Record<string, string> = Record<string, string>,
 > {
   params?: TParams;
   body?: TBody;
@@ -636,7 +636,7 @@ interface ContextDataSpec<
 export type RequiredContext<
   TParams extends Record<string, string> = Record<string, string>,
   TBody = any,
-  TQuery extends Record<string, string> = Record<string, string>
+  TQuery extends Record<string, string> = Record<string, string>,
 > = AppContext<TParams, TBody, TQuery> & {
   params: TParams;
   body: TBody;
@@ -723,7 +723,7 @@ export type ContextFromSpec<T extends ContextDataSpec = ContextDataSpec> =
  * ```
  */
 type ContextHandler<T extends AppContext<any, any, any> = KoaContext> = (
-  context: T
+  context: T,
 ) => Promise<void>;
 
 // ========================================
@@ -875,7 +875,7 @@ export class Router<T extends AppContext<any, any, any> = KoaContext> {
    */
   new<U extends AppContext<any, any, any>>(
     prefix: string,
-    options?: RouterOptions<U>
+    options?: RouterOptions<U>,
   ): Router<U>;
 
   /**
@@ -886,7 +886,7 @@ export class Router<T extends AppContext<any, any, any> = KoaContext> {
     method: HttpMethod,
     prefix: string,
     handle: ContextHandler<U>,
-    validator?: RouterValidator
+    validator?: RouterValidator,
   ): this;
 
   /**
@@ -896,7 +896,7 @@ export class Router<T extends AppContext<any, any, any> = KoaContext> {
   get<U extends AppContext<any, any, any> = T>(
     prefix: string,
     handle: ContextHandler<U>,
-    validator?: RouterValidator
+    validator?: RouterValidator,
   ): this;
 
   /**
@@ -906,7 +906,7 @@ export class Router<T extends AppContext<any, any, any> = KoaContext> {
   post<U extends AppContext<any, any, any> = T>(
     prefix: string,
     handle: ContextHandler<U>,
-    validator?: RouterValidator
+    validator?: RouterValidator,
   ): this;
 
   /**
@@ -916,7 +916,7 @@ export class Router<T extends AppContext<any, any, any> = KoaContext> {
   put<U extends AppContext<any, any, any> = T>(
     prefix: string,
     handle: ContextHandler<U>,
-    validator?: RouterValidator
+    validator?: RouterValidator,
   ): this;
 
   /**
@@ -926,7 +926,7 @@ export class Router<T extends AppContext<any, any, any> = KoaContext> {
   patch<U extends AppContext<any, any, any> = T>(
     prefix: string,
     handle: ContextHandler<U>,
-    validator?: RouterValidator
+    validator?: RouterValidator,
   ): this;
 
   /**
@@ -936,7 +936,7 @@ export class Router<T extends AppContext<any, any, any> = KoaContext> {
   delete<U extends AppContext<any, any, any> = T>(
     prefix: string,
     handle: ContextHandler<U>,
-    validator?: RouterValidator
+    validator?: RouterValidator,
   ): this;
 
   /**
@@ -946,7 +946,7 @@ export class Router<T extends AppContext<any, any, any> = KoaContext> {
   any<U extends AppContext<any, any, any> = T>(
     prefix: string,
     handle: ContextHandler<U>,
-    validator?: RouterValidator
+    validator?: RouterValidator,
   ): this;
 }
 
@@ -969,7 +969,7 @@ type SSEOptions = {
  */
 type SSEContextHandler = (
   context: Koa.ParameterizedContext,
-  next: () => Promise<void>
+  next: () => Promise<void>,
 ) => Promise<void>;
 
 /**
@@ -1050,8 +1050,9 @@ interface AppConfiguration {
  * };
  * ```
  */
-interface TypedAppConfiguration<TRouters extends Router<any>[] = Router<any>[]>
-  extends Omit<AppConfiguration, "routers"> {
+interface TypedAppConfiguration<
+  TRouters extends Router<any>[] = Router<any>[],
+> extends Omit<AppConfiguration, "routers"> {
   /** Strictly typed application routers */
   routers?: TRouters;
 }
@@ -1122,7 +1123,7 @@ export type KoaApplicationConfig = AppConfiguration & {
  * @template TRouters Array type of routers for strict typing
  */
 export type TypedKoaApplicationConfig<
-  TRouters extends Router<any>[] = Router<any>[]
+  TRouters extends Router<any>[] = Router<any>[],
 > = TypedAppConfiguration<TRouters> &
   Omit<KoaApplicationConfig, keyof AppConfiguration>;
 
@@ -1173,7 +1174,7 @@ export type SocketAppConfiguration = AppConfiguration & {
  * @template TRouters Array type of routers for strict typing
  */
 export type TypedSocketAppConfiguration<
-  TRouters extends Router<any>[] = Router<any>[]
+  TRouters extends Router<any>[] = Router<any>[],
 > = TypedAppConfiguration<TRouters> &
   Omit<SocketAppConfiguration, keyof AppConfiguration>;
 
@@ -1214,7 +1215,7 @@ export type WebSocketAppConfiguration = ServerOptions & SocketAppConfiguration;
  * @template TRouters Array type of routers for strict typing
  */
 export type TypedWebSocketAppConfiguration<
-  TRouters extends Router<any>[] = Router<any>[]
+  TRouters extends Router<any>[] = Router<any>[],
 > = ServerOptions & TypedSocketAppConfiguration<TRouters>;
 
 // ========================================
@@ -1319,7 +1320,7 @@ export declare class SocketApplication extends Application {
     data?: any,
     msg?: string,
     code?: number,
-    connections?: Socket[]
+    connections?: Socket[],
   ): void;
 }
 
@@ -1346,7 +1347,7 @@ export declare class WebSocketApplication extends Application {
     data?: any,
     msg?: string,
     code?: number,
-    connections?: WebSocket[]
+    connections?: WebSocket[],
   ): void;
 }
 
@@ -1370,7 +1371,7 @@ export declare class Model {
   static create<T extends Model>(
     obj?: { [key: string]: any },
     rules?: Rules,
-    msg?: ErrorMessages
+    msg?: ErrorMessages,
   ): T;
 
   /**
@@ -1423,7 +1424,7 @@ export function initContext<
     TParams,
     TBody,
     TQuery
-  >
+  >,
 >(options: {
   /** Application instance */
   app: T;
