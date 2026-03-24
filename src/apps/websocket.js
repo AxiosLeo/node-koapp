@@ -26,7 +26,7 @@ const dispatcher = ({ app, app_id, workflow, connection, request }) => {
       app_id,
     });
     context.socket = connection;
-    context.query = connection.connectionQuery || {};
+    context.query = Object.fromEntries(url.searchParams);
     context.body = ctx || {};
     context.headers = request.headers;
     try {
