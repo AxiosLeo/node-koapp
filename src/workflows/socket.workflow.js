@@ -15,7 +15,7 @@ const { _debug } = require('../utils');
  */
 function receive(context) {
   try {
-    context.app.emit('receive', context);
+    context.app?.emit?.('receive', context);
     const router = getRouteInfo(context.app.routes, context.pathinfo, context.method);
     if (!router) {
       error(404, 'Not Found');
@@ -34,7 +34,7 @@ function receive(context) {
  */
 function validate(context) {
   try {
-    context.app.emit('validate', context);
+    context.app?.emit?.('validate', context);
     if (context.router && context.router.validators) {
       const { params, query, body } = context.router.validators;
       const check = {};
@@ -78,7 +78,7 @@ function validate(context) {
  */
 async function middleware(context) {
   try {
-    context.app.emit('middleware', context);
+    context.app?.emit?.('middleware', context);
     // exec middleware by routes configuration
     if (context.router && context.router.middlewares && context.router.middlewares.length > 0) {
       await _foreach(context.router.middlewares, async (middleware) => {
@@ -97,7 +97,7 @@ async function middleware(context) {
  */
 async function handle(context) {
   try {
-    context.app.emit('handle', context);
+    context.app?.emit?.('handle', context);
     if (context.router && context.router.handlers
       && context.router.handlers.length > 0) {
       await _foreach(context.router.handlers, async (handler) => {
@@ -132,7 +132,7 @@ function response(context) {
       message: context.response.message,
       data: {}
     });
-  } else if (context.app.config.debug) {
+  } else if (context.app?.config?.debug) {
     error = context.response;
     response = new HttpResponse({
       format: 'json',
@@ -161,12 +161,12 @@ function response(context) {
     // eslint-disable-next-line no-console
     console.log(error);
   }
-  if (context.app.config.debug && !error) {
+  if (context.app?.config?.debug && !error) {
     let tmp = context.response.stack.split(os.EOL);
     let t = tmp.find((s) => !s.startsWith('Error:') && s.indexOf('node_modules') === -1);
     _debug(context, t);
   }
-  context.app.emit('response', context);
+  context.app?.emit?.('response', context);
 }
 
 /**
@@ -175,13 +175,13 @@ function response(context) {
  */
 async function after(context) {
   try {
-    context.app.emit('request_end', context);
+    context.app?.emit?.('request_end', context);
     if (context.router && context.router.afters && context.router.afters.length > 0) {
       await _foreach(context.router.afters, async (after) => {
         try {
           await after(context);
         } catch (err) {
-          context.app.emit('after_error', context, err);
+          context.app?.emit?.('after_error', context, err);
         }
       });
     }

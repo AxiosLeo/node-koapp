@@ -550,6 +550,53 @@ export interface SocketContext<
 }
 
 /**
+ * WebSocket context extending AppContext
+ * @template TParams Type of route parameters (defaults to Record<string, string>)
+ * @template TBody Type of request body (defaults to any)
+ * @template TQuery Type of query parameters (defaults to any)
+ *
+ * @example
+ * ```typescript
+ * // Define WebSocket-specific types
+ * interface WSParams { roomId: string; }
+ * interface WSBody { content: string; type: 'text' | 'image'; }
+ * interface WSQuery { token: string; }
+ *
+ * type ChatContext = WebSocketContext<WSParams, WSBody, WSQuery>;
+ *
+ * // Use in WebSocket handler
+ * const wsHandler = async (context: ChatContext) => {
+ *   const roomId = context.params.roomId;     // string
+ *   const content = context.body.content;     // string
+ *   const token = context.query.token;        // string
+ *
+ *   // Send raw data via WebSocket
+ *   context.socket.send(JSON.stringify({ type: 'ack' }));
+ * };
+ * ```
+ */
+export interface WebSocketContext<
+  TParams = Record<string, string>,
+  TBody = any,
+  TQuery = any
+> extends AppContext<TParams, TBody, TQuery> {
+  /** Route parameters */
+  params?: TParams;
+  /** Application configuration */
+  config?: AppConfiguration;
+  /** WebSocket connection */
+  socket: WebSocket;
+  /** Request body */
+  body?: TBody;
+  /** Query parameters */
+  query?: TQuery;
+  /** Request headers */
+  headers?: IncomingHttpHeaders;
+  /** Response object */
+  response?: HttpResponse | HttpError;
+}
+
+/**
  * Interface for defining context data specification
  * This allows flexible type configuration without order dependency
  */
