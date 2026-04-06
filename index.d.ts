@@ -481,6 +481,8 @@ interface KoaContext<
   TBody = any,
   TQuery = any,
 > extends AppContext<TParams, TBody, TQuery> {
+  /** Application instance */
+  app: KoaApplication;
   /** Route parameters */
   params?: TParams;
   /** Application configuration */
@@ -533,6 +535,10 @@ export interface SocketContext<
   TBody = any,
   TQuery = any,
 > extends AppContext<TParams, TBody, TQuery> {
+  /** Application instance */
+  app: SocketApplication;
+  /** Connection ID */
+  connection_id: string;
   /** Route parameters */
   params?: TParams;
   /** Application configuration */
@@ -580,6 +586,8 @@ export interface WebSocketContext<
   TBody = any,
   TQuery = any,
 > extends AppContext<TParams, TBody, TQuery> {
+  /** Application instance */
+  app: WebSocketApplication;
   /** Connection ID */
   connection_id: string;
   /** Route parameters */
@@ -1238,7 +1246,7 @@ export declare abstract class Application extends EventEmitter {
   /** Application identifier */
   app_id: string;
   /** Application configuration */
-  config: Configuration;
+  config: AppConfiguration;
 
   constructor(config: AppConfiguration);
 
@@ -1303,6 +1311,7 @@ export declare class SocketClient {
  * Socket-based application
  */
 export declare class SocketApplication extends Application {
+  config: AppConfiguration;
   constructor(config: SocketAppConfiguration);
 
   /**
