@@ -1333,6 +1333,53 @@ export declare class SocketApplication extends Application {
     code?: number,
     connections?: Socket[],
   ): void;
+
+  /**
+   * Send data to a specific connection
+   * @param connection Connection to send to
+   * @param data Data to send
+   * @param msg Message
+   * @param code Status code
+   */
+  send(connection: Socket, data?: any, msg?: string, code?: number): boolean;
+
+  /**
+   * Send data to a specific connection by connection ID
+   * @param connection_id Connection ID to send to
+   * @param data Data to send
+   * @param msg Message
+   * @param code Status code
+   */
+  sendByConnectionId(
+    connection_id: string,
+    data?: any,
+    msg?: string,
+    code?: number,
+  ): boolean;
+
+  /**
+   * Close a specific connection
+   * @param connection Connection to close
+   */
+  close(connection: Socket): boolean;
+
+  /**
+   * Close a specific connection by connection ID
+   */
+  closeByConnectionId(connection_id: string): boolean;
+
+  /**
+   * Get a specific connection by connection ID
+   * @param connection_id Connection ID to get
+   * @returns Connection or null if not found
+   */
+  getConnection(connection_id: string): Socket | null;
+
+  /**
+   * Ping a specific connection
+   * @param connection_id Connection ID to ping
+   */
+  ping(connection_id: string): boolean;
 }
 
 /**
@@ -1383,6 +1430,30 @@ export declare class WebSocketApplication extends Application {
     msg?: string,
     code?: number,
   ): boolean;
+
+  /**
+   * Close a specific connection
+   * @param connection Connection to close
+   */
+  close(connection: WebSocket): boolean;
+
+  /**
+   * Close a specific connection by connection ID
+   */
+  closeByConnectionId(connection_id: string): boolean;
+
+  /**
+   * Get a specific connection by connection ID
+   * @param connection_id Connection ID to get
+   * @returns Connection or null if not found
+   */
+  getConnection(connection_id: string): WebSocket | null;
+
+  /**
+   * Ping a specific connection
+   * @param connection_id Connection ID to ping
+   */
+  ping(connection_id: string): boolean;
 }
 
 // ========================================
