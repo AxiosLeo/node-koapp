@@ -11,7 +11,7 @@ const operator = require('../workflows/socket.workflow');
 const { _assign } = require('@axiosleo/cli-tool/src/helper/obj');
 const { _sleep } = require('@axiosleo/cli-tool/src/helper/cmd');
 
-const dispatcher = ({ app, app_id, workflow, connection }) => {
+const dispatcher = ({ app, app_id, workflow, connection, connection_id }) => {
   return async (ctx) => {
     let context = initContext({
       app,
@@ -21,6 +21,7 @@ const dispatcher = ({ app, app_id, workflow, connection }) => {
       app_id,
     });
     context.socket = connection;
+    context.connection_id = connection_id;
     context.query = ctx.query || {};
     context.body = ctx.body || {};
     try {
@@ -100,7 +101,8 @@ class SocketApplication extends Application {
               app: self,
               app_id: self.app_id,
               workflow: self.workflow,
-              connection
+              connection,
+              connection_id
             });
             process.nextTick(callback, context);
           } catch (err) {
