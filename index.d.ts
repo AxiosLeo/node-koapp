@@ -580,6 +580,8 @@ export interface WebSocketContext<
   TBody = any,
   TQuery = any,
 > extends AppContext<TParams, TBody, TQuery> {
+  /** Connection ID */
+  connection_id: string;
   /** Route parameters */
   params?: TParams;
   /** Application configuration */
@@ -1349,6 +1351,29 @@ export declare class WebSocketApplication extends Application {
     code?: number,
     connections?: WebSocket[],
   ): void;
+
+  /**
+   * Send data to a specific connection
+   * @param connection Connection to send to
+   * @param data Data to send
+   * @param msg Message
+   * @param code Status code
+   */
+  send(connection = null, data?: any, msg?: string, code?: number): boolean;
+
+  /**
+   * Send data to a specific connection by connection ID
+   * @param connection_id Connection ID to send to
+   * @param data Data to send
+   * @param msg Message
+   * @param code Status code
+   */
+  sendByConnectionId(
+    connection_id = null,
+    data?: any,
+    msg?: string,
+    code?: number,
+  ): boolean;
 }
 
 // ========================================
