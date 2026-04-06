@@ -16,9 +16,11 @@ const { _sleep } = require('@axiosleo/cli-tool/src/helper/cmd');
  * @param {{request: import('http').IncomingMessage}} param0 
  * @returns 
  */
-const dispatcher = ({ app, app_id, workflow, connection, request }) => {
+const dispatcher = ({ app, app_id, workflow, connection_id, connection, request }) => {
   return async (ctx) => {
-    const url = new URL(request.url, `ws://localhost:${app.port}`);
+    const host = request.headers.host || `localhost:${app.port}`;
+    const protocol = request.headers['x-forwarded-proto'] === 'https' ? 'wss' : 'ws';
+    const url = new URL(request.url, `${protocol}://${host}`);
     let context = initContext({
       app,
       method: request.method ? request.method.toUpperCase() : 'GET',
@@ -26,6 +28,7 @@ const dispatcher = ({ app, app_id, workflow, connection, request }) => {
       app_id,
     });
     context.socket = connection;
+    context.connection_id = connection_id;
     context.query = Object.fromEntries(url.searchParams);
     context.body = ctx || {};
     context.headers = request.headers;
@@ -116,6 +119,7 @@ class WebSocketApplication extends Application {
             app_id: self.app_id,
             workflow: self.workflow,
             connection: ws,
+            connection_id,
             request
           });
           process.nextTick(callback, context);
@@ -167,6 +171,29 @@ class WebSocketApplication extends Application {
     } else if (is.object(connections)) {
       Object.keys(connections).map((id) => connections[id].send(data));
     }
+  }
+
+  send(connection = null, data = '', msg = 'ok', code = 0) {
+    data = JSON.stringify({
+      request_id: _uuid_salt(this.app_id),
+      timestamp: (new Date()).getTime(),
+      code,
+      message: msg,
+      data: data
+    });
+    if (connection) {
+      connection.send(data);
+      return true;
+    }
+    return false;
+  }
+
+  sendByConnectionId(connection_id = null, data = '', msg = 'ok', code = 0) {
+    if (connection_id) {
+      this.send(this.connections[connection_id], data, msg, code);
+      return true;
+    }
+    return false;
   }
 }
 
