@@ -174,14 +174,14 @@ class WebSocketApplication extends Application {
   }
 
   send(connection = null, data = '', msg = 'ok', code = 0) {
-    data = JSON.stringify({
-      request_id: _uuid_salt(this.app_id),
-      timestamp: (new Date()).getTime(),
-      code,
-      message: msg,
-      data: data
-    });
     if (connection) {
+      data = JSON.stringify({
+        request_id: _uuid_salt(this.app_id),
+        timestamp: (new Date()).getTime(),
+        code,
+        message: msg,
+        data: data
+      });
       connection.send(data);
       return true;
     }
@@ -189,9 +189,8 @@ class WebSocketApplication extends Application {
   }
 
   sendByConnectionId(connection_id = null, data = '', msg = 'ok', code = 0) {
-    if (connection_id) {
-      this.send(this.connections[connection_id], data, msg, code);
-      return true;
+    if (connection_id && this.connections[connection_id]) {
+      return this.send(this.connections[connection_id], data, msg, code);
     }
     return false;
   }
