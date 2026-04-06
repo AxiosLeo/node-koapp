@@ -194,6 +194,35 @@ class WebSocketApplication extends Application {
     }
     return false;
   }
+
+  close(connection = null) {
+    if (connection) {
+      connection.close();
+      return true;
+    }
+    return false;
+  }
+
+  closeByConnectionId(connection_id = null) {
+    if (connection_id && this.connections[connection_id]) {
+      return this.close(this.connections[connection_id]);
+    }
+    return false;
+  }
+
+  getConnection(connection_id = null) {
+    if (connection_id && this.connections[connection_id]) {
+      return this.connections[connection_id];
+    }
+    return null;
+  }
+
+  ping(connection_id = null) {
+    if (connection_id && this.connections[connection_id]) {
+      return this.send(this.connections[connection_id], 'ping', 'ok', 0);
+    }
+    return false;
+  }
 }
 
 module.exports = WebSocketApplication;

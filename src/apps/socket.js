@@ -159,6 +159,57 @@ class SocketApplication extends Application {
       Object.keys(connections).map((id) => connections[id].write(data));
     }
   }
+
+  send(connection = null, data = '', msg = 'ok', code = 0) {
+    if (connection) {
+      data = JSON.stringify({
+        request_id: _uuid_salt(this.app_id),
+        timestamp: (new Date()).getTime(),
+        code,
+        message: msg,
+        data: data
+      });
+      connection.write(data);
+      return true;
+    }
+    return false;
+  }
+
+  sendByConnectionId(connection_id = null, data = '', msg = 'ok', code = 0) {
+    if (connection_id && this.connections[connection_id]) {
+      return this.send(this.connections[connection_id], data, msg, code);
+    }
+    return false;
+  }
+
+  close(connection = null) {
+    if (connection) {
+      connection.end();
+      return true;
+    }
+    return false;
+  }
+
+  closeByConnectionId(connection_id = null) {
+    if (connection_id && this.connections[connection_id]) {
+      return this.close(this.connections[connection_id]);
+    }
+    return false;
+  }
+
+  getConnection(connection_id = null) {
+    if (connection_id && this.connections[connection_id]) {
+      return this.connections[connection_id];
+    }
+    return null;
+  }
+
+  ping(connection_id = null) {
+    if (connection_id && this.connections[connection_id]) {
+      return this.send(this.connections[connection_id], 'ping', 'ok', 0);
+    }
+    return false;
+  }
 }
 
 module.exports = SocketApplication;
