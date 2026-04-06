@@ -1359,7 +1359,7 @@ export declare class WebSocketApplication extends Application {
    * @param msg Message
    * @param code Status code
    */
-  send(connection = null, data?: any, msg?: string, code?: number): boolean;
+  send(connection: WebSocket, data?: any, msg?: string, code?: number): boolean;
 
   /**
    * Send data to a specific connection by connection ID
@@ -1369,7 +1369,7 @@ export declare class WebSocketApplication extends Application {
    * @param code Status code
    */
   sendByConnectionId(
-    connection_id = null,
+    connection_id: string,
     data?: any,
     msg?: string,
     code?: number,
