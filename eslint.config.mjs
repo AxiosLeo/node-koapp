@@ -24,7 +24,7 @@ export default [...compat.extends("eslint:recommended"), {
             beforeEach: true,
         },
 
-        ecmaVersion: 2018,
+        ecmaVersion: 2020,
         sourceType: "commonjs",
 
         parserOptions: {
