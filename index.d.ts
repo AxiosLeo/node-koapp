@@ -1307,11 +1307,16 @@ export declare class SocketClient {
   close(): void;
 }
 
+export type PingConfig = { open: boolean; interval: number; data: any };
+
 /**
  * Socket-based application
  */
 export declare class SocketApplication extends Application {
-  config: AppConfiguration;
+  config: AppConfiguration & {
+    ping?: PingConfig;
+  };
+  pingConfig: PingConfig;
   constructor(config: SocketAppConfiguration);
 
   /**
@@ -1386,6 +1391,7 @@ export declare class SocketApplication extends Application {
  * WebSocket-based application
  */
 export declare class WebSocketApplication extends Application {
+  pingConfig: { open: boolean; interval: number; data: any };
   constructor(config: WebSocketAppConfiguration);
 
   /**

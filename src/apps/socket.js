@@ -73,8 +73,8 @@ class SocketApplication extends Application {
     this.connections = {};
     this.on('response', handleRes);
     this.workflow = new Workflow(operator);
-    this.ping = {};
-    _assign(this.ping, {
+    this.pingConfig = {};
+    _assign(this.pingConfig, {
       open: false,
       interval: 1000 * 60 * 5,
       data: 'this is a ping message'
@@ -125,11 +125,11 @@ class SocketApplication extends Application {
         debug.error('[Socket App]', 'socket server error:', err);
       }
     });
-    if (this.ping.open) {
+    if (this.pingConfig.open) {
       const self = this;
       printer.info('[Socket App] ping is open.');
       process.nextTick(() => {
-        ping.call(self, self.ping.data, self.ping.interval);
+        ping.call(self, self.pingConfig.data, self.pingConfig.interval);
       });
     }
 
@@ -169,7 +169,7 @@ class SocketApplication extends Application {
         message: msg,
         data: data
       });
-      connection.write(data);
+      connection.write(data + '@@@@@@');
       return true;
     }
     return false;
