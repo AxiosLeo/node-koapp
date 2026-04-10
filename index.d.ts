@@ -1317,6 +1317,9 @@ export declare class SocketApplication extends Application {
     ping?: PingConfig;
   };
   pingConfig: PingConfig;
+  /** Active connections indexed by connection ID */
+  connections: Record<string, any>;
+
   constructor(config: SocketAppConfiguration);
 
   /**
@@ -1390,7 +1393,7 @@ export declare class SocketApplication extends Application {
 /**
  * WebSocket-based application
  */
-export declare class WebSocketApplication extends Application {
+export declare class WebSocketApplication extends SocketApplication {
   pingConfig: { open: boolean; interval: number; data: any };
   constructor(config: WebSocketAppConfiguration);
 
@@ -1424,42 +1427,12 @@ export declare class WebSocketApplication extends Application {
   send(connection: WebSocket, data?: any, msg?: string, code?: number): boolean;
 
   /**
-   * Send data to a specific connection by connection ID
-   * @param connection_id Connection ID to send to
-   * @param data Data to send
-   * @param msg Message
-   * @param code Status code
-   */
-  sendByConnectionId(
-    connection_id: string,
-    data?: any,
-    msg?: string,
-    code?: number,
-  ): boolean;
-
-  /**
    * Close a specific connection
    * @param connection Connection to close
    */
   close(connection: WebSocket): boolean;
 
-  /**
-   * Close a specific connection by connection ID
-   */
-  closeByConnectionId(connection_id: string): boolean;
-
-  /**
-   * Get a specific connection by connection ID
-   * @param connection_id Connection ID to get
-   * @returns Connection or null if not found
-   */
   getConnection(connection_id: string): WebSocket | null;
-
-  /**
-   * Ping a specific connection
-   * @param connection_id Connection ID to ping
-   */
-  ping(connection_id: string): boolean;
 }
 
 // ========================================

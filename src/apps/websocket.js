@@ -1,14 +1,11 @@
 'use strict';
 
 const { WebSocketServer } = require('ws');
-const EventEmitter = require('events');
-const Application = require('./app');
-const { debug, printer, Workflow } = require('@axiosleo/cli-tool');
+const SocketApplication = require('./socket');
+const { debug, printer } = require('@axiosleo/cli-tool');
 const { _uuid_salt } = require('../utils');
 const { initContext } = require('../core');
 const is = require('@axiosleo/cli-tool/src/helper/is');
-const operator = require('../workflows/socket.workflow');
-const { _assign } = require('@axiosleo/cli-tool/src/helper/obj');
 const { _sleep } = require('@axiosleo/cli-tool/src/helper/cmd');
 
 /**
@@ -72,25 +69,15 @@ async function ping(data, interval) {
   });
 }
 
-class WebSocketApplication extends Application {
+class WebSocketApplication extends SocketApplication {
   /**
    * 
    * @param {import('../../').WebSocketAppConfiguration} options 
    */
   constructor(options) {
     super(options);
-
-    this.event = new EventEmitter();
-    this.port = this.config.port || 8081;
-    this.connections = {};
+    this.removeAllListeners('response');
     this.on('response', handleRes);
-    this.workflow = new Workflow(operator);
-    this.pingConfig = {};
-    _assign(this.pingConfig, {
-      open: false,
-      interval: 1000 * 60 * 5,
-      data: 'this is a ping message'
-    }, this.config.ping || {});
     delete options.ping;
     this.websocketOptions = options;
   }
@@ -188,38 +175,10 @@ class WebSocketApplication extends Application {
     return false;
   }
 
-  sendByConnectionId(connection_id = null, data = '', msg = 'ok', code = 0) {
-    if (connection_id && this.connections[connection_id]) {
-      return this.send(this.connections[connection_id], data, msg, code);
-    }
-    return false;
-  }
-
   close(connection = null) {
     if (connection) {
       connection.close();
       return true;
-    }
-    return false;
-  }
-
-  closeByConnectionId(connection_id = null) {
-    if (connection_id && this.connections[connection_id]) {
-      return this.close(this.connections[connection_id]);
-    }
-    return false;
-  }
-
-  getConnection(connection_id = null) {
-    if (connection_id && this.connections[connection_id]) {
-      return this.connections[connection_id];
-    }
-    return null;
-  }
-
-  ping(connection_id = null) {
-    if (connection_id && this.connections[connection_id]) {
-      return this.send(this.connections[connection_id], 'ping', 'ok', 0);
     }
     return false;
   }
