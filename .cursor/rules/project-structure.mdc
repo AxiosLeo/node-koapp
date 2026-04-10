@@ -28,8 +28,9 @@ The main entry point is [index.js](mdc:index.js), which exports all framework co
 
 ## Application Types
 
-1. **KoaApplication** - Standard HTTP web server
-2. **SocketApplication** - Socket.io server
-3. **WebSocketApplication** - Native WebSocket server
+1. **KoaApplication** - Standard HTTP web server (extends Application)
+2. **SocketApplication** - TCP socket server (extends Application)
+3. **WebSocketApplication** - Native WebSocket server (extends SocketApplication)
 
-All applications extend the base [Application](mdc:src/apps/app.js) class.
+KoaApplication and SocketApplication extend the base [Application](mdc:src/apps/app.js) class.
+WebSocketApplication extends [SocketApplication](mdc:src/apps/socket.js), inheriting connection management methods.

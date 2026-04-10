@@ -1,0 +1,126 @@
+---
+globs: *.js,*.ts
+description: SocketApplication and WebSocketApplication usage patterns and class hierarchy
+---
+
+# Socket Application Patterns
+
+## Class Hierarchy
+
+```
+Application (base)
+  └── SocketApplication (TCP socket, extends Application)
+        └── WebSocketApplication (WebSocket, extends SocketApplication)
+```
+
+`WebSocketApplication` extends [SocketApplication](mdc:src/apps/socket.js), not `Application` directly.
+Connection management methods (`sendByConnectionId`, `closeByConnectionId`, `getConnection`, `ping`) are defined once in `SocketApplication` and inherited by `WebSocketApplication`.
+
+## SocketApplication Setup
+
+TCP socket server using `net.createServer`:
+
+```javascript
+const { SocketApplication, Router } = require("@axiosleo/koapp");
+
+const router = new Router("/", { /* ... */ });
+
+const app = new SocketApplication({
+  routers: [router],
+  port: 8081,
+  ping: {
+    open: true,
+    interval: 1000 * 10,
+    data: "this is a ping message",
+  },
+});
+
+app.start();
+```
+
+Message protocol: JSON payload terminated by `@@@@@@` delimiter.
+
+```
+{"path":"/test","method":"GET","query":{"test":123}}@@@@@@
+```
+
+## WebSocketApplication Setup
+
+WebSocket server using the `ws` library:
+
+```javascript
+const { WebSocketApplication, Router } = require("@axiosleo/koapp");
+
+const router = new Router("/", { /* ... */ });
+
+const app = new WebSocketApplication({
+  routers: [router],
+  port: 8081,
+  ping: {
+    open: false,
+    interval: 1000 * 3,
+    data: "this is a ping message",
+  },
+});
+
+app.start();
+```
+
+Message protocol: plain JSON string (no delimiter).
+
+```
+{"path":"/test","method":"GET","query":{"test":123}}
+```
+
+## Ping Configuration
+
+Both applications support automatic heartbeat via `pingConfig`:
+
+| Field      | Type    | Default         | Description                   |
+|------------|---------|-----------------|-------------------------------|
+| `open`     | boolean | `false`         | Enable periodic ping          |
+| `interval` | number  | `300000` (5min) | Milliseconds between pings    |
+| `data`     | any     | `"this is a ping message"` | Payload sent with each ping |
+
+## Connection Management (inherited from SocketApplication)
+
+All methods below are available on both `SocketApplication` and `WebSocketApplication`:
+
+- `app.send(connection, data, msg, code)` — Send to a connection object (overridden per subclass)
+- `app.sendByConnectionId(id, data, msg, code)` — Send by connection ID
+- `app.close(connection)` — Close a connection object (overridden per subclass)
+- `app.closeByConnectionId(id)` — Close by connection ID
+- `app.getConnection(id)` — Get connection object by ID, returns `null` if not found
+- `app.ping(id)` — Send a ping to a specific connection
+- `app.broadcast(data, msg, code, connections)` — Broadcast to all or specific connections (overridden per subclass)
+
+Pass `connections = null` to `broadcast` to send to all active connections.
+
+## Protocol Differences
+
+| Aspect           | SocketApplication             | WebSocketApplication          |
+|------------------|-------------------------------|-------------------------------|
+| Transport        | TCP (`net`)                   | WebSocket (`ws`)              |
+| `send()`         | `connection.write(data + '@@@@@@')` | `connection.send(data)` |
+| `close()`        | `connection.end()`            | `connection.close()`          |
+| Response handler | Appends `@@@@@@` delimiter    | No delimiter                  |
+
+## Application Events
+
+Both applications emit the following events:
+
+- `starting` — When the application begins initialization
+- `response` — After each response is sent (handled by internal response handler)
+- `connection` — When a new client connects (emitted on `app.event`)
+- `listen` — When the server starts listening (emitted on `app.event`)
+
+## Context Properties
+
+Inside route handlers, the context object includes:
+
+- `context.app` — The application instance
+- `context.socket` — The raw connection object
+- `context.connection_id` — Unique ID for this connection
+- `context.query` — Parsed query parameters
+- `context.body` — Parsed request body
+- `context.headers` — Request headers (WebSocket only)
