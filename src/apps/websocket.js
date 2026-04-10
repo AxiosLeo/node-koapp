@@ -78,8 +78,11 @@ class WebSocketApplication extends SocketApplication {
     super(options);
     this.removeAllListeners('response');
     this.on('response', handleRes);
-    delete options.ping;
-    this.websocketOptions = options;
+    this.websocketOptions = { ...options };
+    delete this.websocketOptions.ping;
+    delete this.websocketOptions.routers;
+    delete this.websocketOptions.debug;
+    delete this.websocketOptions.app_id;
   }
 
   async start() {
