@@ -175,17 +175,17 @@ class SocketApplication extends Application {
     return false;
   }
 
-  sendByConnectionId(connection_id = null, data = '', msg = 'ok', code = 0) {
-    if (connection_id && this.connections[connection_id]) {
-      return this.send(this.connections[connection_id], data, msg, code);
-    }
-    return false;
-  }
-
   close(connection = null) {
     if (connection) {
       connection.end();
       return true;
+    }
+    return false;
+  }
+
+  sendByConnectionId(connection_id = null, data = '', msg = 'ok', code = 0) {
+    if (connection_id && this.connections[connection_id]) {
+      return this.send(this.connections[connection_id], data, msg, code);
     }
     return false;
   }
