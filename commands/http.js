@@ -5,7 +5,6 @@ const { Command, printer } = require('@axiosleo/cli-tool');
 const { Router, KoaApplication, result } = require('../');
 const path = require('path');
 const promisify = require('util').promisify;
-const readdir = promisify(fs.readdir);
 const stat = promisify(fs.stat);
 const {
   _exists,
@@ -85,26 +84,20 @@ class HttpCommand extends Command {
     if (!await _is_dir(dir)) {
       throw new Error('Only support dir path');
     }
-    const tmp = await readdir(dir);
-    let files = [];
-    await Promise.all(tmp.map(async (filename) => {
-      let filepath = path.join(dir, filename);
-      let is_dir = await _is_dir(filepath);
-      let stats = await stat(filepath);
-      let size = is_dir ? 0 : stats.size;
-      let mtime = stats.mtime;
-      let ext = is_dir ? '' : _ext(filename);
-
-      files.push({
-        filename,
+    const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+    const files = await Promise.all(entries.map(async (entry) => {
+      const filepath = path.join(dir, entry.name);
+      const is_dir = entry.isDirectory();
+      const stats = await stat(filepath);
+      return {
+        filename: entry.name,
         is_dir,
         filepath,
-        size,
-        mtime,
-        ext
-      });
+        size: is_dir ? 0 : stats.size,
+        mtime: stats.mtime,
+        ext: is_dir ? '' : _ext(entry.name)
+      };
     }));
-    // debug.log(files);
     return files;
   }
 
@@ -113,6 +106,7 @@ class HttpCommand extends Command {
    * @param {*} options 
    */
   async exec(args, options) {
+    printer.print('http'.cyan).green(' Starting server...').println();
     let dir = path.resolve(args.dir);
     const router = new Router('/***', {
       method: 'any',
@@ -161,15 +155,33 @@ class HttpCommand extends Command {
         }
         if (await _is_file(d)) {
           const extname = _ext(d);
-          context.koa.type = extname;
-          if (mimeTypes[extname]) {
-            context.koa.headers['Content-Type'] = mimeTypes[extname];
+          const mime = mimeTypes[extname];
+          if (mime) {
+            context.koa.type = extname;
+            context.koa.set('Content-Type', mime);
           } else {
-            let tmp = context.url.split('/');
-            context.koa.headers['Content-disposition'] = 'attachment; filename=' + tmp[tmp.length - 1];
+            const filename = path.basename(d);
+            context.koa.set('Content-Type', 'application/octet-stream');
+            context.koa.set('Content-Disposition', 'attachment; filename=' + encodeURIComponent(filename));
           }
-          context.koa.headers['Content-Type'] = mimeTypes[extname];
+          const fileStat = await stat(d);
+          context.koa.set('Content-Length', String(fileStat.size));
+
           const stream = fs.createReadStream(d);
+          const res = context.koa.res;
+          stream.on('error', (err) => {
+            if (err.code === 'EPIPE' || err.code === 'ERR_STREAM_DESTROYED' || err.code === 'ECONNRESET') {
+              return;
+            }
+            printer.red('StreamError').print(': ');
+            // eslint-disable-next-line no-console
+            console.error(err);
+          });
+          res.on('close', () => {
+            if (!stream.destroyed) {
+              stream.destroy();
+            }
+          });
           context.koa.body = stream;
           return;
         }
@@ -591,10 +603,7 @@ class HttpCommand extends Command {
       port: parseInt(options.port),
       listen_host: '0.0.0.0',
       routers: [router],
-      static: {
-        rootDir: path.resolve(args.dir),
-        index: 'index.html'
-      }
+      static: false
     });
     app.start();
   }
