@@ -50,6 +50,72 @@ app.start();
 // Open http://localhost:8088/test
 ```
 
+## AI Skills
+
+`@axiosleo/koapp` ships a bundle of AI Agent Skills so tools like Cursor and
+Claude Code can generate framework-correct code for you. Each skill is a
+self-contained `SKILL.md` with YAML frontmatter, bundled under
+`node_modules/@axiosleo/koapp/assets/skills/` after installation.
+
+### Install into a project
+
+```bash
+# After: npm install @axiosleo/koapp
+npx @axiosleo/koapp skills --install=cursor
+npx @axiosleo/koapp skills --install=claude
+```
+
+This copies the skills into `./.cursor/skills/` or `./.claude/skills/` in the
+current project, making them visible to the matching AI tool.
+
+### Install for the current user
+
+```bash
+npx @axiosleo/koapp skills --install=cursor --scope=user
+npx @axiosleo/koapp skills --install=claude --scope=user
+```
+
+Writes to `~/.cursor/skills/` or `~/.claude/skills/`, shared across every
+project on this machine.
+
+### Options
+
+| Flag | Values | Default | Description |
+| --- | --- | --- | --- |
+| `--install`, `-i` | `cursor`, `claude` | required | Which tool's skills directory to target |
+| `--scope`, `-s` | `project`, `user` | `project` | Where to write the skills |
+| `--force`, `-f` | boolean | `false` | Overwrite existing skill directories without prompting |
+
+### Bundled skills
+
+| Skill | Purpose |
+| --- | --- |
+| `koapp` | Framework overview + navigation to other skills |
+| `koapp-apps` | Choose and configure `KoaApplication` (HTTP), `SocketApplication` (TCP), or `WebSocketApplication` |
+| `koapp-router` | Define routes, path params, validators, nested routers |
+| `koapp-response` | Send responses via `success` / `failed` / `result` / `response` / `error` |
+| `koapp-controller` | Organize handlers into classes by extending `Controller` |
+| `koapp-model` | Validate and serialize structured data with `Model` |
+| `koapp-sse` | Stream Server-Sent Events with `KoaSSEMiddleware` |
+
+### How the installer picks the source
+
+1. If `@axiosleo/koapp` is installed in the current project, skills are
+   copied from `node_modules/@axiosleo/koapp/assets/skills/`.
+2. If the project does not depend on `@axiosleo/koapp`, the CLI prompts to
+   install it first.
+3. If the local install is an older version without the skills assets, the
+   CLI falls back to the skills shipped inside the `npx`-executed copy and
+   reminds you to run `npm install @axiosleo/koapp@latest`.
+
+### Uninstall
+
+```bash
+rm -rf ./.cursor/skills/koapp*    # or ./.claude/skills/koapp*
+# user scope
+rm -rf ~/.cursor/skills/koapp*    # or ~/.claude/skills/koapp*
+```
+
 ## More Examples
 
 - Request Validation
