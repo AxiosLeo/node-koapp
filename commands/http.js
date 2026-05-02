@@ -87,8 +87,11 @@ class HttpCommand extends Command {
     const entries = await fs.promises.readdir(dir, { withFileTypes: true });
     const files = await Promise.all(entries.map(async (entry) => {
       const filepath = path.join(dir, entry.name);
-      const is_dir = entry.isDirectory();
+      // Use stat (not entry.isDirectory()) so symlinks to directories are
+      // resolved as directories. `Dirent.isDirectory()` is false for
+      // symlinks regardless of their target.
       const stats = await stat(filepath);
+      const is_dir = stats.isDirectory();
       return {
         filename: entry.name,
         is_dir,
@@ -157,8 +160,11 @@ class HttpCommand extends Command {
           const extname = _ext(d);
           const mime = mimeTypes[extname];
           if (mime) {
-            context.koa.type = extname;
-            context.koa.set('Content-Type', mime);
+            // Route through Koa's type setter so charset is auto-appended
+            // for text/* types (and others registered with a charset in
+            // mime-db). Calling `set('Content-Type', mime)` directly would
+            // strip that charset and break non-ASCII content.
+            context.koa.type = mime;
           } else {
             const filename = path.basename(d);
             context.koa.set('Content-Type', 'application/octet-stream');
