@@ -13,7 +13,7 @@ const {
 const { _exec } = require('@axiosleo/cli-tool/src/helper/cmd');
 const {
   resolveLocalPkgDir,
-  detectPackageManager,
+  resolveInstallTarget,
   buildInstallCommand
 } = require('../src/cli/pkg');
 
@@ -89,9 +89,9 @@ class SkillsCommand extends Command {
     const runnerPkgDir = path.resolve(__dirname, '..');
     const cwd = process.cwd();
     const runnerVer = readPkgVersion(runnerPkgDir);
-    const pmInfo = detectPackageManager(cwd);
-    const installCmd = buildInstallCommand(pmInfo.pm, PKG_NAME, {
-      isWorkspaceRoot: pmInfo.isWorkspaceRoot
+    const target = resolveInstallTarget(cwd);
+    const installCmd = buildInstallCommand(target.pm, PKG_NAME, {
+      useWorkspaceFlag: target.useWorkspaceFlag
     });
 
     const state = {
@@ -109,10 +109,10 @@ class SkillsCommand extends Command {
       return this.resolveFromLocal(state, localPkgDir);
     }
 
-    // Warn when cwd is inside a workspace but has no package.json of its own
-    if (pmInfo.rootDir !== path.resolve(cwd) && !(await _exists(path.join(cwd, 'package.json')))) {
+    // Warn when install will land outside cwd (nearest package.json / workspace root)
+    if (path.resolve(target.installDir) !== path.resolve(cwd)) {
       printer.warning(
-        `[skills] no package.json in ${cwd}; detected project root at ${pmInfo.rootDir}`
+        `[skills] no package.json in ${cwd}; will install into ${target.installDir}`
       ).println();
     }
 
@@ -126,7 +126,7 @@ class SkillsCommand extends Command {
     }
 
     const shouldInstall = await this.confirm(
-      `Install ${PKG_NAME} now via \`${installCmd}\`?`,
+      `Install ${PKG_NAME} now via \`${installCmd}\` in ${target.installDir}?`,
       true
     );
     if (!shouldInstall) {
@@ -137,7 +137,7 @@ class SkillsCommand extends Command {
     }
 
     try {
-      await _exec(installCmd, pmInfo.rootDir);
+      await _exec(installCmd, target.installDir);
     } catch (err) {
       const reason = err && err.message ? err.message : String(err);
       printer.error(`[skills] install failed: ${reason}`).println();
@@ -236,7 +236,7 @@ class SkillsCommand extends Command {
 }
 
 SkillsCommand.resolveLocalPkgDir = resolveLocalPkgDir;
-SkillsCommand.detectPackageManager = detectPackageManager;
+SkillsCommand.resolveInstallTarget = resolveInstallTarget;
 SkillsCommand.buildInstallCommand = buildInstallCommand;
 
 module.exports = SkillsCommand;

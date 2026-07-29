@@ -52,6 +52,30 @@ function readPackageJson(dir) {
 }
 
 /**
+ * Walk up from `fromDir` and return the nearest directory that contains
+ * a package.json, or null if none is found.
+ *
+ * @param {string} fromDir
+ * @returns {string|null}
+ */
+function findNearestPackageDir(fromDir) {
+  let dir = path.resolve(fromDir);
+  const { root } = path.parse(dir);
+  let searching = true;
+  while (searching) {
+    if (fs.existsSync(path.join(dir, 'package.json'))) {
+      return dir;
+    }
+    if (dir === root) {
+      searching = false;
+    } else {
+      dir = path.dirname(dir);
+    }
+  }
+  return null;
+}
+
+/**
  * @param {string} dir
  * @param {string} pm
  * @returns {boolean}
@@ -130,18 +154,49 @@ function detectPackageManager(fromDir) {
 }
 
 /**
+ * Decide where and how to add a dependency when running from `fromDir`.
+ * Prefers the nearest package.json (workspace member) over the monorepo root,
+ * so `pnpm add -w` is only used when installing into the workspace root itself.
+ *
+ * @param {string} fromDir
+ * @returns {{
+ *   pm: string,
+ *   rootDir: string,
+ *   installDir: string,
+ *   useWorkspaceFlag: boolean
+ * }}
+ */
+function resolveInstallTarget(fromDir) {
+  const pmInfo = detectPackageManager(fromDir);
+  const nearestPkg = findNearestPackageDir(fromDir);
+  const installDir = nearestPkg || pmInfo.rootDir;
+  const useWorkspaceFlag =
+    pmInfo.isWorkspaceRoot
+    && path.resolve(installDir) === path.resolve(pmInfo.rootDir);
+
+  return {
+    pm: pmInfo.pm,
+    rootDir: pmInfo.rootDir,
+    installDir,
+    useWorkspaceFlag
+  };
+}
+
+/**
  * Build the shell command used to add a dependency.
  *
  * @param {string} pm
  * @param {string} pkgName
- * @param {{ isWorkspaceRoot?: boolean }} [opts]
+ * @param {{ useWorkspaceFlag?: boolean, isWorkspaceRoot?: boolean }} [opts]
  * @returns {string}
  */
 function buildInstallCommand(pm, pkgName, opts = {}) {
-  const { isWorkspaceRoot: workspaceRoot = false } = opts;
+  // isWorkspaceRoot kept as a deprecated alias of useWorkspaceFlag
+  const useWorkspaceFlag = opts.useWorkspaceFlag === true
+    || opts.isWorkspaceRoot === true;
   switch (pm) {
     case 'pnpm':
-      return workspaceRoot
+      return useWorkspaceFlag
         ? `pnpm add ${pkgName} -w`
         : `pnpm add ${pkgName}`;
     case 'yarn':
@@ -156,6 +211,8 @@ function buildInstallCommand(pm, pkgName, opts = {}) {
 
 module.exports = {
   resolveLocalPkgDir,
+  findNearestPackageDir,
   detectPackageManager,
+  resolveInstallTarget,
   buildInstallCommand
 };
