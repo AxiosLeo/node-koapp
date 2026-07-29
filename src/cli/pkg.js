@@ -22,15 +22,17 @@ function resolveLocalPkgDir(pkgName, fromDir) {
 
   let dir = path.resolve(fromDir);
   const { root } = path.parse(dir);
-  while (true) {
+  let searching = true;
+  while (searching) {
     const candidate = path.join(dir, 'node_modules', ...pkgName.split('/'));
     if (fs.existsSync(path.join(candidate, 'package.json'))) {
       return candidate;
     }
     if (dir === root) {
-      break;
+      searching = false;
+    } else {
+      dir = path.dirname(dir);
     }
-    dir = path.dirname(dir);
   }
   return null;
 }
@@ -83,8 +85,9 @@ function isWorkspaceRoot(dir, pm) {
 function detectPackageManager(fromDir) {
   let dir = path.resolve(fromDir);
   const { root } = path.parse(dir);
+  let searching = true;
 
-  while (true) {
+  while (searching) {
     const pkg = readPackageJson(dir);
     if (pkg && typeof pkg.packageManager === 'string') {
       const pm = pkg.packageManager.split('@')[0].trim();
@@ -113,9 +116,10 @@ function detectPackageManager(fromDir) {
     }
 
     if (dir === root) {
-      break;
+      searching = false;
+    } else {
+      dir = path.dirname(dir);
     }
-    dir = path.dirname(dir);
   }
 
   return {
