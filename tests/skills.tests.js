@@ -7,6 +7,7 @@ const { expect } = require('chai');
 const {
   resolveLocalPkgDir,
   detectPackageManager,
+  resolveInstallTarget,
   buildInstallCommand
 } = require('../src/cli/pkg');
 
@@ -22,6 +23,17 @@ function writeJson(filePath, data) {
 function touch(filePath, content = '') {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, content);
+}
+
+function makePnpmWorkspace() {
+  const root = mkdtemp('koapp-skills-ws-');
+  writeJson(path.join(root, 'package.json'), {
+    name: 'root',
+    packageManager: 'pnpm@11.10.0'
+  });
+  touch(path.join(root, 'pnpm-lock.yaml'), 'lockfileVersion: 9.0\n');
+  touch(path.join(root, 'pnpm-workspace.yaml'), 'packages:\n  - "packages/*"\n');
+  return root;
 }
 
 describe('cli/pkg', () => {
@@ -91,14 +103,64 @@ describe('cli/pkg', () => {
     });
   });
 
+  describe('resolveInstallTarget()', () => {
+    it('installs into a workspace member package without -w', () => {
+      const root = makePnpmWorkspace();
+      const member = path.join(root, 'packages', 'api');
+      writeJson(path.join(member, 'package.json'), { name: 'api', version: '0.0.0' });
+
+      const target = resolveInstallTarget(member);
+      expect(target.pm).to.equal('pnpm');
+      expect(target.rootDir).to.equal(root);
+      expect(target.installDir).to.equal(member);
+      expect(target.useWorkspaceFlag).to.equal(false);
+      expect(buildInstallCommand(target.pm, '@axiosleo/koapp', {
+        useWorkspaceFlag: target.useWorkspaceFlag
+      })).to.equal('pnpm add @axiosleo/koapp');
+    });
+
+    it('uses -w when cwd is the workspace root', () => {
+      const root = makePnpmWorkspace();
+
+      const target = resolveInstallTarget(root);
+      expect(target.installDir).to.equal(root);
+      expect(target.useWorkspaceFlag).to.equal(true);
+      expect(buildInstallCommand(target.pm, '@axiosleo/koapp', {
+        useWorkspaceFlag: target.useWorkspaceFlag
+      })).to.equal('pnpm add @axiosleo/koapp -w');
+    });
+
+    it('falls back to workspace root when cwd has no package.json', () => {
+      const root = makePnpmWorkspace();
+      const nested = path.join(root, 'apps');
+      fs.mkdirSync(nested);
+
+      const target = resolveInstallTarget(nested);
+      expect(target.installDir).to.equal(root);
+      expect(target.useWorkspaceFlag).to.equal(true);
+    });
+
+    it('resolves nearest package.json above a nested cwd', () => {
+      const root = makePnpmWorkspace();
+      const member = path.join(root, 'packages', 'api');
+      writeJson(path.join(member, 'package.json'), { name: 'api', version: '0.0.0' });
+      const nested = path.join(member, 'src');
+      fs.mkdirSync(nested, { recursive: true });
+
+      const target = resolveInstallTarget(nested);
+      expect(target.installDir).to.equal(member);
+      expect(target.useWorkspaceFlag).to.equal(false);
+    });
+  });
+
   describe('buildInstallCommand()', () => {
     it('builds pnpm add -w for workspace roots', () => {
-      expect(buildInstallCommand('pnpm', '@axiosleo/koapp', { isWorkspaceRoot: true }))
+      expect(buildInstallCommand('pnpm', '@axiosleo/koapp', { useWorkspaceFlag: true }))
         .to.equal('pnpm add @axiosleo/koapp -w');
     });
 
     it('builds pnpm add without -w for non-workspace', () => {
-      expect(buildInstallCommand('pnpm', '@axiosleo/koapp', { isWorkspaceRoot: false }))
+      expect(buildInstallCommand('pnpm', '@axiosleo/koapp', { useWorkspaceFlag: false }))
         .to.equal('pnpm add @axiosleo/koapp');
     });
 
