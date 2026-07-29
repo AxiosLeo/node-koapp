@@ -246,6 +246,57 @@ describe('cli/pkg', () => {
         .to.equal('yarn add @axiosleo/koapp');
     });
 
+    it('does not hijack a nested project under a config-only pnpm-workspace.yaml', () => {
+      // pnpm 10+ allows pnpm-workspace.yaml with config keys and no packages list
+      const root = mkdtemp('koapp-skills-cfgonly-');
+      writeJson(path.join(root, 'package.json'), { name: 'root' });
+      touch(path.join(root, 'pnpm-workspace.yaml'), 'onlyBuiltDependencies:\n  - esbuild\n');
+      const standalone = path.join(root, 'tools', 'site');
+      writeJson(path.join(standalone, 'package.json'), { name: 'site' });
+      touch(path.join(standalone, 'package-lock.json'), '{}');
+
+      const target = resolveInstallTarget(standalone);
+      expect(target.pm).to.equal('npm');
+      expect(target.installDir).to.equal(standalone);
+    });
+
+    it('treats an empty packages list as having no members', () => {
+      const root = mkdtemp('koapp-skills-emptypkgs-');
+      writeJson(path.join(root, 'package.json'), { name: 'root' });
+      touch(path.join(root, 'pnpm-workspace.yaml'), 'packages: []\n');
+      const standalone = path.join(root, 'demo');
+      writeJson(path.join(standalone, 'package.json'), { name: 'demo' });
+      touch(path.join(standalone, 'package-lock.json'), '{}');
+
+      const target = resolveInstallTarget(standalone);
+      expect(target.pm).to.equal('npm');
+      expect(target.installDir).to.equal(standalone);
+    });
+
+    it('treats empty workspaces: [] in package.json as having no members', () => {
+      const root = mkdtemp('koapp-skills-emptyws-');
+      writeJson(path.join(root, 'package.json'), { name: 'root', workspaces: [] });
+      touch(path.join(root, 'yarn.lock'), '# yarn lockfile v1\n');
+      const standalone = path.join(root, 'demo');
+      writeJson(path.join(standalone, 'package.json'), { name: 'demo' });
+      touch(path.join(standalone, 'package-lock.json'), '{}');
+
+      const target = resolveInstallTarget(standalone);
+      expect(target.pm).to.equal('npm');
+      expect(target.installDir).to.equal(standalone);
+    });
+
+    it('still uses pnpm at a config-only pnpm-workspace.yaml root itself', () => {
+      const root = mkdtemp('koapp-skills-cfgroot-');
+      writeJson(path.join(root, 'package.json'), { name: 'root' });
+      touch(path.join(root, 'pnpm-workspace.yaml'), 'onlyBuiltDependencies:\n  - esbuild\n');
+
+      const target = resolveInstallTarget(root);
+      expect(target.pm).to.equal('pnpm');
+      expect(target.installDir).to.equal(root);
+      expect(target.useWorkspaceFlag).to.equal(true);
+    });
+
     it('does not add a workspace flag for npm or bun roots', () => {
       const npmRoot = mkdtemp('koapp-skills-npmws-');
       writeJson(path.join(npmRoot, 'package.json'), {
