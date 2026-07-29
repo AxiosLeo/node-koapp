@@ -76,67 +76,173 @@ function findNearestPackageDir(fromDir) {
 }
 
 /**
- * @param {string} dir
- * @param {string} pm
- * @returns {boolean}
+ * Parse the `packages:` list out of a pnpm-workspace.yaml without a YAML
+ * dependency. Supports both block sequences and an inline array, and stops
+ * at the next top-level key.
+ *
+ * @param {string} filePath
+ * @returns {string[]}
  */
-function isWorkspaceRoot(dir, pm) {
-  if (pm === 'pnpm') {
-    return fs.existsSync(path.join(dir, 'pnpm-workspace.yaml'));
+function parsePnpmWorkspaceGlobs(filePath) {
+  let raw;
+  try {
+    raw = fs.readFileSync(filePath, 'utf8');
+  } catch (_err) { // eslint-disable-line no-unused-vars
+    return [];
   }
-  if (pm === 'yarn' || pm === 'npm' || pm === 'bun') {
-    const pkg = readPackageJson(dir);
-    return !!(pkg && (pkg.workspaces || pkg.workspace));
+  const unquote = (s) => s.trim().replace(/^['"]|['"]$/g, '').trim();
+  const globs = [];
+  const lines = raw.split(/\r?\n/);
+  let inPackages = false;
+  for (const line of lines) {
+    if (!inPackages) {
+      const inline = line.match(/^packages:\s*\[(.*)\]\s*$/);
+      if (inline) {
+        return inline[1].split(',').map(unquote).filter((s) => s);
+      }
+      if (/^packages:\s*$/.test(line)) {
+        inPackages = true;
+      }
+      continue;
+    }
+    if (!line.trim() || line.trim().startsWith('#')) {
+      continue;
+    }
+    const item = line.match(/^\s+-\s*(.+?)\s*$/);
+    if (!item) {
+      break; // next top-level key
+    }
+    const value = unquote(item[1]);
+    if (value) {
+      globs.push(value);
+    }
   }
-  return false;
+  return globs;
 }
 
 /**
- * Detect the package manager and project root for `fromDir`.
+ * Read the workspace globs declared by `dir`, or null when `dir` is not a
+ * workspace root for `pm`.
  *
- * Precedence while walking upward:
- * 1. `packageManager` field in package.json (name@version prefix)
- * 2. pnpm-lock.yaml / pnpm-workspace.yaml
- * 3. yarn.lock
- * 4. bun.lockb / bun.lock
- * 5. package-lock.json
+ * @param {string} dir
+ * @param {string} pm
+ * @returns {string[]|null}
+ */
+function readWorkspaceGlobs(dir, pm) {
+  if (pm === 'pnpm') {
+    const wsFile = path.join(dir, 'pnpm-workspace.yaml');
+    if (!fs.existsSync(wsFile)) {
+      return null;
+    }
+    const globs = parsePnpmWorkspaceGlobs(wsFile);
+    // An unparseable workspace file still governs its subtree
+    return globs.length ? globs : ['**'];
+  }
+  const pkg = readPackageJson(dir);
+  const field = pkg && (pkg.workspaces || pkg.workspace);
+  if (!field) {
+    return null;
+  }
+  const globs = Array.isArray(field) ? field : field.packages;
+  return Array.isArray(globs) && globs.length ? globs : ['**'];
+}
+
+/**
+ * Convert a workspace glob into an anchored RegExp. Supports `*` and `**`.
  *
- * Defaults to `{ pm: 'npm', rootDir: fromDir, isWorkspaceRoot: false }`.
+ * @param {string} glob
+ * @returns {RegExp}
+ */
+function globToRegExp(glob) {
+  let source = '';
+  for (let i = 0; i < glob.length; i++) {
+    const char = glob[i];
+    if (char === '*') {
+      if (glob[i + 1] === '*') {
+        source += '.*';
+        i++;
+      } else {
+        source += '[^/]*';
+      }
+    } else if ('\\^$.|?+()[]{}'.includes(char)) {
+      source += '\\' + char;
+    } else {
+      source += char;
+    }
+  }
+  return new RegExp('^' + source + '$');
+}
+
+/**
+ * Is `targetDir` governed by the workspace rooted at `rootDir`?
+ * The root itself always counts.
+ *
+ * @param {string} rootDir
+ * @param {string[]} globs
+ * @param {string} targetDir
+ * @returns {boolean}
+ */
+function isWorkspaceMember(rootDir, globs, targetDir) {
+  const from = path.resolve(rootDir);
+  const to = path.resolve(targetDir);
+  if (from === to) {
+    return true;
+  }
+  const rel = path.relative(from, to).split(path.sep).join('/');
+  if (!rel || rel.startsWith('..')) {
+    return false;
+  }
+  let matched = false;
+  for (const glob of globs) {
+    const negated = glob.startsWith('!');
+    const pattern = negated ? glob.slice(1) : glob;
+    if (globToRegExp(pattern).test(rel)) {
+      if (negated) {
+        return false;
+      }
+      matched = true;
+    }
+  }
+  return matched;
+}
+
+/**
+ * Collect every package-manager marker between `fromDir` and the filesystem
+ * root, ordered nearest first.
+ *
+ * Within a single directory: a `packageManager` field wins over lockfiles,
+ * then pnpm, yarn, bun, npm lockfiles.
  *
  * @param {string} fromDir
- * @returns {{ pm: string, rootDir: string, isWorkspaceRoot: boolean }}
+ * @returns {Array<{ dir: string, pm: string, globs: string[]|null }>}
  */
-function detectPackageManager(fromDir) {
+function collectPmCandidates(fromDir) {
+  const candidates = [];
   let dir = path.resolve(fromDir);
   const { root } = path.parse(dir);
   let searching = true;
 
   while (searching) {
+    let pm = null;
     const pkg = readPackageJson(dir);
     if (pkg && typeof pkg.packageManager === 'string') {
-      const pm = pkg.packageManager.split('@')[0].trim();
-      if (pm) {
-        return {
-          pm,
-          rootDir: dir,
-          isWorkspaceRoot: isWorkspaceRoot(dir, pm)
-        };
+      pm = pkg.packageManager.split('@')[0].trim() || null;
+    }
+    if (!pm) {
+      if (fs.existsSync(path.join(dir, 'pnpm-lock.yaml'))
+        || fs.existsSync(path.join(dir, 'pnpm-workspace.yaml'))) {
+        pm = 'pnpm';
+      } else if (fs.existsSync(path.join(dir, 'yarn.lock'))) {
+        pm = 'yarn';
+      } else if (fs.existsSync(path.join(dir, 'bun.lockb'))
+        || fs.existsSync(path.join(dir, 'bun.lock'))) {
+        pm = 'bun';
+      } else if (fs.existsSync(path.join(dir, 'package-lock.json'))) {
+        pm = 'npm';
       }
     }
-
-    if (fs.existsSync(path.join(dir, 'pnpm-lock.yaml'))
-      || fs.existsSync(path.join(dir, 'pnpm-workspace.yaml'))) {
-      return { pm: 'pnpm', rootDir: dir, isWorkspaceRoot: isWorkspaceRoot(dir, 'pnpm') };
-    }
-    if (fs.existsSync(path.join(dir, 'yarn.lock'))) {
-      return { pm: 'yarn', rootDir: dir, isWorkspaceRoot: isWorkspaceRoot(dir, 'yarn') };
-    }
-    if (fs.existsSync(path.join(dir, 'bun.lockb'))
-      || fs.existsSync(path.join(dir, 'bun.lock'))) {
-      return { pm: 'bun', rootDir: dir, isWorkspaceRoot: isWorkspaceRoot(dir, 'bun') };
-    }
-    if (fs.existsSync(path.join(dir, 'package-lock.json'))) {
-      return { pm: 'npm', rootDir: dir, isWorkspaceRoot: isWorkspaceRoot(dir, 'npm') };
+    if (pm) {
+      candidates.push({ dir, pm, globs: readWorkspaceGlobs(dir, pm) });
     }
 
     if (dir === root) {
@@ -144,6 +250,43 @@ function detectPackageManager(fromDir) {
     } else {
       dir = path.dirname(dir);
     }
+  }
+
+  return candidates;
+}
+
+/**
+ * Detect the package manager and project root governing `targetDir`.
+ *
+ * Selection, over every marker between `fromDir` and the filesystem root:
+ * 1. The outermost workspace root that lists `targetDir` as a member wins,
+ *    so a stray nested lockfile cannot override the workspace's own manager.
+ * 2. Otherwise the nearest marker wins, which keeps independent nested
+ *    projects on their own package manager.
+ *
+ * Defaults to `{ pm: 'npm', rootDir: fromDir, isWorkspaceRoot: false }`.
+ *
+ * @param {string} fromDir
+ * @param {string} [targetDir] directory the dependency would be added to
+ * @returns {{ pm: string, rootDir: string, isWorkspaceRoot: boolean }}
+ */
+function detectPackageManager(fromDir, targetDir = fromDir) {
+  const candidates = collectPmCandidates(fromDir);
+
+  for (let i = candidates.length - 1; i >= 0; i--) {
+    const candidate = candidates[i];
+    if (candidate.globs && isWorkspaceMember(candidate.dir, candidate.globs, targetDir)) {
+      return { pm: candidate.pm, rootDir: candidate.dir, isWorkspaceRoot: true };
+    }
+  }
+
+  if (candidates.length) {
+    const nearest = candidates[0];
+    return {
+      pm: nearest.pm,
+      rootDir: nearest.dir,
+      isWorkspaceRoot: !!nearest.globs
+    };
   }
 
   return {
@@ -167,8 +310,8 @@ function detectPackageManager(fromDir) {
  * }}
  */
 function resolveInstallTarget(fromDir) {
-  const pmInfo = detectPackageManager(fromDir);
   const nearestPkg = findNearestPackageDir(fromDir);
+  const pmInfo = detectPackageManager(fromDir, nearestPkg || fromDir);
   const installDir = nearestPkg || pmInfo.rootDir;
   const useWorkspaceFlag =
     pmInfo.isWorkspaceRoot
