@@ -91,7 +91,8 @@ class SkillsCommand extends Command {
     const runnerVer = readPkgVersion(runnerPkgDir);
     const target = resolveInstallTarget(cwd);
     const installCmd = buildInstallCommand(target.pm, PKG_NAME, {
-      useWorkspaceFlag: target.useWorkspaceFlag
+      useWorkspaceFlag: target.useWorkspaceFlag,
+      pmMajor: target.pmMajor
     });
 
     const state = {
