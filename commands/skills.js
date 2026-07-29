@@ -11,6 +11,11 @@ const {
   _remove
 } = require('@axiosleo/cli-tool/src/helper/fs');
 const { _exec } = require('@axiosleo/cli-tool/src/helper/cmd');
+const {
+  resolveLocalPkgDir,
+  detectPackageManager,
+  buildInstallCommand
+} = require('../src/cli/pkg');
 
 const PKG_NAME = '@axiosleo/koapp';
 const TARGET_DIRS = {
@@ -35,6 +40,7 @@ class SkillsCommand extends Command {
     this.addOption('install', 'i', 'Target AI tool: cursor | claude', 'required');
     this.addOption('scope', 's', 'Install scope: project (default) | user', 'optional', 'project');
     this.addOption('force', 'f', 'Overwrite existing skills without prompting', 'optional', false);
+    this.addOption('add-dep', 'a', `Also add ${PKG_NAME} to the project if missing`, 'optional', false);
   }
 
   resolveDestDir(target, scope) {
@@ -46,75 +52,108 @@ class SkillsCommand extends Command {
     return path.join(base, sub);
   }
 
-  async resolveSourceDir() {
-    const runnerPkgDir = path.resolve(__dirname, '..');
-    const localPkgDir = path.join(process.cwd(), 'node_modules', ...PKG_NAME.split('/'));
+  useRunnerAssets(state, reminder) {
+    state.sourceDir = path.join(state.runnerPkgDir, 'assets/skills');
+    state.usingRunner = true;
+    if (reminder) {
+      state.updateReminder = reminder;
+      printer.warning('[skills] ' + reminder).println();
+    }
+    return state;
+  }
 
+  async resolveFromLocal(state, localPkgDir) {
+    state.localPkgDir = localPkgDir;
+    state.localVer = readPkgVersion(localPkgDir);
+    const localSkills = path.join(localPkgDir, 'assets/skills');
+    if (await _exists(localSkills) && await _is_dir(localSkills)) {
+      state.sourceDir = localSkills;
+      if (state.localVer && state.runnerVer && state.localVer !== state.runnerVer) {
+        printer.warning(
+          `[skills] running ${PKG_NAME}@${state.runnerVer}, local install is ${state.localVer}`
+        ).println();
+      } else if (state.localVer) {
+        printer.info(`[skills] installing from local ${PKG_NAME}@${state.localVer}`).println();
+      }
+      return state;
+    }
+    return this.useRunnerAssets(
+      state,
+      `Local ${PKG_NAME}${state.localVer ? '@' + state.localVer : ''} does not ship skills assets. ` +
+      `Installed from runner ${PKG_NAME}${state.runnerVer ? '@' + state.runnerVer : ''} instead. ` +
+      'Please update your local dependency: npm install ' + PKG_NAME + '@latest'
+    );
+  }
+
+  async resolveSourceDir(addDep = false) {
+    const runnerPkgDir = path.resolve(__dirname, '..');
+    const cwd = process.cwd();
     const runnerVer = readPkgVersion(runnerPkgDir);
+    const pmInfo = detectPackageManager(cwd);
+    const installCmd = buildInstallCommand(pmInfo.pm, PKG_NAME, {
+      isWorkspaceRoot: pmInfo.isWorkspaceRoot
+    });
+
     const state = {
       runnerPkgDir,
       runnerVer,
-      localPkgDir,
+      localPkgDir: null,
       localVer: null,
       sourceDir: null,
       updateReminder: null,
       usingRunner: false
     };
 
-    const localExists = await _exists(localPkgDir);
-    if (localExists) {
-      state.localVer = readPkgVersion(localPkgDir);
-      const localSkills = path.join(localPkgDir, 'assets/skills');
-      if (await _exists(localSkills) && await _is_dir(localSkills)) {
-        state.sourceDir = localSkills;
-        if (state.localVer && state.runnerVer && state.localVer !== state.runnerVer) {
-          printer.warning(
-            `[skills] running ${PKG_NAME}@${state.runnerVer}, local install is ${state.localVer}`
-          ).println();
-        } else if (state.localVer) {
-          printer.info(`[skills] installing from local ${PKG_NAME}@${state.localVer}`).println();
-        }
-        return state;
-      }
-      // local install exists but lacks skills assets
-      state.sourceDir = path.join(runnerPkgDir, 'assets/skills');
-      state.usingRunner = true;
-      state.updateReminder =
-        `Local ${PKG_NAME}${state.localVer ? '@' + state.localVer : ''} does not ship skills assets. ` +
-        `Installed from runner ${PKG_NAME}${state.runnerVer ? '@' + state.runnerVer : ''} instead. ` +
-        'Please update your local dependency: npm install ' + PKG_NAME + '@latest';
-      printer.warning('[skills] ' + state.updateReminder).println();
-      return state;
+    const localPkgDir = resolveLocalPkgDir(PKG_NAME, cwd);
+    if (localPkgDir) {
+      return this.resolveFromLocal(state, localPkgDir);
     }
 
-    printer.warning(`[skills] ${PKG_NAME} is not installed in ${process.cwd()}`).println();
+    // Warn when cwd is inside a workspace but has no package.json of its own
+    if (pmInfo.rootDir !== path.resolve(cwd) && !(await _exists(path.join(cwd, 'package.json')))) {
+      printer.warning(
+        `[skills] no package.json in ${cwd}; detected project root at ${pmInfo.rootDir}`
+      ).println();
+    }
+
+    printer.info(`[skills] ${PKG_NAME} is not installed under ${cwd}`).println();
+
+    if (!addDep) {
+      printer.info(
+        `[skills] using runner assets. To add the dependency later: ${installCmd}`
+      ).println();
+      return this.useRunnerAssets(state);
+    }
+
     const shouldInstall = await this.confirm(
-      `Install ${PKG_NAME} now? (required for consistent skill content)`,
+      `Install ${PKG_NAME} now via \`${installCmd}\`?`,
       true
     );
     if (!shouldInstall) {
-      printer.info(`[skills] aborted. Run \`npm install ${PKG_NAME}\` and retry.`).println();
-      return null;
+      printer.info(
+        `[skills] skipped install. Using runner assets. Hint: ${installCmd}`
+      ).println();
+      return this.useRunnerAssets(state);
     }
-    await _exec(`npm install ${PKG_NAME}`, process.cwd());
 
-    if (await _exists(localPkgDir)) {
-      state.localVer = readPkgVersion(localPkgDir);
-      const localSkills = path.join(localPkgDir, 'assets/skills');
-      if (await _exists(localSkills) && await _is_dir(localSkills)) {
-        state.sourceDir = localSkills;
-        return state;
-      }
-      state.sourceDir = path.join(runnerPkgDir, 'assets/skills');
-      state.usingRunner = true;
-      state.updateReminder =
-        `Freshly installed ${PKG_NAME}${state.localVer ? '@' + state.localVer : ''} lacks skills assets. ` +
-        'Using runner assets. Please upgrade: npm install ' + PKG_NAME + '@latest';
-      printer.warning('[skills] ' + state.updateReminder).println();
-      return state;
+    try {
+      await _exec(installCmd, pmInfo.rootDir);
+    } catch (err) {
+      const reason = err && err.message ? err.message : String(err);
+      printer.error(`[skills] install failed: ${reason}`).println();
+      printer.info('[skills] falling back to runner assets.').println();
+      return this.useRunnerAssets(state);
     }
-    printer.error(`[skills] ${PKG_NAME} install appears to have failed.`).println();
-    return null;
+
+    const freshPkgDir = resolveLocalPkgDir(PKG_NAME, cwd);
+    if (freshPkgDir) {
+      return this.resolveFromLocal(state, freshPkgDir);
+    }
+
+    printer.warning(
+      `[skills] ${PKG_NAME} install completed but package was not found; using runner assets.`
+    ).println();
+    return this.useRunnerAssets(state);
   }
 
   async copySkill(src, dst, force) {
@@ -157,13 +196,14 @@ class SkillsCommand extends Command {
   }
 
   /**
-   * @param {*} args 
-   * @param {*} options 
+   * @param {*} args
+   * @param {*} options
    */
   async exec(args, options) {
     const target = options.install;
     const scope = options.scope === 'user' ? 'user' : 'project';
     const force = options.force === true || options.force === 'true';
+    const addDep = options['add-dep'] === true || options['add-dep'] === 'true';
 
     if (!target || !TARGET_DIRS[target]) {
       printer.error(`[skills] --install must be one of: ${Object.keys(TARGET_DIRS).join(', ')}`).println();
@@ -174,10 +214,7 @@ class SkillsCommand extends Command {
     printer.info(`[skills] target : ${target} (${scope} scope)`).println();
     printer.info(`[skills] destDir: ${destDir}`).println();
 
-    const state = await this.resolveSourceDir();
-    if (!state) {
-      return;
-    }
+    const state = await this.resolveSourceDir(addDep);
     printer.info(`[skills] source : ${state.sourceDir}`).println();
 
     if (!await _exists(state.sourceDir)) {
@@ -197,5 +234,9 @@ class SkillsCommand extends Command {
     }
   }
 }
+
+SkillsCommand.resolveLocalPkgDir = resolveLocalPkgDir;
+SkillsCommand.detectPackageManager = detectPackageManager;
+SkillsCommand.buildInstallCommand = buildInstallCommand;
 
 module.exports = SkillsCommand;
