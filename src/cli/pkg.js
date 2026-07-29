@@ -134,9 +134,10 @@ function readWorkspaceGlobs(dir, pm) {
     if (!fs.existsSync(wsFile)) {
       return null;
     }
-    const globs = parsePnpmWorkspaceGlobs(wsFile);
-    // An unparseable workspace file still governs its subtree
-    return globs.length ? globs : ['**'];
+    // A missing or empty `packages:` list means the root is the only package
+    // (pnpm 10+ uses this file for plain config too). Membership then only
+    // matches the root itself, never the whole subtree.
+    return parsePnpmWorkspaceGlobs(wsFile);
   }
   const pkg = readPackageJson(dir);
   const field = pkg && (pkg.workspaces || pkg.workspace);
@@ -144,7 +145,7 @@ function readWorkspaceGlobs(dir, pm) {
     return null;
   }
   const globs = Array.isArray(field) ? field : field.packages;
-  return Array.isArray(globs) && globs.length ? globs : ['**'];
+  return Array.isArray(globs) ? globs : [];
 }
 
 /**
