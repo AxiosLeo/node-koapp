@@ -151,6 +151,49 @@ describe('cli/pkg', () => {
       expect(target.installDir).to.equal(member);
       expect(target.useWorkspaceFlag).to.equal(false);
     });
+
+    it('ignores a stray package-lock.json inside a pnpm workspace member', () => {
+      const root = makePnpmWorkspace();
+      const member = path.join(root, 'packages', 'api');
+      writeJson(path.join(member, 'package.json'), { name: 'api', version: '0.0.0' });
+      touch(path.join(member, 'package-lock.json'), '{}');
+
+      const target = resolveInstallTarget(member);
+      expect(target.pm).to.equal('pnpm');
+      expect(target.rootDir).to.equal(root);
+      expect(target.installDir).to.equal(member);
+      expect(target.useWorkspaceFlag).to.equal(false);
+    });
+
+    it('keeps npm for an independent nested project outside the workspace globs', () => {
+      const root = makePnpmWorkspace();
+      const standalone = path.join(root, 'examples', 'demo');
+      writeJson(path.join(standalone, 'package.json'), { name: 'demo', version: '0.0.0' });
+      touch(path.join(standalone, 'package-lock.json'), '{}');
+
+      const target = resolveInstallTarget(standalone);
+      expect(target.pm).to.equal('npm');
+      expect(target.installDir).to.equal(standalone);
+      expect(target.useWorkspaceFlag).to.equal(false);
+    });
+
+    it('honors yarn workspaces declared in package.json', () => {
+      const root = mkdtemp('koapp-skills-yarnws-');
+      writeJson(path.join(root, 'package.json'), {
+        name: 'root',
+        private: true,
+        workspaces: ['packages/*']
+      });
+      touch(path.join(root, 'yarn.lock'), '# yarn lockfile v1\n');
+      const member = path.join(root, 'packages', 'web');
+      writeJson(path.join(member, 'package.json'), { name: 'web' });
+      touch(path.join(member, 'package-lock.json'), '{}');
+
+      const target = resolveInstallTarget(member);
+      expect(target.pm).to.equal('yarn');
+      expect(target.rootDir).to.equal(root);
+      expect(target.installDir).to.equal(member);
+    });
   });
 
   describe('buildInstallCommand()', () => {
