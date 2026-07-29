@@ -194,6 +194,85 @@ describe('cli/pkg', () => {
       expect(target.rootDir).to.equal(root);
       expect(target.installDir).to.equal(member);
     });
+
+    it('adds -W at a Yarn Classic workspace root', () => {
+      const root = mkdtemp('koapp-skills-yarn1-');
+      writeJson(path.join(root, 'package.json'), {
+        name: 'root',
+        private: true,
+        workspaces: ['packages/*']
+      });
+      touch(path.join(root, 'yarn.lock'), '# yarn lockfile v1\n');
+
+      const target = resolveInstallTarget(root);
+      expect(target.pm).to.equal('yarn');
+      expect(target.pmMajor).to.equal(1);
+      expect(target.useWorkspaceFlag).to.equal(true);
+      expect(buildInstallCommand(target.pm, '@axiosleo/koapp', target))
+        .to.equal('yarn add @axiosleo/koapp -W');
+    });
+
+    it('omits -W at a Yarn Berry workspace root', () => {
+      const root = mkdtemp('koapp-skills-yarn3-');
+      writeJson(path.join(root, 'package.json'), {
+        name: 'root',
+        private: true,
+        packageManager: 'yarn@4.1.0',
+        workspaces: ['packages/*']
+      });
+      touch(path.join(root, '.yarnrc.yml'), 'nodeLinker: node-modules\n');
+      touch(path.join(root, 'yarn.lock'), '__metadata:\n  version: 8\n');
+
+      const target = resolveInstallTarget(root);
+      expect(target.pmMajor).to.equal(4);
+      expect(target.useWorkspaceFlag).to.equal(true);
+      expect(buildInstallCommand(target.pm, '@axiosleo/koapp', target))
+        .to.equal('yarn add @axiosleo/koapp');
+    });
+
+    it('detects Yarn Berry from .yarnrc.yml without a packageManager field', () => {
+      const root = mkdtemp('koapp-skills-yarnrc-');
+      writeJson(path.join(root, 'package.json'), {
+        name: 'root',
+        private: true,
+        workspaces: ['packages/*']
+      });
+      touch(path.join(root, '.yarnrc.yml'), 'nodeLinker: node-modules\n');
+      touch(path.join(root, 'yarn.lock'), '__metadata:\n  version: 8\n');
+
+      const target = resolveInstallTarget(root);
+      expect(target.pmMajor).to.equal(2);
+      expect(buildInstallCommand(target.pm, '@axiosleo/koapp', target))
+        .to.equal('yarn add @axiosleo/koapp');
+    });
+
+    it('does not add a workspace flag for npm or bun roots', () => {
+      const npmRoot = mkdtemp('koapp-skills-npmws-');
+      writeJson(path.join(npmRoot, 'package.json'), {
+        name: 'root',
+        private: true,
+        workspaces: ['packages/*']
+      });
+      touch(path.join(npmRoot, 'package-lock.json'), '{}');
+
+      const npmTarget = resolveInstallTarget(npmRoot);
+      expect(npmTarget.useWorkspaceFlag).to.equal(true);
+      expect(buildInstallCommand(npmTarget.pm, '@axiosleo/koapp', npmTarget))
+        .to.equal('npm install @axiosleo/koapp');
+
+      const bunRoot = mkdtemp('koapp-skills-bunws-');
+      writeJson(path.join(bunRoot, 'package.json'), {
+        name: 'root',
+        private: true,
+        workspaces: ['packages/*']
+      });
+      touch(path.join(bunRoot, 'bun.lock'), '{}');
+
+      const bunTarget = resolveInstallTarget(bunRoot);
+      expect(bunTarget.useWorkspaceFlag).to.equal(true);
+      expect(buildInstallCommand(bunTarget.pm, '@axiosleo/koapp', bunTarget))
+        .to.equal('bun add @axiosleo/koapp');
+    });
   });
 
   describe('buildInstallCommand()', () => {
@@ -211,6 +290,21 @@ describe('cli/pkg', () => {
       expect(buildInstallCommand('yarn', '@axiosleo/koapp')).to.equal('yarn add @axiosleo/koapp');
       expect(buildInstallCommand('bun', '@axiosleo/koapp')).to.equal('bun add @axiosleo/koapp');
       expect(buildInstallCommand('npm', '@axiosleo/koapp')).to.equal('npm install @axiosleo/koapp');
+    });
+
+    it('only adds yarn -W for Yarn Classic at a workspace root', () => {
+      expect(buildInstallCommand('yarn', '@axiosleo/koapp', {
+        useWorkspaceFlag: true, pmMajor: 1
+      })).to.equal('yarn add @axiosleo/koapp -W');
+      expect(buildInstallCommand('yarn', '@axiosleo/koapp', {
+        useWorkspaceFlag: true, pmMajor: 4
+      })).to.equal('yarn add @axiosleo/koapp');
+      expect(buildInstallCommand('yarn', '@axiosleo/koapp', {
+        useWorkspaceFlag: false, pmMajor: 1
+      })).to.equal('yarn add @axiosleo/koapp');
+      expect(buildInstallCommand('yarn', '@axiosleo/koapp', {
+        useWorkspaceFlag: true, pmMajor: null
+      })).to.equal('yarn add @axiosleo/koapp');
     });
   });
 

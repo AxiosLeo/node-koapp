@@ -207,6 +207,48 @@ function isWorkspaceMember(rootDir, globs, targetDir) {
 }
 
 /**
+ * Determine the major version of the package manager at `dir`.
+ * Falls back to lockfile / rc-file shape when no `packageManager` field
+ * pins a version, and returns null when it cannot be determined.
+ *
+ * @param {string} dir
+ * @param {string} pm
+ * @param {string|null} pmVersion version from the `packageManager` field
+ * @returns {number|null}
+ */
+function detectPmMajor(dir, pm, pmVersion) {
+  if (pmVersion) {
+    const major = parseInt(pmVersion.split('.')[0], 10);
+    if (!Number.isNaN(major)) {
+      return major;
+    }
+  }
+  if (pm !== 'yarn') {
+    return null;
+  }
+  // Yarn Berry always ships a .yarnrc.yml
+  if (fs.existsSync(path.join(dir, '.yarnrc.yml'))) {
+    return 2;
+  }
+  const lockFile = path.join(dir, 'yarn.lock');
+  if (fs.existsSync(lockFile)) {
+    let head = '';
+    try {
+      head = fs.readFileSync(lockFile, 'utf8').slice(0, 1024);
+    } catch (_err) { // eslint-disable-line no-unused-vars
+      return null;
+    }
+    if (head.includes('yarn lockfile v1')) {
+      return 1;
+    }
+    if (head.includes('__metadata')) {
+      return 2;
+    }
+  }
+  return null;
+}
+
+/**
  * Collect every package-manager marker between `fromDir` and the filesystem
  * root, ordered nearest first.
  *
@@ -214,7 +256,12 @@ function isWorkspaceMember(rootDir, globs, targetDir) {
  * then pnpm, yarn, bun, npm lockfiles.
  *
  * @param {string} fromDir
- * @returns {Array<{ dir: string, pm: string, globs: string[]|null }>}
+ * @returns {Array<{
+ *   dir: string,
+ *   pm: string,
+ *   pmMajor: number|null,
+ *   globs: string[]|null
+ * }>}
  */
 function collectPmCandidates(fromDir) {
   const candidates = [];
@@ -224,9 +271,16 @@ function collectPmCandidates(fromDir) {
 
   while (searching) {
     let pm = null;
+    let pmVersion = null;
     const pkg = readPackageJson(dir);
     if (pkg && typeof pkg.packageManager === 'string') {
-      pm = pkg.packageManager.split('@')[0].trim() || null;
+      const at = pkg.packageManager.indexOf('@');
+      if (at > 0) {
+        pm = pkg.packageManager.slice(0, at).trim() || null;
+        pmVersion = pkg.packageManager.slice(at + 1).trim() || null;
+      } else {
+        pm = pkg.packageManager.trim() || null;
+      }
     }
     if (!pm) {
       if (fs.existsSync(path.join(dir, 'pnpm-lock.yaml'))
@@ -242,7 +296,12 @@ function collectPmCandidates(fromDir) {
       }
     }
     if (pm) {
-      candidates.push({ dir, pm, globs: readWorkspaceGlobs(dir, pm) });
+      candidates.push({
+        dir,
+        pm,
+        pmMajor: detectPmMajor(dir, pm, pmVersion),
+        globs: readWorkspaceGlobs(dir, pm)
+      });
     }
 
     if (dir === root) {
@@ -268,7 +327,12 @@ function collectPmCandidates(fromDir) {
  *
  * @param {string} fromDir
  * @param {string} [targetDir] directory the dependency would be added to
- * @returns {{ pm: string, rootDir: string, isWorkspaceRoot: boolean }}
+ * @returns {{
+ *   pm: string,
+ *   pmMajor: number|null,
+ *   rootDir: string,
+ *   isWorkspaceRoot: boolean
+ * }}
  */
 function detectPackageManager(fromDir, targetDir = fromDir) {
   const candidates = collectPmCandidates(fromDir);
@@ -276,7 +340,12 @@ function detectPackageManager(fromDir, targetDir = fromDir) {
   for (let i = candidates.length - 1; i >= 0; i--) {
     const candidate = candidates[i];
     if (candidate.globs && isWorkspaceMember(candidate.dir, candidate.globs, targetDir)) {
-      return { pm: candidate.pm, rootDir: candidate.dir, isWorkspaceRoot: true };
+      return {
+        pm: candidate.pm,
+        pmMajor: candidate.pmMajor,
+        rootDir: candidate.dir,
+        isWorkspaceRoot: true
+      };
     }
   }
 
@@ -284,6 +353,7 @@ function detectPackageManager(fromDir, targetDir = fromDir) {
     const nearest = candidates[0];
     return {
       pm: nearest.pm,
+      pmMajor: nearest.pmMajor,
       rootDir: nearest.dir,
       isWorkspaceRoot: !!nearest.globs
     };
@@ -291,6 +361,7 @@ function detectPackageManager(fromDir, targetDir = fromDir) {
 
   return {
     pm: 'npm',
+    pmMajor: null,
     rootDir: path.resolve(fromDir),
     isWorkspaceRoot: false
   };
@@ -304,6 +375,7 @@ function detectPackageManager(fromDir, targetDir = fromDir) {
  * @param {string} fromDir
  * @returns {{
  *   pm: string,
+ *   pmMajor: number|null,
  *   rootDir: string,
  *   installDir: string,
  *   useWorkspaceFlag: boolean
@@ -319,6 +391,7 @@ function resolveInstallTarget(fromDir) {
 
   return {
     pm: pmInfo.pm,
+    pmMajor: pmInfo.pmMajor,
     rootDir: pmInfo.rootDir,
     installDir,
     useWorkspaceFlag
@@ -328,9 +401,16 @@ function resolveInstallTarget(fromDir) {
 /**
  * Build the shell command used to add a dependency.
  *
+ * Only pnpm and Yarn Classic need an explicit workspace-root flag. Yarn Berry
+ * rejects `-W` as an unknown option, and npm / bun add at the root as-is.
+ *
  * @param {string} pm
  * @param {string} pkgName
- * @param {{ useWorkspaceFlag?: boolean, isWorkspaceRoot?: boolean }} [opts]
+ * @param {{
+ *   useWorkspaceFlag?: boolean,
+ *   isWorkspaceRoot?: boolean,
+ *   pmMajor?: number|null
+ * }} [opts]
  * @returns {string}
  */
 function buildInstallCommand(pm, pkgName, opts = {}) {
@@ -343,7 +423,9 @@ function buildInstallCommand(pm, pkgName, opts = {}) {
         ? `pnpm add ${pkgName} -w`
         : `pnpm add ${pkgName}`;
     case 'yarn':
-      return `yarn add ${pkgName}`;
+      return useWorkspaceFlag && opts.pmMajor === 1
+        ? `yarn add ${pkgName} -W`
+        : `yarn add ${pkgName}`;
     case 'bun':
       return `bun add ${pkgName}`;
     case 'npm':
