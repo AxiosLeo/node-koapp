@@ -1,0 +1,383 @@
+import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import config, { appRoot, isStandaloneBinary } from '../config';
+import type { EntityStatus, PaginatedResult } from '../types';
+
+/** Minimal sync SQLite surface shared by better-sqlite3 (Node) and bun:sqlite (Bun). */
+interface SqliteRunResult {
+  changes: number;
+  lastInsertRowid: number | bigint;
+}
+
+interface SqliteStatement {
+  run(...params: unknown[]): SqliteRunResult;
+  get(...params: unknown[]): unknown;
+  all(...params: unknown[]): unknown[];
+}
+
+interface SqliteDatabase {
+  prepare(sql: string): SqliteStatement;
+  exec(sql: string): void;
+  pragma(key: string): unknown;
+  close(): void;
+}
+
+/**
+ * bun:sqlite requires named-param object keys to include the SQL prefix
+ * (`@id` / `$id` / `:id`). better-sqlite3 accepts bare keys (`id`).
+ * Rewrite bare keys so existing `.run(row)` call sites keep working under Bun.
+ */
+function normalizeBunNamedParams(sql: string, params: unknown[]): unknown[] {
+  if (
+    params.length !== 1 ||
+    params[0] === null ||
+    typeof params[0] !== 'object' ||
+    Array.isArray(params[0])
+  ) {
+    return params;
+  }
+  const obj = params[0] as Record<string, unknown>;
+  const named = sql.match(/[@:$][A-Za-z_][A-Za-z0-9_]*/g);
+  if (!named || named.length === 0) {
+    return params;
+  }
+  const out: Record<string, unknown> = {};
+  for (const full of named) {
+    const bare = full.slice(1);
+    if (Object.prototype.hasOwnProperty.call(obj, full)) {
+      out[full] = obj[full];
+    } else if (Object.prototype.hasOwnProperty.call(obj, bare)) {
+      out[full] = obj[bare];
+    }
+  }
+  return [out];
+}
+
+function wrapBunStatement(sql: string, stmt: SqliteStatement): SqliteStatement {
+  return {
+    run: (...params: unknown[]) => stmt.run(...normalizeBunNamedParams(sql, params)),
+    get: (...params: unknown[]) => stmt.get(...normalizeBunNamedParams(sql, params)),
+    all: (...params: unknown[]) => stmt.all(...normalizeBunNamedParams(sql, params))
+  };
+}
+
+/**
+ * Open a SQLite DB with the runtime-appropriate driver.
+ * Bun does not support better-sqlite3 (V8 native addon); use bun:sqlite instead.
+ */
+function openDatabase(filepath: string): SqliteDatabase {
+  if (typeof (globalThis as { Bun?: unknown }).Bun !== 'undefined') {
+    // Dynamic require keeps Node/tsc builds free of bun:sqlite types.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { Database } = require('bun:sqlite') as {
+      Database: new (filename: string, options?: { create?: boolean }) => {
+        prepare(sql: string): SqliteStatement;
+        exec(sql: string): void;
+        close(): void;
+      };
+    };
+    const db = new Database(filepath, { create: true });
+    return {
+      prepare: (sql) => wrapBunStatement(sql, db.prepare(sql)),
+      exec: (sql) => {
+        db.exec(sql);
+      },
+      pragma: (key) => {
+        db.exec(`PRAGMA ${key}`);
+        return undefined;
+      },
+      close: () => db.close()
+    };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const BetterSqlite3 = require('better-sqlite3') as new (filename: string) => SqliteDatabase;
+  return new BetterSqlite3(filepath);
+}
+
+/**
+ * SQLite DDL for the monorepo template meta store.
+ */
+export const SQLITE_DDL = `
+CREATE TABLE IF NOT EXISTS apps (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  description TEXT DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'disabled')),
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS api_keys (
+  id TEXT PRIMARY KEY,
+  app_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  token_hash TEXT NOT NULL UNIQUE,
+  prefix TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'disabled')),
+  last_used_at TEXT,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (app_id) REFERENCES apps(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_api_keys_app_id ON api_keys(app_id);
+CREATE INDEX IF NOT EXISTS idx_api_keys_token_hash ON api_keys(token_hash);
+`;
+
+export interface AppRecord {
+  id: string;
+  name: string;
+  description: string;
+  status: EntityStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApiKeyRecord {
+  id: string;
+  app_id: string;
+  name: string;
+  token_hash: string;
+  prefix: string;
+  status: EntityStatus;
+  last_used_at: string | null;
+  created_at: string;
+}
+
+export interface ListOptions {
+  page?: number;
+  size?: number;
+  keyword?: string;
+}
+
+let dbInstance: SqliteDatabase | null = null;
+let dbPathResolved: string | null = null;
+
+function nowISO(): string {
+  return new Date().toISOString();
+}
+
+function newId(): string {
+  return crypto.randomUUID();
+}
+
+/** Default DB: binary → next to executable; else package-anchored (apps/services/data). */
+const DEFAULT_DB_PATH = isStandaloneBinary()
+  ? path.join(appRoot, 'data/${name}.db')
+  : path.resolve(__dirname, '../../data/${name}.db');
+
+function resolveRelative(p: string): string {
+  return path.isAbsolute(p) ? p : path.resolve(appRoot, p);
+}
+
+function resolveDbPath(): string {
+  const raw = process.env.SQLITE_PATH;
+  if (raw) {
+    return resolveRelative(raw);
+  }
+  // Prefer package-anchored default so CLI and service share one file when unset.
+  // config.envs.sqlite.path is only used when it differs from the relative default.
+  const configured = config.envs.sqlite.path;
+  if (configured && configured !== './data/${name}.db') {
+    return resolveRelative(configured);
+  }
+  return DEFAULT_DB_PATH;
+}
+
+function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+/**
+ * Open (or create) the SQLite database and run DDL migrations.
+ * Singleton per process; path resolved from SQLITE_PATH / config.
+ */
+export function getDB(): SqliteDatabase {
+  const resolved = resolveDbPath();
+  if (dbInstance && dbPathResolved === resolved) {
+    return dbInstance;
+  }
+  if (dbInstance) {
+    dbInstance.close();
+    dbInstance = null;
+  }
+
+  fs.mkdirSync(path.dirname(resolved), { recursive: true });
+  const db = openDatabase(resolved);
+  db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
+  db.exec(SQLITE_DDL);
+
+  dbInstance = db;
+  dbPathResolved = resolved;
+  return db;
+}
+
+/** Close singleton DB — used by tests. */
+export function closeDB(): void {
+  if (dbInstance) {
+    dbInstance.close();
+    dbInstance = null;
+    dbPathResolved = null;
+  }
+}
+
+// ─── apps ───────────────────────────────────────────────────────────────────
+
+export function createApp(name: string, description = ''): AppRecord {
+  const db = getDB();
+  const now = nowISO();
+  const row: AppRecord = {
+    id: newId(),
+    name,
+    description,
+    status: 'active',
+    created_at: now,
+    updated_at: now
+  };
+  db.prepare(
+    `INSERT INTO apps (id, name, description, status, created_at, updated_at)
+     VALUES (@id, @name, @description, @status, @created_at, @updated_at)`
+  ).run(row);
+  return row;
+}
+
+export function listApps(options: ListOptions = {}): PaginatedResult<AppRecord> {
+  const page = options.page && options.page > 0 ? options.page : 1;
+  const size = options.size && options.size > 0 ? Math.min(options.size, 100) : 20;
+  const offset = (page - 1) * size;
+
+  const params: unknown[] = [];
+  let where = '1=1';
+  if (options.keyword) {
+    where += ' AND (name LIKE ? OR description LIKE ?)';
+    params.push(`%${options.keyword}%`, `%${options.keyword}%`);
+  }
+
+  const db = getDB();
+  const total = (db.prepare(`SELECT COUNT(*) AS c FROM apps WHERE ${where}`).get(...params) as { c: number }).c;
+  const list = db
+    .prepare(`SELECT * FROM apps WHERE ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`)
+    .all(...params, size, offset) as AppRecord[];
+
+  return { list, total, page, size };
+}
+
+export function getApp(id: string): AppRecord | null {
+  return (getDB().prepare('SELECT * FROM apps WHERE id = ?').get(id) as AppRecord | undefined) || null;
+}
+
+export function getAppByName(name: string): AppRecord | null {
+  return (getDB().prepare('SELECT * FROM apps WHERE name = ?').get(name) as AppRecord | undefined) || null;
+}
+
+export interface UpdateAppInput {
+  name?: string;
+  description?: string;
+  status?: EntityStatus;
+}
+
+export function updateApp(id: string, input: UpdateAppInput): AppRecord | null {
+  const existing = getApp(id);
+  if (!existing) {
+    return null;
+  }
+  const updated: AppRecord = {
+    ...existing,
+    name: input.name ?? existing.name,
+    description: input.description ?? existing.description,
+    status: input.status ?? existing.status,
+    updated_at: nowISO()
+  };
+  getDB().prepare(
+    `UPDATE apps SET name = @name, description = @description, status = @status, updated_at = @updated_at
+     WHERE id = @id`
+  ).run(updated);
+  return updated;
+}
+
+export function removeApp(id: string): boolean {
+  const result = getDB().prepare('DELETE FROM apps WHERE id = ?').run(id);
+  return result.changes > 0;
+}
+
+// ─── api_keys ───────────────────────────────────────────────────────────────
+
+export function createApiKey(
+  app_id: string,
+  name = 'default'
+): { record: ApiKeyRecord; token: string } {
+  const app = getApp(app_id);
+  if (!app) {
+    throw new Error(`App not found: ${app_id}`);
+  }
+
+  const token = `sk2a_${crypto.randomBytes(20).toString('hex')}`;
+  const record: ApiKeyRecord = {
+    id: newId(),
+    app_id,
+    name,
+    token_hash: hashToken(token),
+    prefix: token.slice(0, 12),
+    status: 'active',
+    last_used_at: null,
+    created_at: nowISO()
+  };
+
+  getDB().prepare(
+    `INSERT INTO api_keys (id, app_id, name, token_hash, prefix, status, last_used_at, created_at)
+     VALUES (@id, @app_id, @name, @token_hash, @prefix, @status, @last_used_at, @created_at)`
+  ).run(record);
+
+  return { record, token };
+}
+
+export function listApiKeys(app_id: string): ApiKeyRecord[] {
+  return getDB()
+    .prepare('SELECT * FROM api_keys WHERE app_id = ? ORDER BY created_at DESC')
+    .all(app_id) as ApiKeyRecord[];
+}
+
+export function getApiKey(app_id: string, id: string): ApiKeyRecord | null {
+  return (
+    (getDB()
+      .prepare('SELECT * FROM api_keys WHERE id = ? AND app_id = ?')
+      .get(id, app_id) as ApiKeyRecord | undefined) || null
+  );
+}
+
+export function revokeApiKey(id: string): boolean {
+  const result = getDB()
+    .prepare(`UPDATE api_keys SET status = 'disabled' WHERE id = ?`)
+    .run(id);
+  return result.changes > 0;
+}
+
+/**
+ * Resolve an api-key plaintext to its owning app.
+ * Validates both key and app are active; updates last_used_at.
+ */
+export async function resolveApiKey(
+  token: string
+): Promise<{ app_id: string; key_id: string } | null> {
+  if (!token) {
+    return null;
+  }
+  const db = getDB();
+  const key = db
+    .prepare('SELECT * FROM api_keys WHERE token_hash = ?')
+    .get(hashToken(token)) as ApiKeyRecord | undefined;
+
+  if (!key || key.status !== 'active') {
+    return null;
+  }
+
+  const app = getApp(key.app_id);
+  if (!app || app.status !== 'active') {
+    return null;
+  }
+
+  db.prepare('UPDATE api_keys SET last_used_at = ? WHERE id = ?').run(nowISO(), key.id);
+  return { app_id: key.app_id, key_id: key.id };
+}

@@ -1,0 +1,19 @@
+#!/usr/bin/env node
+
+'use strict';
+
+const path = require('path');
+const dotenv = require('dotenv');
+
+dotenv.config({ path: path.join(__dirname, '../.env') });
+
+const { App } = require('@axiosleo/cli-tool');
+const app = new App({
+  name: '${name}',
+  version: '0.0.0',
+  desc: '${name} cli tools',
+  commands_dir: path.join(__dirname, '../packages/commands'),
+  commands_sort: ['app', 'apikey', 'help']
+});
+
+app.start();

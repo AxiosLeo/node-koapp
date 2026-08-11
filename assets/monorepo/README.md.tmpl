@@ -1,0 +1,177 @@
+# ${name}
+
+[中文](README.md) | [English](README.en.md)
+
+pnpm monorepo 目录规范模板。后端基于 [@axiosleo/koapp](https://github.com/AxiosLeo/node-koapp)，提供 Session 鉴权的管理 API、多应用 / Api-Key 骨架，以及可挂载业务模块的 `/openapi` 空壳。
+
+## 特性
+
+- **双 API 面**：`/api/*`（Session cookie）与 `/openapi/*`（Bearer Api-Key）
+- **管理端**：管理员登录、应用与 Api-Key CRUD
+- **多应用 Api-Key**：密钥前缀 `sk2a_`，明文仅创建时展示一次
+- **SQLite 元数据**：应用与 Key 存于内部库（默认 `./data/${name}.db`）
+- **CLI**：通过 `${name} app` / `${name} apikey` 管理应用与密钥
+- **健康检查**：`GET /api/health`（无需鉴权）
+
+## 环境要求
+
+- Node.js `>= 20`
+- pnpm `>= 9`
+
+## 快速开始
+
+```bash
+# 安装依赖
+pnpm install
+
+# 配置环境变量（ADMIN_PASSWORD 为空时无法登录）
+cp .env.example .env
+# 编辑 .env，至少设置 ADMIN_PASSWORD
+
+# 启动开发服务（默认 0.0.0.0:8082）
+pnpm --filter ${name}-services run dev
+```
+
+验证服务：
+
+```bash
+curl http://127.0.0.1:8082/api/health
+```
+
+## 目录结构
+
+```
+.
+├── apps/
+│   └── services/          # 后端 API（@axiosleo/koapp）
+│       └── src/
+│           ├── modules/   # admin、app 等模块
+│           ├── middlewares/
+│           └── services/  # SQLite 元数据
+├── packages/
+│   ├── commands/          # CLI 命令实现（app / apikey）
+│   └── utils/             # 共享工具占位
+├── .agents/               # Agent 规则与 koapp 技能文档
+├── .env.example
+└── package.json           # 工作区根包（bin: ${name}）
+```
+
+## 架构与鉴权
+
+```
+Client ──Session cookie──► /api/*        ──► admin 登录（公开）
+                                         ──► apps / keys CRUD（需登录）
+Client ──Bearer sk2a_…──► /openapi/*     ──► 业务路由空壳（需 Api-Key）
+                              │
+                              ▼
+                     SQLite（apps / api_keys）
+```
+
+| 面 | 鉴权 | 用途 |
+| --- | --- | --- |
+| `/api/*` | Session cookie | 管理控制台：登录、应用与 Key 管理 |
+| `/openapi/*` | `Authorization: Bearer <token>` | 对外业务 API；模板仅挂鉴权中间件与 404 兜底 |
+
+## 管理 API（Session）
+
+公开路由：
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| `POST` | `/api/login` | 登录，body: `{ username, password }` |
+| `GET` | `/api/logout` | 登出 |
+| `GET` | `/api/profile` | 当前用户（需已登录） |
+| `GET` | `/api/health` | 健康检查（无鉴权） |
+
+登录后可用：
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| `POST` | `/api/apps` | 创建应用 |
+| `GET` | `/api/apps` | 应用列表 |
+| `GET` | `/api/apps/{:id}` | 应用详情 |
+| `PATCH` | `/api/apps/{:id}` | 更新应用 |
+| `DELETE` | `/api/apps/{:id}` | 删除应用 |
+| `GET` | `/api/apps/{:id}/keys` | 列出 Api-Key |
+| `POST` | `/api/apps/{:id}/keys` | 创建 Api-Key（明文仅返回一次） |
+| `DELETE` | `/api/apps/{:id}/keys/{:keyId}` | 吊销 Api-Key |
+
+## OpenAPI 面（Api-Key）
+
+请求头：
+
+```http
+Authorization: Bearer sk2a_<40 hex chars>
+```
+
+- 密钥以 SHA-256 哈希存储；创建时打印的明文不会再次出现
+- 应用与 Key 均需为 `active` 状态
+- 业务路由请挂载到 [`apps/services/src/modules/index.ts`](apps/services/src/modules/index.ts) 中 `/openapi` 的 `root` Router 下
+
+## CLI
+
+命令实现位于 `packages/commands/`。使用前请先构建 services，并确保根包可执行入口 `bin/${name}.js` 可用：
+
+```bash
+pnpm --filter ${name}-services run build
+```
+
+应用管理：
+
+```bash
+${name} app create --name my-app [--desc "..."]
+${name} app list
+${name} app remove --name my-app --yes
+```
+
+Api-Key 管理：
+
+```bash
+${name} apikey create --app <app_id> [--name default]
+${name} apikey list --app <app_id>
+${name} apikey revoke --id <key_id>
+```
+
+CLI 会读取仓库根目录 `.env`（如 `SQLITE_PATH`），与 API 进程共用同一元数据库。
+
+## 常用脚本
+
+根目录：
+
+| 命令 | 说明 |
+| --- | --- |
+| `pnpm build` | 递归构建各包 |
+| `pnpm test` | 递归测试 |
+| `pnpm lint` | 递归 lint |
+
+`apps/services`（或 `pnpm --filter ${name}-services run <script>`）：
+
+| 命令 | 说明 |
+| --- | --- |
+| `pnpm dev` | nodemon 开发模式 |
+| `pnpm build` | TypeScript 编译 |
+| `pnpm start` | 生产构建并启动 |
+| `pnpm test` | 单元测试 |
+
+## 环境变量
+
+将 [`.env.example`](.env.example) 复制为仓库根目录 `.env` 后按需修改。若使用 Bun `build --compile` 打包为二进制，请将 `.env`（以及相对路径下的数据目录）放在可执行文件同目录：
+
+| 变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `API_PORT` | `8082` | HTTP 监听端口 |
+| `APP_SECRET` | `${name}-dev-secret-change-me` | 应用密钥（配置项） |
+| `SQLITE_PATH` | `./data/${name}.db` | 元数据库路径（相对路径锚定到仓库根，或二进制同目录） |
+| `ADMIN_USERNAME` | `admin` | 管理员用户名 |
+| `ADMIN_PASSWORD` | （空） | 管理员密码；为空则禁用登录 |
+| `DEPLOY_ENV` | `local` | `prod` 时启用多 worker 集群 |
+
+## 扩展指引
+
+1. **业务 API**：在 `/openapi` Router 下新增模块与路由，客户端使用 Bearer Api-Key 调用。
+2. **新包**：按 pnpm workspace 约定放入 `packages/*` 或 `apps/*`。
+3. **管理能力**：继续扩展 `/api` 下需 Session 的路由即可。
+
+## License
+
+Private template — 按你的项目需要自行调整许可与工程名。

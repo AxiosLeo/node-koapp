@@ -1,0 +1,21 @@
+export type EntityStatus = 'active' | 'disabled';
+
+export interface PaginationQuery {
+  page?: number;
+  size?: number;
+  keyword?: string;
+}
+
+export interface PaginatedResult<T> {
+  list: T[];
+  total: number;
+  page: number;
+  size: number;
+}
+
+/** Shared validatorjs rules for paginated list query params. */
+export const paginationRules = {
+  page: 'integer|min:1',
+  size: 'integer|min:1|max:100',
+  keyword: 'string'
+};

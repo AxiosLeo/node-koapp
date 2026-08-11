@@ -1,0 +1,59 @@
+{
+  "name": "${name}-services",
+  "version": "0.0.1",
+  "description": "",
+  "main": "dist/bootstrap.js",
+  "bin": {
+    "bootstrap": "dist/bootstrap.js"
+  },
+  "scripts": {
+    "lint": "eslint --fix src/",
+    "build": "tsc -p tsconfig.prod.json && tsc-alias -p tsconfig.prod.json",
+    "start": "DEPLOY_ENV=prod && npm run build && node ./dist/bootstrap.js",
+    "dev": "nodemon",
+    "test": "mocha -r @swc-node/register 'src/**/*.test.ts'",
+    "test-one": "NODE_ENV=test mocha -r @swc-node/register --exit",
+    "test-cov": "nyc mocha -r @swc-node/register 'src/**/*.test.ts' --parallel"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "@axiosleo/koapp": "^1.2.1",
+    "better-sqlite3": "^11.9.1",
+    "cluster": "^0.7.7",
+    "dotenv": "^16.4.5",
+    "validatorjs": "^3.22.1"
+  },
+  "devDependencies": {
+    "@swc-node/register": "^1.9.0",
+    "@swc/cli": "^0.3.12",
+    "@swc/core": "^1.4.14",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/koa": "^2.15.0",
+    "@types/koa-bodyparser": "^4.3.12",
+    "@types/koa-session": "^6.4.5",
+    "@types/koa-static-server": "^1.5.3",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.12.7",
+    "@types/validatorjs": "^3.15.5",
+    "@typescript-eslint/eslint-plugin": "^7.7.0",
+    "@typescript-eslint/parser": "^7.7.0",
+    "eslint": "^9.0.0",
+    "json-schema-to-ts": "^3.0.1",
+    "mocha": "^11.7.6",
+    "nodemon": "^3.1.0",
+    "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.8",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.4.5"
+  },
+  "pkg": {
+    "scripts": "dist/bootstrap.js",
+    "targets": [
+      "linux-x64"
+    ],
+    "outputPath": "dist",
+    "assets": "assets/**/*"
+  }
+}

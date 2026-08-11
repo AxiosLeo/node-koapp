@@ -1,0 +1,31 @@
+{
+  "name": "${name}",
+  "version": "0.0.0",
+  "private": true,
+  "description": "${name} monorepo managed by pnpm workspaces",
+  "packageManager": "pnpm@11.10.0",
+  "bin": {
+    "${name}": "./bin/${name}.js"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "dev": "pnpm --filter ${name}-services run dev",
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "lint": "pnpm -r run lint",
+    "clean": "pnpm -r run clean"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@axiosleo/cli-tool": "^1.6.12",
+    "@axiosleo/koapp": "^1.2.1",
+    "axios": "^1.9.0",
+    "better-sqlite3": "^11.9.1",
+    "dotenv": "^16.5.0"
+  }
+}

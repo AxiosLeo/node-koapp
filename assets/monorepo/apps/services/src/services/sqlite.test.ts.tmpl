@@ -1,0 +1,84 @@
+import assert from 'assert';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
+import {
+    closeDB,
+    createApiKey,
+    createApp,
+    getApp,
+    listApiKeys,
+    listApps,
+    removeApp,
+    resolveApiKey,
+    revokeApiKey,
+    updateApp
+} from './sqlite';
+
+describe('sqlite service', function () {
+  this.timeout(10000);
+
+  let tmpDir: string;
+
+  before(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), '${name}-sqlite-'));
+    process.env.SQLITE_PATH = path.join(tmpDir, 'test.db');
+    process.env.APP_SECRET = 'test-secret-for-unit-tests';
+    closeDB();
+  });
+
+  after(() => {
+    closeDB();
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+    delete process.env.SQLITE_PATH;
+  });
+
+  it('creates apps and lists them', () => {
+    const app = createApp('demo-app', 'Demo application');
+    assert.ok(app.id);
+    assert.strictEqual(app.name, 'demo-app');
+    assert.strictEqual(app.status, 'active');
+
+    const apps = listApps();
+    assert.ok(apps.list.some((a) => a.id === app.id));
+  });
+
+  it('updates and removes apps', () => {
+    const app = createApp('update-app');
+    const updated = updateApp(app.id, { description: 'updated', status: 'disabled' });
+    assert.ok(updated);
+    assert.strictEqual(updated!.description, 'updated');
+    assert.strictEqual(updated!.status, 'disabled');
+
+    assert.strictEqual(removeApp(app.id), true);
+    assert.strictEqual(getApp(app.id), null);
+  });
+
+  it('creates api key and resolves it', async () => {
+    const app = createApp('key-app');
+    const { record, token } = createApiKey(app.id, 'test-key');
+    assert.ok(token.startsWith('sk2a_'));
+    assert.strictEqual(record.prefix, token.slice(0, 12));
+
+    const keys = listApiKeys(app.id);
+    assert.ok(keys.some((k) => k.id === record.id));
+
+    const resolved = await resolveApiKey(token);
+    assert.ok(resolved);
+    assert.strictEqual(resolved!.app_id, app.id);
+    assert.strictEqual(resolved!.key_id, record.id);
+
+    assert.strictEqual(await resolveApiKey('sk2a_invalid'), null);
+
+    revokeApiKey(record.id);
+    assert.strictEqual(await resolveApiKey(token), null);
+  });
+
+  it('cascades api keys when app is removed', () => {
+    const app = createApp('cascade-app');
+    createApiKey(app.id, 'k1');
+    assert.strictEqual(listApiKeys(app.id).length, 1);
+    removeApp(app.id);
+    assert.strictEqual(listApiKeys(app.id).length, 0);
+  });
+});

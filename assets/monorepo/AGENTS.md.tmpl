@@ -1,0 +1,30 @@
+# ${name}
+
+pnpm monorepo 模板（pnpm >= 9，Node >= 20）。提供带 Session 鉴权的管理 API、多应用 / Api-Key 骨架，以及可挂载业务模块的 `/openapi` 空壳。
+
+## 目录结构
+
+- `apps/services` — 后端 API 服务（@axiosleo/koapp，默认端口 8082）
+  - `src/modules/` — 骨架模块：`admin`（登录/登出/资料）、`app`（应用 + Api-Key）
+  - `src/middlewares/` — `auth.ts`（Bearer Api-Key）、`admin-auth.ts`（Session）
+  - `src/services/` — `sqlite.ts`（元数据库：apps / api_keys）
+- `packages/commands` — CLI 命令实现（纯 JS，@axiosleo/cli-tool）：`app.js`、`apikey.js`
+- `bin/${name}.js` — CLI 入口（`${name} app` / `${name} apikey`）
+
+## 关键事实
+
+- 元数据（应用、Api-Key）存内部 SQLite，默认 `./data/${name}.db`
+- 两套 API 面：
+  - `/openapi/*`：Bearer Api-Key（`sk2a_…`，明文仅创建时展示一次）；模板仅挂空壳，业务路由在此挂载
+  - `/api/*`：Session cookie；公开 `admin` 登录相关路由，其余需登录（当前挂 `app`）
+- 健康检查：`GET /api/health`（无鉴权）
+
+## 常用命令
+
+- `pnpm install` — 安装依赖
+- `pnpm build` / `pnpm test` / `pnpm lint` — 递归执行各包对应脚本
+- 后端开发：`apps/services` 下 `pnpm dev`（nodemon），或 `pnpm --filter ${name}-services run dev`
+
+## 领域约定
+
+后端编码约定见 `.agents/rules/`（按文件路径自动生效）；Git commit 规范见 `.agents/rules/git-commit.mdc`（仅在生成 commit message 时生效）；koapp 框架 API 用法见 `.agents/skills/koapp*`。

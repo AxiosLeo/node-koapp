@@ -1,0 +1,33 @@
+import path from 'path';
+import dotenv from 'dotenv';
+
+/** Bun --compile embeds sources under /$bunfs. */
+export function isStandaloneBinary(): boolean {
+  return typeof __dirname === 'string' && __dirname.includes('/$bunfs');
+}
+
+/** Dev: monorepo root. Compiled binary: directory of the executable. */
+export const appRoot = isStandaloneBinary()
+  ? path.dirname(process.execPath)
+  : path.resolve(__dirname, '../../..');
+
+dotenv.config({ path: path.join(appRoot, '.env') });
+
+export default {
+  envs: {
+    deploy: process.env.DEPLOY_ENV || 'local',
+    app: {
+      web_public: process.env.APP_WEB_PUBLIC || '../web/dist',
+      api_port: process.env.API_PORT ? parseInt(process.env.API_PORT) : 8801,
+      secret: process.env.APP_SECRET || '${name}-dev-secret-change-me'
+    },
+    admin: {
+      username: process.env.ADMIN_USERNAME || 'admin',
+      // Empty password disables login (forces explicit configuration).
+      password: process.env.ADMIN_PASSWORD || ''
+    },
+    sqlite: {
+      path: process.env.SQLITE_PATH || './data/${name}.db'
+    }
+  }
+};

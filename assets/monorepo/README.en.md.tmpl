@@ -1,0 +1,177 @@
+# ${name}
+
+[中文](README.md) | [English](README.en.md)
+
+A pnpm monorepo layout template. The backend is built on [@axiosleo/koapp](https://github.com/AxiosLeo/node-koapp) and ships a Session-authenticated admin API, a multi-app / Api-Key skeleton, and an empty `/openapi` surface for your business modules.
+
+## Features
+
+- **Two API surfaces**: `/api/*` (Session cookie) and `/openapi/*` (Bearer Api-Key)
+- **Admin console**: login, plus app and Api-Key CRUD
+- **Multi-app Api-Keys**: tokens use the `sk2a_` prefix; plaintext is shown only once at creation
+- **SQLite metadata**: apps and keys live in an internal DB (default `./data/${name}.db`)
+- **CLI**: manage apps and keys via `${name} app` / `${name} apikey`
+- **Health check**: `GET /api/health` (no auth)
+
+## Requirements
+
+- Node.js `>= 20`
+- pnpm `>= 9`
+
+## Quick start
+
+```bash
+# Install dependencies
+pnpm install
+
+# Configure env (login is disabled while ADMIN_PASSWORD is empty)
+cp .env.example .env
+# Edit .env and set at least ADMIN_PASSWORD
+
+# Start the API in dev mode (default 0.0.0.0:8082)
+pnpm --filter ${name}-services run dev
+```
+
+Verify the service:
+
+```bash
+curl http://127.0.0.1:8082/api/health
+```
+
+## Directory layout
+
+```
+.
+├── apps/
+│   └── services/          # Backend API (@axiosleo/koapp)
+│       └── src/
+│           ├── modules/   # admin, app, …
+│           ├── middlewares/
+│           └── services/  # SQLite metadata
+├── packages/
+│   ├── commands/          # CLI command implementations (app / apikey)
+│   └── utils/             # Shared utils placeholder
+├── .agents/               # Agent rules and koapp skill docs
+├── .env.example
+└── package.json           # Workspace root (bin: ${name})
+```
+
+## Architecture and auth
+
+```
+Client ──Session cookie──► /api/*        ──► admin login (public)
+                                         ──► apps / keys CRUD (authenticated)
+Client ──Bearer sk2a_…──► /openapi/*     ──► business routers (skeleton, Api-Key required)
+                              │
+                              ▼
+                     SQLite (apps / api_keys)
+```
+
+| Surface | Auth | Purpose |
+| --- | --- | --- |
+| `/api/*` | Session cookie | Admin console: login, apps, and key management |
+| `/openapi/*` | `Authorization: Bearer <token>` | External business API; template mounts auth middleware and a 404 fallback only |
+
+## Admin API (Session)
+
+Public routes:
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/api/login` | Login, body: `{ username, password }` |
+| `GET` | `/api/logout` | Logout |
+| `GET` | `/api/profile` | Current user (requires session) |
+| `GET` | `/api/health` | Health check (no auth) |
+
+After login:
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/api/apps` | Create app |
+| `GET` | `/api/apps` | List apps |
+| `GET` | `/api/apps/{:id}` | App detail |
+| `PATCH` | `/api/apps/{:id}` | Update app |
+| `DELETE` | `/api/apps/{:id}` | Delete app |
+| `GET` | `/api/apps/{:id}/keys` | List Api-Keys |
+| `POST` | `/api/apps/{:id}/keys` | Create Api-Key (plaintext returned once) |
+| `DELETE` | `/api/apps/{:id}/keys/{:keyId}` | Revoke Api-Key |
+
+## OpenAPI surface (Api-Key)
+
+Request header:
+
+```http
+Authorization: Bearer sk2a_<40 hex chars>
+```
+
+- Keys are stored as SHA-256 hashes; the plaintext printed at creation is never shown again
+- Both the app and the key must be `active`
+- Mount business routers under the `/openapi` `root` Router in [`apps/services/src/modules/index.ts`](apps/services/src/modules/index.ts)
+
+## CLI
+
+Command implementations live in `packages/commands/`. Build services first, and ensure the root package entry `bin/${name}.js` is available:
+
+```bash
+pnpm --filter ${name}-services run build
+```
+
+Apps:
+
+```bash
+${name} app create --name my-app [--desc "..."]
+${name} app list
+${name} app remove --name my-app --yes
+```
+
+Api-Keys:
+
+```bash
+${name} apikey create --app <app_id> [--name default]
+${name} apikey list --app <app_id>
+${name} apikey revoke --id <key_id>
+```
+
+The CLI loads the monorepo root `.env` (for example `SQLITE_PATH`) so it shares the same metadata DB as the API process.
+
+## Scripts
+
+Root:
+
+| Command | Description |
+| --- | --- |
+| `pnpm build` | Build all packages recursively |
+| `pnpm test` | Run tests recursively |
+| `pnpm lint` | Lint recursively |
+
+`apps/services` (or `pnpm --filter ${name}-services run <script>`):
+
+| Command | Description |
+| --- | --- |
+| `pnpm dev` | Development mode with nodemon |
+| `pnpm build` | Compile TypeScript |
+| `pnpm start` | Production build and start |
+| `pnpm test` | Unit tests |
+
+## Environment variables
+
+Copy [`.env.example`](.env.example) to the monorepo root `.env` and adjust as needed. For a Bun `build --compile` binary, place `.env` (and any relative data directories) next to the executable:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `API_PORT` | `8082` | HTTP listen port |
+| `APP_SECRET` | `${name}-dev-secret-change-me` | Application secret (config) |
+| `SQLITE_PATH` | `./data/${name}.db` | Metadata DB path (relative to monorepo root, or the binary directory) |
+| `ADMIN_USERNAME` | `admin` | Admin username |
+| `ADMIN_PASSWORD` | (empty) | Admin password; empty disables login |
+| `DEPLOY_ENV` | `local` | Use `prod` for multi-worker clustering |
+
+## Extending the template
+
+1. **Business APIs**: add modules and routes under the `/openapi` Router; clients call them with a Bearer Api-Key.
+2. **New packages**: place them under `packages/*` or `apps/*` per the pnpm workspace layout.
+3. **Admin features**: extend Session-protected routes under `/api`.
+
+## License
+
+Private template — adjust the license and project name for your own use.
