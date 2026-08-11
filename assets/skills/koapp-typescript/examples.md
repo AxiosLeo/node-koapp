@@ -71,21 +71,20 @@ users.delete<ItemContext>('/{:id}', async (context) => {
 ## File uploads
 
 Files never appear in `TBody`; they live on `context.koa.request.files`
-(`@koa/multer` + `@types/koa__multer`). Intersect a typed `koa` onto the
-spec:
+(`@koa/multer` + `@types/koa__multer`). Use the required-props `KoaContext`
+helper so both the route data and `koa` are fully typed:
 
 ```typescript
 import multer from '@koa/multer';
-import type { ParameterizedContext } from 'koa';
-import { Router, ContextFromSpec, success, failed } from '@axiosleo/koapp';
+import { Router, KoaContext, success, failed } from '@axiosleo/koapp';
+
+type HttpContext<P = Record<string, string>, B = any, Q = any> =
+  KoaContext<P, B, Q> & { params: P; body: B; query: Q };
 
 const router = new Router('/files');
 
 // Multiple files: upload.any() -> request.files needs narrowing
-type UploadContext = ContextFromSpec<{
-  params: { dir: string };
-  query: { overwrite?: string };
-}> & { koa: ParameterizedContext };
+type UploadContext = HttpContext<{ dir: string }, any, { overwrite?: string }>;
 
 router.post<UploadContext>('/upload/{:dir}', async (context) => {
   const upload = multer({ storage: multer.memoryStorage() });
@@ -108,9 +107,7 @@ router.post<UploadContext>('/upload/{:dir}', async (context) => {
 });
 
 // Single file: upload.single(field) -> request.file (multer.File)
-type AvatarContext = ContextFromSpec<{
-  params: { userId: string };
-}> & { koa: ParameterizedContext };
+type AvatarContext = HttpContext<{ userId: string }>;
 
 router.post<AvatarContext>('/avatar/{:userId}', async (context) => {
   const upload = multer({ storage: multer.memoryStorage() });
@@ -134,19 +131,18 @@ router.post<AvatarContext>('/echo/{:userId}', async (context) => {
 
 ## Reusable typed middleware
 
-`ContextHandler` / `KoaContext` are not exported; recover the context type
-from `Router` once and share it:
+`ContextHandler<T>` (default `T = KoaContext`) types any middleware,
+handler, or after-handler:
 
 ```typescript
 import { Router, error } from '@axiosleo/koapp';
+import type { ContextHandler } from '@axiosleo/koapp';
 
-type KoaCtx = Router extends Router<infer C> ? C : never;
-
-const requestLogger = async (context: KoaCtx): Promise<void> => {
+const requestLogger: ContextHandler = async (context) => {
   console.log(`[${context.method}] ${context.pathinfo}`);
 };
 
-const requireAuth = async (context: KoaCtx): Promise<void> => {
+const requireAuth: ContextHandler = async (context) => {
   const token = context.headers?.authorization;
   if (!token) {
     error(401, 'Unauthorized');
@@ -163,6 +159,45 @@ const api = new Router('/api', {
 });
 
 const secured = api.new('/admin', { middlewares: [requireAuth] });
+```
+
+## Extending KoaContext (module augmentation)
+
+Attach typed properties to the context from a middleware - the same
+pattern the monorepo scaffold uses for Bearer auth:
+
+```typescript
+import { error } from '@axiosleo/koapp';
+import type { ContextHandler } from '@axiosleo/koapp';
+
+export interface AuthContext {
+  app_id: string | null;
+  key_id: string;
+  is_admin?: boolean;
+}
+
+declare module '@axiosleo/koapp' {
+  interface KoaContext {
+    auth?: AuthContext;
+  }
+}
+
+export const authMiddleware: ContextHandler = async (context) => {
+  const header = context.headers?.authorization;
+  if (!header || typeof header !== 'string') {
+    error(401, 'Unauthorized');
+  }
+  const match = /^Bearer\s+(.+)$/i.exec(header as string);
+  if (!match) {
+    error(401, 'Unauthorized');
+  }
+  context.auth = { app_id: null, key_id: match![1].trim() };
+};
+
+// Downstream handlers see the typed property:
+const whoami: ContextHandler = async (context) => {
+  console.log(context.auth?.key_id); // string | undefined
+};
 ```
 
 ## Controllers in TypeScript

@@ -17,7 +17,7 @@ import type { ServerOptions, WebSocket } from "ws";
  * Predefined status codes with format "code;message"
  * Used for standardized API responses
  */
-type StatusCode =
+export type StatusCode =
   | string
   | "000;Unknown Error"
   | "200;Success"
@@ -38,7 +38,7 @@ type StatusCode =
  * HTTP methods supported by the framework
  * Includes both uppercase and lowercase variants
  */
-type HttpMethod =
+export type HttpMethod =
   | "ANY"
   | "GET"
   | "POST"
@@ -239,7 +239,7 @@ export declare class Controller implements ControllerInterface {
 /**
  * Configuration for request validation
  */
-interface ValidatorConfig {
+export interface ValidatorConfig {
   /** Validation rules */
   rules: Rules;
   /** Custom error messages */
@@ -249,7 +249,7 @@ interface ValidatorConfig {
 /**
  * Validators for different parts of the request
  */
-interface RouterValidator {
+export interface RouterValidator {
   /** Path parameter validation */
   params?: ValidatorConfig;
   /** Query parameter validation */
@@ -290,7 +290,7 @@ interface RouterValidator {
  * };
  * ```
  */
-interface RouterInfo<
+export interface RouterInfo<
   TParams = Record<string, string>,
   TBody = any,
   TQuery = any,
@@ -327,7 +327,7 @@ interface RouterInfo<
 /**
  * Server-sent event data structure
  */
-interface IKoaSSEvent {
+export interface IKoaSSEvent {
   /** Event ID */
   id?: number;
   /** Event data */
@@ -339,7 +339,7 @@ interface IKoaSSEvent {
 /**
  * Server-sent events interface extending Transform stream
  */
-interface IKoaSSE extends Transform {
+export interface IKoaSSE extends Transform {
   /** Send SSE event */
   send(data: IKoaSSEvent | string): void;
   /** Send keep-alive ping */
@@ -374,7 +374,7 @@ interface IKoaSSE extends Transform {
  * };
  * ```
  */
-interface AppContext<
+export interface AppContext<
   TParams = Record<string, string>,
   TBody = any,
   TQuery = any,
@@ -476,7 +476,7 @@ interface AppContext<
  * });
  * ```
  */
-interface KoaContext<
+export interface KoaContext<
   TParams = Record<string, string>,
   TBody = any,
   TQuery = any,
@@ -610,7 +610,7 @@ export interface WebSocketContext<
  * Interface for defining context data specification
  * This allows flexible type configuration without order dependency
  */
-interface ContextDataSpec<
+export interface ContextDataSpec<
   TParams extends Record<string, string> = Record<string, string>,
   TBody = any,
   TQuery extends Record<string, string> = Record<string, string>,
@@ -732,7 +732,7 @@ export type ContextFromSpec<T extends ContextDataSpec = ContextDataSpec> =
  * };
  * ```
  */
-type ContextHandler<T extends AppContext<any, any, any> = KoaContext> = (
+export type ContextHandler<T extends AppContext<any, any, any> = KoaContext> = (
   context: T,
 ) => Promise<void>;
 
@@ -774,7 +774,7 @@ type ContextHandler<T extends AppContext<any, any, any> = KoaContext> = (
  * };
  * ```
  */
-interface RouterOptions<T extends AppContext<any, any, any> = KoaContext> {
+export interface RouterOptions<T extends AppContext<any, any, any> = KoaContext> {
   /** Default HTTP method */
   method?: HttpMethod;
   /** Route handlers */
@@ -967,7 +967,7 @@ export class Router<T extends AppContext<any, any, any> = KoaContext> {
 /**
  * Options for Server-Sent Events middleware
  */
-type SSEOptions = {
+export type SSEOptions = {
   /** Ping interval in milliseconds (default: 60000) */
   pingInterval?: number;
   /** Event name for close event (default: 'close') */
@@ -1023,7 +1023,7 @@ export namespace middlewares {
  * };
  * ```
  */
-interface AppConfiguration {
+export interface AppConfiguration {
   [key: string]: any;
   /** Enable debug mode */
   debug?: boolean;
@@ -1060,7 +1060,7 @@ interface AppConfiguration {
  * };
  * ```
  */
-interface TypedAppConfiguration<
+export interface TypedAppConfiguration<
   TRouters extends Router<any>[] = Router<any>[],
 > extends Omit<AppConfiguration, "routers"> {
   /** Strictly typed application routers */
