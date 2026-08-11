@@ -123,17 +123,16 @@ router.post('/upload', async (context) => {
 Install with `npm install @koa/multer` (and `@types/koa__multer` for TS).
 
 In TypeScript, uploaded files are **not** covered by the body generic -
-they live on `context.koa.request.files`. Intersect a typed `koa` onto the
-context so the multer types apply:
+they live on `context.koa.request.files`. Type the route through
+`KoaContext` so the multer types apply:
 
 ```typescript
 import multer from '@koa/multer';
-import type { ParameterizedContext } from 'koa';
-import { ContextFromSpec, success, failed } from '@axiosleo/koapp';
+import { KoaContext, success, failed } from '@axiosleo/koapp';
 
-type UploadContext = ContextFromSpec<{
+type UploadContext = KoaContext<{ dir: string }> & {
   params: { dir: string };
-}> & { koa: ParameterizedContext };
+};
 
 router.post<UploadContext>('/upload/{:dir}', async (context) => {
   const upload = multer({ storage: multer.memoryStorage() });
@@ -143,7 +142,7 @@ router.post<UploadContext>('/upload/{:dir}', async (context) => {
   if (!first) {
     failed({}, '400;Bad Data', 400);
   }
-  success({ name: first.originalname, size: first.size });
+  success({ dir: context.params.dir, name: first.originalname });
 });
 ```
 
