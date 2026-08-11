@@ -208,3 +208,4 @@ For a request `PUT /users/42`:
 - Richer, copy-paste examples: [examples.md](examples.md)
 - Building a complete HTTP server around the router: **koapp-apps**
 - Sending responses from handlers: **koapp-response**
+- Typed contexts and Router generics in TypeScript: **koapp-typescript**

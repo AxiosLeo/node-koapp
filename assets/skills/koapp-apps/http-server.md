@@ -122,6 +122,34 @@ router.post('/upload', async (context) => {
 
 Install with `npm install @koa/multer` (and `@types/koa__multer` for TS).
 
+In TypeScript, uploaded files are **not** covered by the body generic -
+they live on `context.koa.request.files`. Intersect a typed `koa` onto the
+context so the multer types apply:
+
+```typescript
+import multer from '@koa/multer';
+import type { ParameterizedContext } from 'koa';
+import { ContextFromSpec, success, failed } from '@axiosleo/koapp';
+
+type UploadContext = ContextFromSpec<{
+  params: { dir: string };
+}> & { koa: ParameterizedContext };
+
+router.post<UploadContext>('/upload/{:dir}', async (context) => {
+  const upload = multer({ storage: multer.memoryStorage() });
+  await upload.any()(context.koa, async () => {});
+  const files = context.koa.request.files;
+  const first = Array.isArray(files) ? files[0] : undefined;
+  if (!first) {
+    failed({}, '400;Bad Data', 400);
+  }
+  success({ name: first.originalname, size: first.size });
+});
+```
+
+See **koapp-typescript** for the full typed-upload recipes (single file,
+multiple files, echo-as-download).
+
 ## Sessions
 
 When `session` config is present, the framework signs the cookie with
