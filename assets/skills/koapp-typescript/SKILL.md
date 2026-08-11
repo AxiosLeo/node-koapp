@@ -37,7 +37,7 @@ All of these come straight from `import { ... } from '@axiosleo/koapp'`:
 | Response / SSE | `StatusCode`, `IKoaSSE`, `IKoaSSEvent`, `SSEOptions` |
 | Functions | `success`, `failed`, `result`, `response`, `error`, `initContext`, `middlewares.KoaSSEMiddleware` |
 
-On `@axiosleo/koapp` **1.3.1 and earlier** the context/router/config types
+On `@axiosleo/koapp` **1.3.2 and earlier** the context/router/config types
 above (everything except `ContextFromSpec`, `RequiredContext`,
 `SocketContext`, `WebSocketContext` and the `*ApplicationConfig` family)
 were not exported; recover the context type there with
