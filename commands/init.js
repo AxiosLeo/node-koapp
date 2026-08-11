@@ -2,10 +2,19 @@
 'use strict';
 
 const path = require('path');
+const { spawnSync } = require('child_process');
 const { _search, _write, _mkdir, _exists, _move, _sync } = require('@axiosleo/cli-tool/src/helper/fs');
 const { _foreach, _exec } = require('@axiosleo/cli-tool/src/helper/cmd');
 const { Command, printer, debug } = require('@axiosleo/cli-tool');
 const { _render_with_file } = require('@axiosleo/cli-tool/src/helper/str');
+
+function hasPnpm() {
+  const result = spawnSync('pnpm', ['--version'], {
+    encoding: 'utf8',
+    shell: true
+  });
+  return result.status === 0;
+}
 
 class InitCommand extends Command {
   constructor() {
@@ -46,6 +55,18 @@ class InitCommand extends Command {
     await _sync(path.join(__dirname, '../assets/skills'), path.join(dir, '.agents/skills'));
 
     printer.success('Initialized successfully');
+
+    if (!hasPnpm()) {
+      printer.warning('pnpm is required but not found');
+      if (await this.confirm('install pnpm?', true)) {
+        printer.info('running: npm install -g pnpm');
+        await _exec('npm install -g pnpm', dir);
+      } else {
+        printer.info('Please run: npm install -g pnpm');
+        process.exit(0);
+      }
+    }
+
     if (await this.confirm('install dependencies?', true)) {
       await _exec('pnpm install', dir);
     }
