@@ -1,0 +1,85 @@
+---
+description: 起草或生成 git commit message 时使用（Conventional Commits + TaskID）
+alwaysApply: false
+---
+
+# Git Commit Message 规范
+
+对齐 `@commitlint/config-conventional` 与 Conventional Commits 1.0.0。起草 / 执行 `git commit` 时必须遵循本规范。
+
+## 格式
+
+```text
+<type>(<scope>): <subject> <TaskID>
+
+<body>
+
+<footer>
+```
+
+- header / body / footer 之间空一行
+- `scope`、`TaskID`、`body`、`footer` 均可省略；有关联工单时必须带 `TaskID`
+- `subject` ≤ 50 字符，祈使语气，首字母小写、句末不加句号
+- `body` 每行尽量 ≤ 72 字符，可多段、可用列表
+
+## type
+
+| type | 含义 |
+|------|------|
+| `feat` | 新功能 |
+| `fix` | 修 bug |
+| `perf` | 性能优化（仅限性能，不含一般改进） |
+| `docs` | 文档 |
+| `style` | 代码格式（不影响运行的变动） |
+| `refactor` | 重构（非新功能、非修 bug），运维部署变更(端口号、环境变量、配置文件等) |
+| `test` | 增加或修正测试 |
+| `build` | 构建系统或外部依赖变更（pnpm、tsconfig、依赖升级等） |
+| `ci` | CI 配置与脚本变更（GitHub Actions 等） |
+| `chore` | 其他杂项（不改动源码与测试的维护性变动） |
+| `revert` | 撤销变更（header 复述被撤销 commit 的 header，body 注明 `This reverts commit <hash>.`） |
+
+依赖变更写成 `build(deps): ...`，不要用独立的 `deps` type。
+
+## scope（本仓库推荐）
+
+- `services` — `apps/services`
+- `commands` — `packages/commands`
+- `cli` — `bin/`
+- `agents` — `.agents/`
+- `deps` — 依赖升降级（配合 `build`）
+- `root` — 根配置（`package.json`、pnpm workspace 等）
+
+跨包改动可省略 scope，或用最主要影响面。
+
+## footer
+
+仅两种用途：
+
+1. 不兼容变动：以 `BREAKING CHANGE: ` 开头，说明变动、理由与迁移方法；也可在 type/scope 后加 `!`（如 `feat(services)!: ...`）并配合 footer
+2. 关闭缺陷：`Closes #123` / `Fixes #123`
+
+## 正反例
+
+```text
+# 好
+feat(services): add health check endpoint T123
+
+Expose GET /api/health without auth so deploy probes
+can verify the process is up.
+
+# 好（无工单、无 body）
+fix(commands): handle missing app id in apikey create
+
+# 好（依赖变更）
+build(deps): bump @axiosleo/koapp from 1.2.0 to 1.3.1
+
+# 好（破坏性）
+feat(services): require bearer prefix on openapi keys
+
+BREAKING CHANGE: Api-Key must start with sk2a_. Old keys
+need to be recreated via ${name} apikey create.
+
+# 差
+Update stuff.
+fix: Fixed the bug.
+```
