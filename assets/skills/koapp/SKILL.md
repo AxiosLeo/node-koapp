@@ -62,6 +62,7 @@ code-level guidance:
 - Organizing handlers into classes with shared helpers → **koapp-controller**
 - Validating and serializing structured payloads → **koapp-model**
 - Pushing real-time events to the browser over HTTP → **koapp-sse**
+- Writing koapp code in TypeScript / typing contexts and routers → **koapp-typescript**
 
 ## Request Lifecycle (Koa path)
 

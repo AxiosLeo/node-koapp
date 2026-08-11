@@ -123,3 +123,4 @@ If you just need to build one server, start with the matching doc:
 - Building a TCP service → [socket-server.md](socket-server.md)
 - Building a WebSocket service → [websocket-server.md](websocket-server.md)
 - Copy-paste-ready examples → [examples.md](examples.md)
+- Typing contexts and configs in TypeScript → **koapp-typescript**
