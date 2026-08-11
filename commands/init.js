@@ -2,7 +2,7 @@
 'use strict';
 
 const path = require('path');
-const { _search, _write, _mkdir, _exists } = require('@axiosleo/cli-tool/src/helper/fs');
+const { _search, _write, _mkdir, _exists, _move, _sync } = require('@axiosleo/cli-tool/src/helper/fs');
 const { _foreach, _exec } = require('@axiosleo/cli-tool/src/helper/cmd');
 const { Command, printer, debug } = require('@axiosleo/cli-tool');
 const { _render_with_file } = require('@axiosleo/cli-tool/src/helper/str');
@@ -31,7 +31,7 @@ class InitCommand extends Command {
     printer.info('Initializing...');
     await _mkdir(dir);
 
-    const tmplDir = path.join(__dirname, '../assets/tmpl/');
+    const tmplDir = path.join(__dirname, '../assets/monorepo/');
     const files = await _search(tmplDir, 'tmpl');
 
     await _foreach(files, async (file) => {
@@ -42,23 +42,16 @@ class InitCommand extends Command {
       await _write(f, c);
     });
 
+    await _move(path.join(dir, 'bin/monoapp.js'), path.join(dir, `bin/${name}.js`));
+    await _sync(path.join(__dirname, '../assets/skills'), path.join(dir, '.agents/skills'));
+
     printer.success('Initialized successfully');
     if (await this.confirm('install dependencies?', true)) {
-      await _exec('npm install', dir);
-    }
-
-    const metaDir = path.join(dir, './meta');
-    const metaExists = await _exists(metaDir);
-    const moduleDir = path.join(dir, './services/src/modules');
-    const moduleExists = await _exists(moduleDir);
-    if (metaExists && moduleExists && await this.confirm('Do you want to generate code by meta json schema?', true)) {
-      await _exec('koapp gen -d ./meta -o ./services/src/modules', dir);
-    } else {
-      printer.warning('you also can run `npm run gen:services` to generate code');
+      await _exec('pnpm install', dir);
     }
 
     if (await this.confirm('start services right now?')) {
-      await _exec('npm run start:services', dir);
+      await _exec('pnpm dev', dir);
     }
   }
 }
