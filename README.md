@@ -1,3 +1,5 @@
+
+
 # @axiosleo/koapp
 
 [![NPM version](https://img.shields.io/npm/v/@axiosleo/koapp.svg?style=flat-square)](https://npmjs.org/package/@axiosleo/koapp)
@@ -153,7 +155,7 @@ const router = new Router("/test", {
 
 const multer = require("@koa/multer");
 
-root.post("/upload", async (context) => {
+router.post("/upload", async (context) => {
   // Array of files
   const upload = multer();
   const func = upload.any();
@@ -180,7 +182,7 @@ const test = async (context) => {
 
 const { KoaSSEMiddleware } = require("@axiosleo/koapp");
 
-root.any("/sse", async (context) => {
+router.any("/sse", async (context) => {
   const func = KoaSSEMiddleware();
   await func(context.koa, async () => {});
   context.koa.sse.send({ data: "hello, world!" });
