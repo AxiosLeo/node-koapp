@@ -183,3 +183,49 @@ const api = new Router('/api/v1');
 registerCrud(api, 'users', usersController);
 registerCrud(api, 'posts', postsController);
 ```
+
+## Runtime registration from database
+
+Routes stored in a database (not declared with the `Router` class) can be
+injected while the app is running. Map each record to a plain route object
+and register it - new routes serve the very next request, no restart needed:
+
+```javascript
+const { KoaApplication, success } = require('@axiosleo/koapp');
+
+const app = new KoaApplication({
+  port: 8080,
+  routers: [staticRouter] // routes known at startup
+});
+await app.start();
+
+// later, while the app is running:
+// e.g. rows like { path: '/pages/about', method: 'GET', template: '...' }
+const rows = await db.query('SELECT path, method, template FROM dynamic_routes');
+
+app.registerRouters(rows.map((row) => ({
+  path: row.path,                  // must start with "/"
+  method: row.method,              // 'get' works too, normalized to uppercase
+  handlers: async (context) => {   // single function is auto-wrapped
+    success({ html: render(row.template, context.params) });
+  }
+})));
+
+// registering a single route works the same way, no array needed
+app.registerRouters({
+  path: '/pages/{:slug}',
+  method: 'ANY',
+  handlers: async (context) => {
+    const page = await db.findPage(context.params.slug);
+    success(page);
+  }
+});
+```
+
+The standalone function does the same against any route tree:
+
+```javascript
+const { registerRouters } = require('@axiosleo/koapp');
+
+registerRouters(app.routes, { path: '/health', method: 'GET', handlers: [ping] });
+```
