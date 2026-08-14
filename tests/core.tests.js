@@ -1,7 +1,7 @@
 'use strict';
 
 const { expect } = require('chai');
-const { resolveRouters, getRouteInfo, initContext } = require('../src/core');
+const { resolveRouters, getRouteInfo, initContext, registerRouters } = require('../src/core');
 const { Router } = require('../src/router');
 
 describe('core', () => {
@@ -184,6 +184,139 @@ describe('core', () => {
       const tree = resolveRouters([]);
       const info = getRouteInfo(tree, '/anything', 'GET');
       expect(info).to.be.null;
+    });
+  });
+
+  describe('registerRouters()', () => {
+    it('should register a single plain object route into a resolved tree', () => {
+      const router = new Router('/api');
+      router.get('/users', async () => {});
+      const tree = resolveRouters(router);
+
+      registerRouters(tree, {
+        path: '/api/dynamic',
+        method: 'GET',
+        handlers: [async () => {}]
+      });
+
+      // new route takes effect
+      expect(getRouteInfo(tree, '/api/dynamic', 'GET')).to.not.be.null;
+      // existing routes still work
+      expect(getRouteInfo(tree, '/api/users', 'GET')).to.not.be.null;
+    });
+
+    it('should register into an empty tree', () => {
+      const tree = {};
+      registerRouters(tree, {
+        path: '/hello',
+        method: 'GET',
+        handlers: [async () => {}]
+      });
+      expect(getRouteInfo(tree, '/hello', 'GET')).to.not.be.null;
+    });
+
+    it('should support path params in plain object routes', () => {
+      const tree = resolveRouters([]);
+      registerRouters(tree, {
+        path: '/dynamic/{:id}/detail/{:field}',
+        method: 'GET',
+        handlers: [async () => {}]
+      });
+      const info = getRouteInfo(tree, '/dynamic/42/detail/name', 'GET');
+      expect(info).to.not.be.null;
+      expect(info.params.id).to.equal('42');
+      expect(info.params.field).to.equal('name');
+    });
+
+    it('should normalize lowercase method to uppercase', () => {
+      const tree = {};
+      registerRouters(tree, {
+        path: '/lower',
+        method: 'post',
+        handlers: [async () => {}]
+      });
+      expect(getRouteInfo(tree, '/lower', 'POST')).to.not.be.null;
+      expect(getRouteInfo(tree, '/lower', 'GET')).to.be.null;
+    });
+
+    it('should wrap a single handler function into an array', () => {
+      const handler = async () => {};
+      const tree = {};
+      registerRouters(tree, {
+        path: '/single-handler',
+        method: 'GET',
+        handlers: handler
+      });
+      const info = getRouteInfo(tree, '/single-handler', 'GET');
+      expect(info).to.not.be.null;
+      expect(info.handlers).to.be.an('array').that.includes(handler);
+    });
+
+    it('should support prefix field as alias of path', () => {
+      const tree = {};
+      registerRouters(tree, {
+        prefix: '/by-prefix',
+        method: 'GET',
+        handlers: [async () => {}]
+      });
+      expect(getRouteInfo(tree, '/by-prefix', 'GET')).to.not.be.null;
+    });
+
+    it('should register multiple routes at once', () => {
+      const tree = resolveRouters([]);
+      registerRouters(tree, [
+        { path: '/multi/a', method: 'GET', handlers: [async () => {}] },
+        { path: '/multi/b', method: 'POST', handlers: [async () => {}] },
+        { path: '/multi/c', method: 'ANY', handlers: [async () => {}] }
+      ]);
+      expect(getRouteInfo(tree, '/multi/a', 'GET')).to.not.be.null;
+      expect(getRouteInfo(tree, '/multi/b', 'POST')).to.not.be.null;
+      expect(getRouteInfo(tree, '/multi/c', 'DELETE')).to.not.be.null;
+    });
+
+    it('should accept Router instances', () => {
+      const tree = resolveRouters([]);
+      const router = new Router('/from-router');
+      router.get('/test', async () => {});
+      registerRouters(tree, router);
+      expect(getRouteInfo(tree, '/from-router/test', 'GET')).to.not.be.null;
+    });
+
+    it('should register middlewares and afters of plain object routes', () => {
+      const mw = async () => {};
+      const afterFn = async () => {};
+      const tree = {};
+      registerRouters(tree, {
+        path: '/with-mw',
+        method: 'GET',
+        handlers: [async () => {}],
+        middlewares: [mw],
+        afters: [afterFn]
+      });
+      const info = getRouteInfo(tree, '/with-mw', 'GET');
+      expect(info).to.not.be.null;
+      expect(info.middlewares).to.include(mw);
+      expect(info.afters).to.include(afterFn);
+    });
+
+    it('should support nested routers in plain objects', () => {
+      const tree = {};
+      registerRouters(tree, {
+        path: '/parent',
+        routers: [
+          { path: '/child', method: 'get', handlers: async () => {} }
+        ]
+      });
+      expect(getRouteInfo(tree, '/parent/child', 'GET')).to.not.be.null;
+    });
+
+    it('should throw for invalid path not starting with "/"', () => {
+      const tree = {};
+      expect(() => registerRouters(tree, {
+        path: 'invalid-path',
+        method: 'GET',
+        handlers: [async () => {}]
+      })).to.throw('Invalid route path');
     });
   });
 });
