@@ -1,11 +1,12 @@
 ---
 name: koapp-router
-description: Define routes, path parameters, validators, and nested routers with the @axiosleo/koapp Router class. Use when declaring HTTP/WebSocket/TCP routes in koapp, adding path params like /users/{:id}, composing nested routers, attaching per-route middlewares or after-handlers, validating params/query/body with validatorjs rules, or using shortcut helpers (get/post/put/patch/delete/any).
+description: Define routes, path parameters, validators, and nested routers with the @axiosleo/koapp Router class. Use when declaring HTTP/WebSocket/TCP routes in koapp, adding path params like /users/{:id}, composing nested routers, attaching per-route middlewares or after-handlers, validating params/query/body with validatorjs rules, using shortcut helpers (get/post/put/patch/delete/any), or registering routes dynamically at runtime (e.g. routes loaded from a database) with registerRouters / app.registerRouters.
 ---
 
 # @axiosleo/koapp Router
 
-Source: [`src/router.js`](../../../src/router.js).
+Source: [`src/router.js`](../../../src/router.js) (Router class) and
+[`src/core.js`](../../../src/core.js) (`registerRouters` for runtime registration).
 
 `Router` is the single route-definition primitive for all three application
 types (`KoaApplication`, `SocketApplication`, `WebSocketApplication`). A
@@ -190,6 +191,45 @@ For a request `PUT /users/42`:
 2. When multiple candidates remain, prefer the one whose `method` list includes the request method (or `ANY`)
 3. If nothing matches, follow the nearest `/***` fallback
 4. If even that misses, the framework lets the next Koa middleware run (typically 404)
+
+## Runtime route registration
+
+Routers passed via `config.routers` are resolved once at startup. To inject
+additional routes **while the app is running** (e.g. route info stored in a
+database instead of declared with the `Router` class), use `registerRouters`:
+
+```javascript
+const { registerRouters } = require('@axiosleo/koapp');
+
+// register a single route: pass one object
+registerRouters(app.routes, {
+  path: '/dynamic/{:id}',        // alias of prefix; must start with "/"
+  method: 'get',                 // normalized to uppercase; 'GET|POST' and 'ANY' work too
+  handlers: async (context) => { // a single function is wrapped into an array
+    // handle request
+  }
+});
+
+// register multiple routes: pass an array
+registerRouters(app.routes, [routeA, routeB]);
+```
+
+Every application instance also exposes it as a chainable method:
+
+```javascript
+app.registerRouters({ path: '/dynamic', method: 'ANY', handlers: [handler] });
+```
+
+Notes:
+
+- Each item may be a `Router` instance or a plain object with `path` (or
+  `prefix`), `method`, `handlers`, plus optional `middlewares`, `afters`,
+  `validators`, and nested `routers`.
+- Routes are inserted into the live route tree, so they take effect for the
+  next request immediately - no restart needed.
+- Registering the same path + method again appends a new entry; lookup
+  returns the **first** registered one, so existing routes are not overridden.
+- A route without `method` never matches; use `'ANY'` to accept all methods.
 
 ## Common pitfalls
 
