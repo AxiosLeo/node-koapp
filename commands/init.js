@@ -1,19 +1,57 @@
-/* eslint-disable no-unused-vars */
 'use strict';
 
 const path = require('path');
-const { spawnSync } = require('child_process');
-const { _search, _write, _mkdir, _exists, _move, _sync } = require('@axiosleo/cli-tool/src/helper/fs');
-const { _foreach, _exec } = require('@axiosleo/cli-tool/src/helper/cmd');
-const { Command, printer, debug } = require('@axiosleo/cli-tool');
+const { spawn, spawnSync } = require('child_process');
+const { _search, _write, _mkdir, _move, _sync } = require('@axiosleo/cli-tool/src/helper/fs');
+const { _foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
+const { Command, printer } = require('@axiosleo/cli-tool');
 const { _render_with_file } = require('@axiosleo/cli-tool/src/helper/str');
+const {
+  DEFAULT_PNPM_PIN,
+  readPnpmPin,
+  corepackEnv,
+  isCorepackLoadError,
+  globalInstallCommand
+} = require('../src/cli/pnpm');
 
-function hasPnpm() {
-  const result = spawnSync('pnpm', ['--version'], {
+function probePnpm(dir, env) {
+  return spawnSync('pnpm', ['--version'], {
+    cwd: dir,
     encoding: 'utf8',
-    shell: true
+    shell: true,
+    env
   });
-  return result.status === 0;
+}
+
+function probeOutput(result) {
+  const errMsg = result.error && result.error.message ? result.error.message : '';
+  return `${result.stderr || ''}${result.stdout || ''}${errMsg}`;
+}
+
+function runCommand(command, dir, env) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, {
+      cwd: dir,
+      shell: true,
+      stdio: 'inherit',
+      env
+    });
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`The command "${command}" exited with code "${code}"`));
+      }
+    });
+  });
+}
+
+function printPnpmRecovery(dir) {
+  printer.info('The scaffold is already written. To run pnpm later:');
+  printer.info('  npm install -g corepack@latest && corepack enable');
+  printer.info('  # or switch to Node 22+ / 24 (see .nvmrc)');
+  printer.info(`  cd ${dir} && pnpm install`);
 }
 
 class InitCommand extends Command {
@@ -27,8 +65,8 @@ class InitCommand extends Command {
   }
 
   /**
-   * @param {*} args 
-   * @param {*} options 
+   * @param {*} args
+   * @param {*} options
    */
   async exec(args, options) {
     let name = args.name;
@@ -56,23 +94,58 @@ class InitCommand extends Command {
 
     printer.success('Initialized successfully');
 
-    if (!hasPnpm()) {
+    const pin = readPnpmPin(dir) || DEFAULT_PNPM_PIN;
+    const env = corepackEnv(process.env);
+    const installHint = globalInstallCommand(pin);
+    let probe = probePnpm(dir, env);
+
+    if (probe.status !== 0) {
+      const output = probeOutput(probe);
+      if (isCorepackLoadError(output)) {
+        printer.error('pnpm failed to run (Corepack could not load the pinned version).');
+        printPnpmRecovery(dir);
+        return;
+      }
       printer.warning('pnpm is required but not found');
       if (await this.confirm('install pnpm?', true)) {
-        printer.info('running: npm install -g pnpm');
-        await _exec('npm install -g pnpm', dir);
+        printer.info(`running: ${installHint}`);
+        try {
+          await runCommand(installHint, dir, env);
+        } catch (err) {
+          printer.error(err && err.message ? err.message : String(err));
+          printPnpmRecovery(dir);
+          return;
+        }
+        probe = probePnpm(dir, env);
+        if (probe.status !== 0) {
+          printer.error('pnpm is still not usable after install.');
+          printPnpmRecovery(dir);
+          return;
+        }
       } else {
-        printer.info('Please run: npm install -g pnpm');
-        process.exit(0);
+        printer.info(`Please run: ${installHint}`);
+        printer.info(`Then: cd ${dir} && pnpm install`);
+        return;
       }
     }
 
     if (await this.confirm('install dependencies?', true)) {
-      await _exec('pnpm install', dir);
+      try {
+        await runCommand('pnpm install', dir, env);
+      } catch (err) {
+        printer.error(err && err.message ? err.message : String(err));
+        printPnpmRecovery(dir);
+        return;
+      }
     }
 
     if (await this.confirm('start services right now?')) {
-      await _exec('pnpm dev', dir);
+      try {
+        await runCommand('pnpm dev', dir, env);
+      } catch (err) {
+        printer.error(err && err.message ? err.message : String(err));
+        printPnpmRecovery(dir);
+      }
     }
   }
 }
