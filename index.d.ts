@@ -792,6 +792,38 @@ export interface RouterOptions<T extends AppContext<any, any, any> = KoaContext>
 }
 
 /**
+ * Options for registering routes dynamically at runtime
+ * (e.g. route info loaded from a database, not declared with the Router class)
+ * @template T Context type extending AppContext
+ *
+ * @example
+ * ```typescript
+ * const route: DynamicRouterOptions = {
+ *   path: '/dynamic/{:id}',        // alias of prefix, must start with "/"
+ *   method: 'get',                 // normalized to uppercase; supports 'GET|POST' and 'ANY'
+ *   handlers: async (context) => { // single function will be wrapped into an array
+ *     // handle request
+ *   }
+ * };
+ *
+ * registerRouters(app.routes, route);          // register a single route
+ * registerRouters(app.routes, [route, other]); // register multiple routes
+ * ```
+ */
+export interface DynamicRouterOptions<
+  T extends AppContext<any, any, any> = KoaContext,
+> extends Omit<RouterOptions<T>, "handlers" | "routers"> {
+  /** Route path like '/dynamic/{:id}', alias of prefix */
+  path?: string;
+  /** Route path prefix, used when path is not provided */
+  prefix?: string;
+  /** Route handlers: a single function or an array of functions */
+  handlers?: ContextHandler<T> | ContextHandler<T>[];
+  /** Nested sub-routers */
+  routers?: Array<Router<AppContext<any, any, any>> | DynamicRouterOptions<any>>;
+}
+
+/**
  * Router class for defining API routes and middleware
  * @template T Context type extending AppContext (can be KoaContext, SocketContext, etc.)
  *
@@ -1251,6 +1283,19 @@ export declare abstract class Application extends EventEmitter {
   constructor(config: AppConfiguration);
 
   /**
+   * Register one or more routers at runtime.
+   * Takes effect immediately for subsequent requests.
+   * @param routers Single router or an array of routers (Router instances or plain route objects)
+   * @returns The application instance for chaining
+   */
+  registerRouters(
+    routers:
+      | Router<any>
+      | DynamicRouterOptions<any>
+      | Array<Router<any> | DynamicRouterOptions<any>>,
+  ): this;
+
+  /**
    * Start the application
    * @returns Promise that resolves when application is started
    */
@@ -1488,6 +1533,38 @@ export declare class Model {
 // ========================================
 // Utility Functions
 // ========================================
+
+/**
+ * Register one or more routers into an existing route tree at runtime.
+ * Accepts Router instances or plain objects (e.g. route info loaded from a database).
+ * Registered routes take effect immediately for subsequent requests.
+ * @template T Context type extending AppContext
+ * @param routes Route tree resolved at startup (e.g. app.routes)
+ * @param routers Single router or an array of routers
+ * @returns The route tree
+ *
+ * @example
+ * ```typescript
+ * // register a single route (plain object, e.g. loaded from database)
+ * registerRouters(app.routes, {
+ *   path: '/dynamic/{:id}',
+ *   method: 'GET',
+ *   handlers: async (context) => { ... }
+ * });
+ *
+ * // register multiple routes at once
+ * registerRouters(app.routes, [routeA, routeB]);
+ * ```
+ */
+export function registerRouters<
+  T extends AppContext<any, any, any> = KoaContext,
+>(
+  routes: any,
+  routers:
+    | Router<any>
+    | DynamicRouterOptions<T>
+    | Array<Router<any> | DynamicRouterOptions<T>>,
+): any;
 
 /**
  * Initialize application context

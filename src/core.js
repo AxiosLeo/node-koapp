@@ -85,12 +85,41 @@ const recur = (tree, prefix, router, middlewares = [], afters = []) => {
   }
 };
 
-const resolveRouters = (routers = []) => {
+const normalizeRouter = (router) => {
+  const item = Object.assign({}, router);
+  if (!item.prefix && item.path) {
+    item.prefix = item.path;
+  }
+  if (item.method) {
+    item.method = `${item.method}`.toUpperCase();
+  }
+  if (is.func(item.handlers)) {
+    item.handlers = [item.handlers];
+  }
+  if (is.array(item.routers) && item.routers.length) {
+    item.routers = item.routers.map(normalizeRouter);
+  }
+  return item;
+};
+
+/**
+ * Register one or more routers into an existing route tree.
+ * Accepts Router instances or plain objects (e.g. route info loaded from database),
+ * so routes can be injected dynamically while the app is running.
+ * @param {object} routes route tree resolved by resolveRouters (e.g. app.routes)
+ * @param {object|object[]} routers single router or an array of routers
+ */
+const registerRouters = (routes, routers = []) => {
   if (!is.array(routers)) {
     routers = [routers];
   }
+  routers.forEach(item => recur(routes, '', normalizeRouter(item), []));
+  return routes;
+};
+
+const resolveRouters = (routers = []) => {
   const tree = {};
-  routers.forEach(item => recur(tree, '', item, []));
+  registerRouters(tree, routers);
   return tree;
 };
 
@@ -212,4 +241,5 @@ module.exports = {
   initContext,
   getRouteInfo,
   resolveRouters,
+  registerRouters,
 };
