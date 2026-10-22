@@ -14,7 +14,7 @@ to WebSocket semantics.
 const { WebSocketApplication } = require('@axiosleo/koapp');
 
 const app = new WebSocketApplication({
-  port: 8081,
+  port: 8801,
   routers: [router],
   app_id: 'my-ws-service',
   ping: {
@@ -42,7 +42,7 @@ Outbound frames are written via `ws.send(json)`.
 Browser client example:
 
 ```javascript
-const ws = new WebSocket('ws://localhost:8081');
+const ws = new WebSocket('ws://localhost:8801');
 ws.onopen = () => {
   ws.send(JSON.stringify({
     path: '/chat/42',

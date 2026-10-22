@@ -27,7 +27,7 @@ const router = new Router("/", { /* ... */ });
 
 const app = new SocketApplication({
   routers: [router],
-  port: 8081,
+  port: 8801,
   ping: {
     open: true,
     interval: 1000 * 10,
@@ -55,7 +55,7 @@ const router = new Router("/", { /* ... */ });
 
 const app = new WebSocketApplication({
   routers: [router],
-  port: 8081,
+  port: 8801,
   ping: {
     open: false,
     interval: 1000 * 3,

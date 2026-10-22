@@ -69,7 +69,7 @@ class SocketApplication extends Application {
     super(options);
 
     this.event = new EventEmitter();
-    this.port = this.config.port || 8081;
+    this.port = this.config.port || 8801;
     this.connections = {};
     this.on('response', handleRes);
     this.workflow = new Workflow(operator);

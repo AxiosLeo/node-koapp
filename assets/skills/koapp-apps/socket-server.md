@@ -11,7 +11,7 @@ routes inbound frames through the same `Router` stack as HTTP.
 const { SocketApplication } = require('@axiosleo/koapp');
 
 const app = new SocketApplication({
-  port: 8081,
+  port: 8801,
   routers: [router],
   app_id: 'my-tcp-service',
   debug: false,
@@ -40,7 +40,7 @@ Client side (example in Node):
 
 ```javascript
 const net = require('net');
-const client = net.createConnection({ port: 8081 });
+const client = net.createConnection({ port: 8801 });
 client.write(JSON.stringify({
   path: '/chat/42',
   method: 'GET',

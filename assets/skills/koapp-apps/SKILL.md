@@ -81,7 +81,7 @@ Socket apps support opt-in periodic ping:
 
 ```javascript
 new SocketApplication({
-  port: 8081,
+  port: 8801,
   routers: [root],
   ping: {
     open: true,              // default false

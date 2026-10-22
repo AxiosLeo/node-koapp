@@ -367,7 +367,7 @@ new KoaApplication(config).start();
 type UserRouter = Router<UserContext>;
 const strictConfig: TypedKoaApplicationConfig<UserRouter[]> = {
   listen_host: 'localhost',
-  port: 8081,
+  port: 8801,
   routers: [userRouter],
 };
 ```

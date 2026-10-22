@@ -28,14 +28,14 @@ pnpm install
 cp .env.example .env
 # 编辑 .env，至少设置 ADMIN_PASSWORD
 
-# 启动开发服务（默认 0.0.0.0:8081）
+# 启动开发服务（默认 0.0.0.0:8801）
 pnpm --filter ${name}-services run dev
 ```
 
 验证服务：
 
 ```bash
-curl http://127.0.0.1:8081/api/health
+curl http://127.0.0.1:8801/api/health
 ```
 
 ## 目录结构
@@ -159,7 +159,7 @@ CLI 会读取仓库根目录 `.env`（如 `SQLITE_PATH`），与 API 进程共�
 
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
-| `API_PORT` | `8081` | HTTP 监听端口 |
+| `API_PORT` | `8801` | HTTP 监听端口 |
 | `APP_SECRET` | `${name}-dev-secret-change-me` | 应用密钥（配置项） |
 | `SQLITE_PATH` | `./data/${name}.db` | 元数据库路径（相对路径锚定到仓库根，或二进制同目录） |
 | `ADMIN_USERNAME` | `admin` | 管理员用户名 |

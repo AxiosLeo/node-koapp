@@ -4,7 +4,7 @@ const root = require('./api.router');
 
 const app = new WebSocketApplication({
   routers: [root],
-  port: 8081,
+  port: 8801,
   ping: {
     open: false,
     interval: 1000 * 3,

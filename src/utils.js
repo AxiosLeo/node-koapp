@@ -54,7 +54,7 @@ function _debug(context, location, error) {
 class SocketClient {
   constructor(options = {}) {
     this.options = Object.assign({
-      port: 8081,
+      port: 8801,
       host: 'localhost',
       name: 'default',
     }, options);
