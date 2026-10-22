@@ -4,11 +4,11 @@
   "description": "",
   "author": "AxiosLeo",
   "bin": {
-    "koapp": "./bin/koapp.js"
+    "koapp": "bin/koapp.js"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/AxiosLeo/node-koapp"
+    "url": "git+https://github.com/AxiosLeo/node-koapp.git"
   },
   "scripts": {
     "dev": "nodemon",
