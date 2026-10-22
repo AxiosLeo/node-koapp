@@ -1,0 +1,13 @@
+'use strict';
+
+const path = require('path');
+const dotenv = require('dotenv');
+
+dotenv.config({ path: path.join(__dirname, '../.env') });
+
+module.exports = {
+  envs: {
+    deploy: process.env.DEPLOY_ENV || 'local',
+    port: process.env.API_PORT ? parseInt(process.env.API_PORT, 10) : 8801
+  }
+};

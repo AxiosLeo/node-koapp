@@ -1,0 +1,39 @@
+/**
+ * @axiosleo/cli-tool ships no declarations. This ambient module also
+ * satisfies the same import inside @axiosleo/koapp's index.d.ts.
+ */
+declare module '@axiosleo/cli-tool' {
+  import { EventEmitter } from 'events';
+
+  export class Workflow<T = unknown> extends EventEmitter {
+    constructor(config?: Configuration);
+    context?: T;
+  }
+
+  export interface Configuration {
+    [key: string]: unknown;
+  }
+
+  export interface Context {
+    [key: string]: unknown;
+  }
+
+  export const debug: {
+    log(...args: unknown[]): void;
+  };
+
+  export const printer: {
+    print(text?: string): typeof printer;
+    println(text?: string): typeof printer;
+    yellow(text?: string): typeof printer;
+    green(text?: string): typeof printer;
+    info(message?: string): void;
+    warning(message?: string): void;
+    error(message?: string): void;
+    success(message?: string): void;
+  };
+}
+
+declare module '@axiosleo/cli-tool/src/helper/cmd' {
+  export function _sleep(ms: number): Promise<void>;
+}

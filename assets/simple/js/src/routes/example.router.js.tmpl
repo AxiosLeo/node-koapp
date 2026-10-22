@@ -1,0 +1,138 @@
+'use strict';
+
+const { _sleep } = require('@axiosleo/cli-tool/src/helper/cmd');
+const { failed, middlewares, Model, result, Router, success, error } = require('@axiosleo/koapp');
+
+const router = new Router('');
+
+function echo(context) {
+  success({
+    body: context.body,
+    query: context.query,
+    params: context.params,
+    method: context.method
+  });
+}
+
+router.get('/', async () => {
+  success('hello, world!');
+});
+
+router.get('/health', async () => {
+  success({ status: 'ok' });
+});
+
+router.push('get|post', '/multi', async (context) => {
+  success({ method: context.method });
+});
+
+router.get('/a/{:a}/b/{:b}', echo);
+
+router.any('/any', echo);
+
+router.any('/error', async () => {
+  throw new Error('error');
+});
+
+router.any('/failed', async () => {
+  failed({ data: 'something' }, '403;Unauthorized', 403);
+});
+
+router.any('/result', async () => {
+  result(JSON.stringify({ hello: 'world!' }), 200, {
+    'Content-Type': 'application/json'
+  });
+});
+
+router.get('/result/obj', async () => {
+  result([{ test: 123 }]);
+});
+
+router.any('/success', async () => {
+  success('Hello, World!');
+});
+
+router.any('/html', async () => {
+  result('hello, world!', 200, {
+    'Content-Type': 'text/html'
+  });
+});
+
+router.any('/model', async () => {
+  const model = new Model({
+    submodel: new Model({
+      submodel: new Model({
+        a: 'A'
+      })
+    })
+  });
+  success({
+    obj: model.toObj(),
+    json: model.toJson(),
+    properties: model.properties(),
+    count: model.count()
+  });
+});
+
+router.any('/model/error', async () => {
+  Model.create({}, { param: 'required' });
+});
+
+router.any('/validate/{:param1}/{:param2}', async (context) => {
+  success({
+    result: 'all params is valid',
+    params: context.params,
+    query: context.query,
+    body: context.body
+  });
+}, {
+  params: {
+    rules: {
+      param1: 'required',
+      param2: 'required'
+    }
+  },
+  query: {
+    rules: {
+      a: 'required',
+      b: 'integer'
+    }
+  },
+  body: {
+    rules: {
+      bodyA: 'required',
+      bodyB: 'integer'
+    },
+    messages: {
+      required: 'The :attribute field is required......'
+    }
+  }
+});
+
+router.any('/sse', async (context) => {
+  const func = middlewares.KoaSSEMiddleware();
+  await func(context.koa, async () => {
+    return;
+  });
+  const sse = context.koa.sse;
+  if (!sse) {
+    error(500, 'SSE is not available');
+  }
+  // The response body is the SSE stream only after this handler returns,
+  // so further events are pushed on a later turn.
+  sse.send({ data: 'hello, world!' });
+  process.nextTick(() => {
+    const pump = async () => {
+      for (let index = 0; index < 5; index++) {
+        sse.send({ data: { index } });
+        await _sleep(200);
+      }
+      sse.end();
+    };
+    pump().catch(() => {
+      sse.end();
+    });
+  });
+});
+
+module.exports = router;

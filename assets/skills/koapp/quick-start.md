@@ -40,17 +40,20 @@ node server.js
 # open http://localhost:8088/
 ```
 
-## 3. Scaffolding a full project
+## 3. Scaffolding a project
 
-The CLI ships a project scaffold: a pnpm monorepo whose `apps/services`
-package is a TypeScript koapp API (Session-authenticated admin routes, an
-`/openapi` surface guarded by Bearer Api-Keys, and a SQLite metadata store).
-Business modules follow the
-`src/modules/<name>/<name>.{router,controller,model}.ts` convention and are
-written by hand - there is no code generator.
+`npx @axiosleo/koapp init <name>` asks which template to write. The default
+is a single HTTP service. There is no code generator; routes are the samples
+shipped with the template, and further modules are written by hand.
+
+| Flag | Result |
+| --- | --- |
+| `-t simple-ts` (default) | TypeScript koapp service, sample routes, no database |
+| `-t simple-js` | The same service in CommonJS, no compile step |
+| `-t monorepo` | pnpm workspace. `apps/services` is a TypeScript API with Session admin routes, an `/openapi` surface guarded by Bearer Api-Keys, and a SQLite metadata store. Business modules follow `src/modules/<name>/<name>.{router,controller,model}.ts` |
 
 ```bash
-npx @axiosleo/koapp init my-app
+npx @axiosleo/koapp init my-app -t simple-ts
 # init offers to run `pnpm install` and `pnpm dev` for you; otherwise:
 cd my-app
 pnpm install
