@@ -76,7 +76,7 @@ router.any('/chat/{:room}', async (context) => {
 });
 
 const app = new SocketApplication({
-  port: 8081,
+  port: 8801,
   routers: [router],
   ping: {
     open: true,
@@ -97,7 +97,7 @@ Matching TCP client:
 ```javascript
 const net = require('net');
 
-const client = net.createConnection({ port: 8081 });
+const client = net.createConnection({ port: 8801 });
 client.write(JSON.stringify({
   path: '/chat/general',
   method: 'POST',

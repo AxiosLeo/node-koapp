@@ -28,14 +28,14 @@ pnpm install
 cp .env.example .env
 # Edit .env and set at least ADMIN_PASSWORD
 
-# Start the API in dev mode (default 0.0.0.0:8081)
+# Start the API in dev mode (default 0.0.0.0:8801)
 pnpm --filter ${name}-services run dev
 ```
 
 Verify the service:
 
 ```bash
-curl http://127.0.0.1:8081/api/health
+curl http://127.0.0.1:8801/api/health
 ```
 
 ## Directory layout
@@ -159,7 +159,7 @@ Copy [`.env.example`](.env.example) to the monorepo root `.env` and adjust as ne
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `API_PORT` | `8081` | HTTP listen port |
+| `API_PORT` | `8801` | HTTP listen port |
 | `APP_SECRET` | `${name}-dev-secret-change-me` | Application secret (config) |
 | `SQLITE_PATH` | `./data/${name}.db` | Metadata DB path (relative to monorepo root, or the binary directory) |
 | `ADMIN_USERNAME` | `admin` | Admin username |

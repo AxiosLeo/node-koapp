@@ -26,7 +26,7 @@ router.any('/hello', async (context) => {
 });
 
 const app = new WebSocketApplication({
-  port: 8081,
+  port: 8801,
   routers: [router],
 });
 
@@ -41,7 +41,7 @@ app.start();
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `port` | `number` | `8081` | 监听端口 |
+| `port` | `number` | `8801` | 监听端口 |
 | `debug` | `boolean` | `false` | 是否开启调试模式 |
 | `app_id` | `string` | 自动生成 UUID | 应用唯一标识 |
 | `routers` | `Router[]` | `[]` | 路由列表 |
@@ -71,7 +71,7 @@ app.start();
 
 ```javascript
 const app = new WebSocketApplication({
-  port: 8081,
+  port: 8801,
   debug: true,
   app_id: 'my-ws-app',
   routers: [router],
@@ -140,7 +140,7 @@ apiRouter.any('/rooms/{:id}', async (context) => {
 });
 
 const app = new WebSocketApplication({
-  port: 8081,
+  port: 8801,
   routers: [apiRouter],
 });
 ```
@@ -221,7 +221,7 @@ const router = new Router('/api', {
 **浏览器端：**
 
 ```javascript
-const ws = new WebSocket('ws://localhost:8081/api/v1/chat?token=abc123');
+const ws = new WebSocket('ws://localhost:8801/api/v1/chat?token=abc123');
 
 ws.onopen = () => {
   ws.send(JSON.stringify({
@@ -241,7 +241,7 @@ ws.onmessage = (event) => {
 ```javascript
 const WebSocket = require('ws');
 
-const ws = new WebSocket('ws://localhost:8081/api/v1/chat?token=abc123');
+const ws = new WebSocket('ws://localhost:8801/api/v1/chat?token=abc123');
 
 ws.on('open', () => {
   ws.send(JSON.stringify({
@@ -512,7 +512,7 @@ WebSocketApplication 继承自 `EventEmitter`，支持丰富的事件监听。
 
 ```javascript
 const app = new WebSocketApplication({
-  port: 8081,
+  port: 8801,
   routers: [router],
 });
 
@@ -646,7 +646,7 @@ router.get('/status', async () => {
 
 // 创建应用
 const app = new WebSocketApplication({
-  port: 8081,
+  port: 8801,
   debug: true,
   routers: [router],
   ping: {
@@ -681,7 +681,7 @@ app.start();
 ### 对应的客户端代码
 
 ```javascript
-const ws = new WebSocket('ws://localhost:8081/chat/room/general/join?token=my-token');
+const ws = new WebSocket('ws://localhost:8801/chat/room/general/join?token=my-token');
 
 ws.onopen = () => {
   // 加入房间
