@@ -38,9 +38,10 @@ Available in [package.json](mdc:package.json):
 - Use clear, descriptive file names
 - Follow existing patterns for consistency
 
-### Templates (`assets/tmpl/`)
+### Templates (`assets/monorepo/`, `assets/skills/`)
 
-- Template files use `.tmpl` extension
+- Template files use `.tmpl` extension; `${name}` is replaced with the app name during `koapp init`
+- `assets/skills/` is copied verbatim into generated projects (`.agents/skills/`)
 - Maintain template structure for project scaffolding
 - Update templates when adding new features
 

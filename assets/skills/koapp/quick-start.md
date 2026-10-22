@@ -42,27 +42,22 @@ node server.js
 
 ## 3. Scaffolding a full project
 
-The CLI ships a project generator that wires up TypeScript, a DB layer, Docker,
-and module scaffolding:
+The CLI ships a project scaffold: a pnpm monorepo whose `apps/services`
+package is a TypeScript koapp API (Session-authenticated admin routes, an
+`/openapi` surface guarded by Bearer Api-Keys, and a SQLite metadata store).
+Business modules follow the
+`src/modules/<name>/<name>.{router,controller,model}.ts` convention and are
+written by hand - there is no code generator.
 
 ```bash
 npx @axiosleo/koapp init my-app
+# init offers to run `pnpm install` and `pnpm dev` for you; otherwise:
 cd my-app
-npm install
-npm run start:services
+pnpm install
+pnpm dev
 ```
 
-## 4. Generating CRUD modules from JSON Schema
-
-After `init`, place `*.schema.json` files under `./meta/` and run:
-
-```bash
-npx @axiosleo/koapp gen -d ./meta -o ./services/src/modules
-```
-
-Each schema produces `name.model.ts`, `name.controller.ts`, `name.router.ts`.
-
-## 5. Next steps
+## 4. Next steps
 
 Once the skeleton is running, consult the specialized skills:
 

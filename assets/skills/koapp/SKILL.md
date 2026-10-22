@@ -92,7 +92,8 @@ implicit - no need to `return` the result of `success(...)`.
 ## Conventions enforced by the framework
 
 1. Code uses `'use strict'`, CommonJS, and async/await - follow suit in user
-   code unless the target project uses TypeScript (see `assets/tmpl/`).
+   code unless the target project uses TypeScript (see **koapp-typescript**
+   and the `init` scaffold under `assets/monorepo/apps/services/`).
 2. Response payloads (JSON) are always wrapped as
    `{ request_id, timestamp, code, message, data }`. `code` is a
    `"<status>;<message>"` string.

@@ -59,7 +59,7 @@ router.get('/version', () => health.version());
   constructor and reuse across methods.
 - **Inheritance**: define a `BaseController` with common middlewares or
   helpers, then extend it per module (the `init` scaffolding template at
-  [`assets/tmpl/services/src/modules/controller.ts.tmpl`](../../tmpl/services/src/modules/controller.ts.tmpl) does this).
+  [`assets/monorepo/apps/services/src/modules/controller.ts.tmpl`](../../monorepo/apps/services/src/modules/controller.ts.tmpl) does this).
 - **Testability**: easier to mock a controller instance than free-floating
   functions.
 
@@ -132,20 +132,50 @@ router.push('post', '/users', (ctx) => controller.create(ctx), {
 The validator runs before the handler, so by the time `controller.create`
 executes you already have a validated `context.body`.
 
-## Generator output
+## Scaffold output
 
-Running `npx @axiosleo/koapp gen -d ./meta -o ./services/src/modules`
-produces `.controller.ts` files that extend a project-local
-`BaseController`. That `BaseController` typically extends `Controller` and
-adds database handles:
+There is no code generator; modules are written by hand following the
+layout produced by `npx @axiosleo/koapp init <name>` (monorepo template).
+It ships a project-local `BaseController` at
+`apps/services/src/modules/controller.ts` that extends `Controller` and
+adds request-scoped helpers (the template source is
+[`assets/monorepo/apps/services/src/modules/controller.ts.tmpl`](../../monorepo/apps/services/src/modules/controller.ts.tmpl)):
 
 ```typescript
+import type { KoaContext } from '@axiosleo/koapp';
 import { Controller } from '@axiosleo/koapp';
-import { mainDB } from '../services/db';
 
 export class BaseController extends Controller {
-  protected mainDB = mainDB;
+  /** Resolve the app scope for the current request (Api-Key vs admin session). */
+  protected appId(context: KoaContext): string | null { /* ... */ }
+
+  protected isAdmin(context: KoaContext): boolean {
+    return context.auth?.is_admin === true;
+  }
 }
+```
+
+Each business module then follows the three-file convention
+`src/modules/<name>/<name>.router.ts` + `<name>.controller.ts` +
+`<name>.model.ts`, where the controller extends `BaseController` and is
+exported as a singleton bound to routes with arrow wrappers:
+
+```typescript
+// src/modules/app/app.controller.ts
+import { BaseController } from '../controller';
+
+export class AppController extends BaseController {
+  async list(context: KoaContext) {
+    this.success({ list: [] });
+  }
+}
+
+export default new AppController();
+
+// src/modules/app/app.router.ts
+import controller from './app.controller';
+const router = new Router('/apps');
+router.get('', (ctx) => controller.list(ctx));
 ```
 
 ## Common pitfalls
