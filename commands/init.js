@@ -2,10 +2,7 @@
 
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
-const { _search, _write, _mkdir, _move, _sync } = require('@axiosleo/cli-tool/src/helper/fs');
-const { _foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
 const { Command, printer } = require('@axiosleo/cli-tool');
-const { _render_with_file } = require('@axiosleo/cli-tool/src/helper/str');
 const {
   DEFAULT_PNPM_PIN,
   readPnpmPin,
@@ -13,6 +10,11 @@ const {
   isCorepackLoadError,
   globalInstallCommand
 } = require('../src/cli/pnpm');
+const {
+  TEMPLATES,
+  templateChoices,
+  scaffold
+} = require('../src/cli/scaffold');
 
 function probePnpm(dir, env) {
   return spawnSync('pnpm', ['--version'], {
@@ -62,6 +64,7 @@ class InitCommand extends Command {
     });
     this.addArgument('name', 'Application name', 'required');
     this.addOption('dir', 'd', 'output dir', 'optional', process.cwd());
+    this.addOption('template', 't', 'Project template: simple-ts (default) | simple-js | monorepo', 'optional', null);
   }
 
   /**
@@ -69,28 +72,23 @@ class InitCommand extends Command {
    * @param {*} options
    */
   async exec(args, options) {
-    let name = args.name;
+    const name = args.name;
+    const ids = TEMPLATES.map((item) => item.id);
+    let template = options.template;
+    if (!template) {
+      // Object choices ignore select()'s default argument; index 0 (simple-ts) is highlighted.
+      template = await this.select('Choose a template', templateChoices());
+    } else if (ids.indexOf(template) === -1) {
+      printer.error(`Unknown template "${template}". Choose one of: ${ids.join(', ')}`);
+      return;
+    }
 
-    printer.info(`Will initialize ${name} application`);
+    printer.info(`Will initialize ${name} application (${template})`);
 
-    let dir = path.join(options.dir, name + '/');
+    const dir = path.join(options.dir, name + '/');
     printer.info(`Output dir: ${dir}`);
     printer.info('Initializing...');
-    await _mkdir(dir);
-
-    const tmplDir = path.join(__dirname, '../assets/monorepo/');
-    const files = await _search(tmplDir, 'tmpl');
-
-    await _foreach(files, async (file) => {
-      let f = file.substring(0, file.length - 5);
-      f = f.replace(tmplDir, '');
-      f = path.join(dir, f);
-      let c = await _render_with_file(file, { name });
-      await _write(f, c);
-    });
-
-    await _move(path.join(dir, 'bin/monoapp.js'), path.join(dir, `bin/${name}.js`));
-    await _sync(path.join(__dirname, '../assets/skills'), path.join(dir, '.agents/skills'));
+    await scaffold({ template, name, dir });
 
     printer.success('Initialized successfully');
 

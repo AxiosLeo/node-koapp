@@ -1,0 +1,23 @@
+'use strict';
+
+const { debug } = require('@axiosleo/cli-tool');
+const { error, Router } = require('@axiosleo/koapp');
+const example = require('./example.router');
+
+const root = new Router('', {
+  middlewares: [async (context) => {
+    const pathinfo = context.router ? context.router.pathinfo : '';
+    debug.log(`[${context.app_id}] ${context.method}: ${pathinfo}`);
+  }],
+  afters: [async (context) => {
+    debug.log(context.response);
+  }]
+});
+
+root.any('/***', async () => {
+  error(404, 'Not Found');
+});
+
+root.add(example);
+
+module.exports = [root];

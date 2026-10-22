@@ -1,0 +1,20 @@
+import { KoaApplication } from '@axiosleo/koapp';
+import config from './config';
+import routers from './routes';
+
+export default class App extends KoaApplication {
+  constructor() {
+    const debugMode = config.envs.deploy !== 'prod';
+    super({
+      app_id: '${name}',
+      listen_host: '0.0.0.0',
+      debug: debugMode,
+      port: config.envs.port,
+      routers,
+      body_parser: {
+        enableTypes: ['json', 'form', 'text'],
+        encode: 'utf-8'
+      }
+    });
+  }
+}

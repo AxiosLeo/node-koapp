@@ -17,8 +17,16 @@ npm install @axiosleo/koapp
 
 ## Initialization
 
+`koapp init` asks which project to generate. Pressing enter selects the simple TypeScript service. Pass `-t` to skip the prompt.
+
+| Template | Flag | What you get |
+| --- | --- | --- |
+| Simple TypeScript app (default) | `-t simple-ts` | One koapp HTTP service and sample routes. No database. |
+| Simple JavaScript app | `-t simple-js` | The same service in CommonJS, with no compile step. |
+| Full monorepo | `-t monorepo` | pnpm workspace: admin Session API, Api-Keys, and SQLite. |
+
 ```bash
-npx @axiosleo/koapp init <app-name> -d <optional-dir>
+npx @axiosleo/koapp init <app-name> [-d <dir>] [-t simple-ts|simple-js|monorepo]
 
 # Show help information
 # npx @axiosleo/koapp init -h

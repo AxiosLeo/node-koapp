@@ -1,0 +1,22 @@
+import { debug } from '@axiosleo/cli-tool';
+import type { KoaContext } from '@axiosleo/koapp';
+import { error, Router } from '@axiosleo/koapp';
+import example from './example.router';
+
+const root = new Router('', {
+  middlewares: [async (context: KoaContext) => {
+    const pathinfo = context.router ? context.router.pathinfo : '';
+    debug.log(`[${context.app_id}] ${context.method}: ${pathinfo}`);
+  }],
+  afters: [async (context: KoaContext) => {
+    debug.log(context.response);
+  }]
+});
+
+root.any('/***', async () => {
+  error(404, 'Not Found');
+});
+
+root.add(example);
+
+export default [root];

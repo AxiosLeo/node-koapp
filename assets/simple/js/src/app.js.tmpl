@@ -1,0 +1,24 @@
+'use strict';
+
+const { KoaApplication } = require('@axiosleo/koapp');
+const config = require('./config');
+const routers = require('./routes');
+
+class App extends KoaApplication {
+  constructor() {
+    const debugMode = config.envs.deploy !== 'prod';
+    super({
+      app_id: '${name}',
+      listen_host: '0.0.0.0',
+      debug: debugMode,
+      port: config.envs.port,
+      routers,
+      body_parser: {
+        enableTypes: ['json', 'form', 'text'],
+        encode: 'utf-8'
+      }
+    });
+  }
+}
+
+module.exports = App;

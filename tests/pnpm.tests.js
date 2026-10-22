@@ -47,6 +47,17 @@ describe('cli/pnpm', () => {
       expect(tmpl).to.include('"pnpm": ">=10"');
     });
 
+    it('pins the same pnpm version in the simple templates', () => {
+      ['ts', 'js'].forEach((lang) => {
+        const tmpl = fs.readFileSync(
+          path.join(__dirname, `../assets/simple/${lang}/package.json.tmpl`),
+          'utf8'
+        );
+        expect(tmpl).to.include(`"packageManager": "pnpm@${DEFAULT_PNPM_PIN}"`);
+        expect(tmpl).to.include('"pnpm": ">=10"');
+      });
+    });
+
     it('reads packageManager from package.json', () => {
       const dir = mkdtemp('koapp-pnpm-pin-');
       fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({
