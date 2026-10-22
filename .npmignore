@@ -15,3 +15,4 @@ nodemon.json
 .vscode/*
 examples/*
 .cursor/*
+.agents/*
