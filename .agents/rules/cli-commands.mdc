@@ -10,41 +10,48 @@ description: CLI command patterns and development
 The main CLI is defined in [bin/koapp.js](mdc:bin/koapp.js) and provides:
 
 - `koapp init <app-name>` - Initialize new project
-- `koapp gen` - Generate code/components
-- `koapp http` - HTTP-related utilities
+- `koapp http [dir]` - Serve a static directory over HTTP
+- `koapp skills -i <cursor|claude>` - Install the bundled AI skills into a project
 
 ## Command Structure
 
-Commands are implemented in the `commands/` directory:
+Commands are implemented in the `commands/` directory and auto-loaded by
+`@axiosleo/cli-tool` through the `commands_dir` option:
 
 - [commands/init.js](mdc:commands/init.js) - Project initialization
-- [commands/gen.js](mdc:commands/gen.js) - Code generation
-- [commands/http.js](mdc:commands/http.js) - HTTP utilities
+- [commands/http.js](mdc:commands/http.js) - Static HTTP server
+- [commands/skills.js](mdc:commands/skills.js) - AI skills installer
+
+Shared, testable helpers live in `src/cli/` (e.g. [src/cli/pnpm.js](mdc:src/cli/pnpm.js)
+for Corepack / pnpm detection, [src/cli/pkg.js](mdc:src/cli/pkg.js) for
+package-manager detection). Keep command files thin and put logic there.
 
 ## Project Initialization
 
-The init command creates new projects using templates from `assets/tmpl/`:
+The init command creates new projects using templates from `assets/monorepo/`:
 
 ```bash
 npx @axiosleo/koapp init <app-name> -d <optional-dir>
 ```
 
-This generates:
+This generates a pnpm monorepo:
 
-- TypeScript service structure
-- Database configuration
-- Docker compose setup
-- Package.json with dependencies
-- Basic application structure
+- `apps/services` - TypeScript koapp API service (admin Session auth,
+  `/openapi` Bearer Api-Key surface, SQLite metadata store)
+- `packages/commands` + `bin/<app-name>.js` - project CLI
+- `.agents/` - rules plus the koapp skills synced from `assets/skills/`
+
+After writing files, init probes for pnpm (offering to install the pinned
+version) and then offers to run `pnpm install` and `pnpm dev`.
 
 ## Template System
 
-Templates use `.tmpl` extension and are processed during project generation:
+Templates use the `.tmpl` extension and are processed during project generation:
 
-- `assets/tmpl/services/` - Service templates
-- `assets/tmpl/database/` - Database setup
-- `assets/tmpl/docker-compose.yml.tmpl` - Docker configuration
-- `assets/tmpl/package.json.tmpl` - Package configuration
+- `assets/monorepo/**/*.tmpl` - rendered with `_render_with_file`, which replaces
+  `${name}` with the app name; the `.tmpl` suffix is stripped on output
+- `assets/monorepo/bin/monoapp.js.tmpl` - renamed to `bin/<app-name>.js`
+- `assets/skills/` - copied verbatim into `<app>/.agents/skills/`
 
 ## Command Development
 
@@ -53,7 +60,8 @@ When creating new CLI commands:
 1. Create command file in `commands/` directory
 2. Extend base Command class from `@axiosleo/cli-tool`
 3. Implement `exec(args, options)` method
-4. Register command in main CLI file
+4. No manual registration is needed - every file under `commands/` is picked up
+   via `commands_dir` in `bin/koapp.js`
 
 ## Usage Examples
 
