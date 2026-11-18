@@ -7,7 +7,7 @@ description: Overview of the @axiosleo/koapp framework - a Koa-based web, TCP so
 
 `@axiosleo/koapp` is a Node.js framework built on top of [Koa](https://koajs.com/) that provides three runtime modes (HTTP, TCP, WebSocket) behind a unified `Application` base, plus batteries-included helpers for routing, validation, response shaping, and Server-Sent Events.
 
-Minimum Node.js version: **16.0.0**.
+Supported Node.js versions: **^20.19.0 || >=22.12.0** (20.19+ on the 20.x line, or 22.12 and later).
 
 ## Installation
 
