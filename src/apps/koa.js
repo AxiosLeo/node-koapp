@@ -1,7 +1,7 @@
 'use strict';
 
 const KoaBodyParser = require('koa-bodyparser');
-const session = require('koa-session');
+const { createSession: session } = require('koa-session');
 const KoaStaticServer = require('koa-static-server');
 const path = require('path');
 const Koa = require('koa');
@@ -100,8 +100,7 @@ class KoaApplication extends Application {
       context.url = ctx.req.url ? ctx.req.url : '/';
       try {
         await self.workflow.start(context);
-      } catch (exContext) {
-        context = exContext;
+      } catch {
         await next();
       }
     });

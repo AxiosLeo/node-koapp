@@ -26,8 +26,8 @@ const dispatcher = ({ app, app_id, workflow, connection, connection_id }) => {
     context.body = ctx.body || {};
     try {
       await workflow.start(context);
-    } catch (exContext) {
-      context = exContext;
+    } catch {
+      // a failed step rejects with this same context, the error is in context.curr.error
     }
   };
 };
@@ -37,7 +37,7 @@ const dispatcher = ({ app, app_id, workflow, connection, connection_id }) => {
  */
 const handleRes = (context) => {
   let response = context.response;
-  let data = '';
+  let data;
   if (response.format === 'json' && response.notResolve !== true) {
     let code, message;
     if (response.code) {
