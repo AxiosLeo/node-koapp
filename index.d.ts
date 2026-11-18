@@ -2,7 +2,7 @@ import { Configuration, Context, Workflow } from "@axiosleo/cli-tool";
 import { EventEmitter } from "events";
 import { IncomingHttpHeaders } from "http";
 import * as Koa from "koa";
-import * as session from "koa-session";
+import type { CreateSessionOptions } from "koa-session";
 import * as KoaStaticServer from "koa-static-server";
 import type { Socket } from "net";
 import { Transform } from "stream";
@@ -1123,7 +1123,7 @@ export type KoaApplicationConfig = AppConfiguration & {
   /** Session key name */
   session_key?: string;
   /** Session configuration */
-  session?: Partial<session.opts>;
+  session?: CreateSessionOptions;
   /** Static file serving options */
   static?: KoaStaticServer.Options;
 };
@@ -1311,8 +1311,11 @@ export type PingConfig = { open: boolean; interval: number; data: any };
 
 /**
  * Socket-based application
+ * @template TConnection Connection type held by the application (net.Socket by default)
  */
-export declare class SocketApplication extends Application {
+export declare class SocketApplication<
+  TConnection = Socket,
+> extends Application {
   config: AppConfiguration & {
     ping?: PingConfig;
   };
@@ -1339,7 +1342,7 @@ export declare class SocketApplication extends Application {
     data?: any,
     msg?: string,
     code?: number,
-    connections?: Socket[],
+    connections?: TConnection[],
   ): void;
 
   /**
@@ -1349,7 +1352,12 @@ export declare class SocketApplication extends Application {
    * @param msg Message
    * @param code Status code
    */
-  send(connection: Socket, data?: any, msg?: string, code?: number): boolean;
+  send(
+    connection: TConnection,
+    data?: any,
+    msg?: string,
+    code?: number,
+  ): boolean;
 
   /**
    * Send data to a specific connection by connection ID
@@ -1369,7 +1377,7 @@ export declare class SocketApplication extends Application {
    * Close a specific connection
    * @param connection Connection to close
    */
-  close(connection: Socket): boolean;
+  close(connection: TConnection): boolean;
 
   /**
    * Close a specific connection by connection ID
@@ -1381,7 +1389,7 @@ export declare class SocketApplication extends Application {
    * @param connection_id Connection ID to get
    * @returns Connection or null if not found
    */
-  getConnection(connection_id: string): Socket | null;
+  getConnection(connection_id: string): TConnection | null;
 
   /**
    * Ping a specific connection
@@ -1393,7 +1401,7 @@ export declare class SocketApplication extends Application {
 /**
  * WebSocket-based application
  */
-export declare class WebSocketApplication extends SocketApplication {
+export declare class WebSocketApplication extends SocketApplication<WebSocket> {
   pingConfig: { open: boolean; interval: number; data: any };
   constructor(config: WebSocketAppConfiguration);
 
