@@ -17,7 +17,8 @@ const {
 } = require('../src/cli/scaffold');
 
 function probePnpm(dir, env) {
-  return spawnSync('pnpm', ['--version'], {
+  // Single command string: args + shell:true triggers DEP0190 on newer Node.
+  return spawnSync('pnpm --version', {
     cwd: dir,
     encoding: 'utf8',
     shell: true,
