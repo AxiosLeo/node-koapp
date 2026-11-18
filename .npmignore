@@ -5,6 +5,7 @@ tests/*
 coverage/*
 .nyc_output/*
 package-lock.json
+/pnpm-workspace.yaml
 nyc.config.js
 .idea/*
 node_modules/*
