@@ -233,7 +233,7 @@ function detectPmMajor(dir, pm, pmVersion) {
   }
   const lockFile = path.join(dir, 'yarn.lock');
   if (fs.existsSync(lockFile)) {
-    let head = '';
+    let head;
     try {
       head = fs.readFileSync(lockFile, 'utf8').slice(0, 1024);
     } catch (_err) { // eslint-disable-line no-unused-vars
