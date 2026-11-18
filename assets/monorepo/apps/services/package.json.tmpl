@@ -16,10 +16,10 @@
     "test-cov": "nyc mocha -r @swc-node/register 'src/**/*.test.ts' --parallel"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "dependencies": {
-    "@axiosleo/koapp": "^1.2.1",
+    "@axiosleo/koapp": "^2.0.0",
     "better-sqlite3": "^11.9.1",
     "cluster": "^0.7.7",
     "dotenv": "^16.4.5",
@@ -30,9 +30,8 @@
     "@swc/cli": "^0.3.12",
     "@swc/core": "^1.4.14",
     "@types/better-sqlite3": "^7.6.13",
-    "@types/koa": "^2.15.0",
+    "@types/koa": "^3.0.0",
     "@types/koa-bodyparser": "^4.3.12",
-    "@types/koa-session": "^6.4.5",
     "@types/koa-static-server": "^1.5.3",
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.12.7",
