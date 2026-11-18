@@ -4,7 +4,7 @@ const is = require('@axiosleo/cli-tool/src/helper/is');
 const { _uuid_salt } = require('./utils');
 
 const resolvePathinfo = (pathinfo) => {
-  let trace = [];
+  let trace;
   if (!pathinfo || pathinfo === '/') {
     trace = ['@'];
   } else if (pathinfo[0] !== '/') {
